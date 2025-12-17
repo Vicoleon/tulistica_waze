@@ -317,3 +317,69 @@ export const savedRecipes = mysqlTable("saved_recipes", {
 
 export type SavedRecipe = typeof savedRecipes.$inferSelect;
 export type InsertSavedRecipe = typeof savedRecipes.$inferInsert;
+
+// ============ PRICE ALERTS ============
+export const priceAlerts = mysqlTable("price_alerts", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  productId: int("productId").notNull(),
+  targetPrice: float("targetPrice").notNull(), // Alert when price drops below this
+  currentLowestPrice: float("currentLowestPrice"),
+  currentLowestStoreId: int("currentLowestStoreId"),
+  isActive: boolean("isActive").default(true),
+  lastNotifiedAt: timestamp("lastNotifiedAt"),
+  notificationCount: int("notificationCount").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+  index("idx_alerts_user").on(table.userId),
+  index("idx_alerts_product").on(table.productId),
+  index("idx_alerts_active").on(table.isActive),
+]);
+
+export type PriceAlert = typeof priceAlerts.$inferSelect;
+export type InsertPriceAlert = typeof priceAlerts.$inferInsert;
+
+// ============ STORE CROWDEDNESS REPORTS ============
+export const storeCrowdedness = mysqlTable("store_crowdedness", {
+  id: int("id").autoincrement().primaryKey(),
+  storeId: int("storeId").notNull(),
+  userId: int("userId"),
+  crowdednessLevel: int("crowdednessLevel").notNull(), // 0-100
+  reportSource: mysqlEnum("reportSource", ["user", "google", "estimated"]).default("user"),
+  waitTimeMinutes: int("waitTimeMinutes"),
+  comment: text("comment"),
+  reportedAt: timestamp("reportedAt").defaultNow().notNull(),
+  expiresAt: timestamp("expiresAt"), // Crowdedness reports expire after ~30 mins
+}, (table) => [
+  index("idx_crowdedness_store").on(table.storeId),
+  index("idx_crowdedness_time").on(table.reportedAt),
+]);
+
+export type StoreCrowdedness = typeof storeCrowdedness.$inferSelect;
+export type InsertStoreCrowdedness = typeof storeCrowdedness.$inferInsert;
+
+// ============ GOOGLE PLACES CACHE ============
+export const googlePlacesCache = mysqlTable("google_places_cache", {
+  id: int("id").autoincrement().primaryKey(),
+  placeId: varchar("placeId", { length: 255 }).notNull().unique(),
+  storeId: int("storeId"), // Link to our stores table if imported
+  name: varchar("name", { length: 255 }).notNull(),
+  address: text("address"),
+  latitude: float("latitude").notNull(),
+  longitude: float("longitude").notNull(),
+  rating: float("rating"),
+  userRatingsTotal: int("userRatingsTotal"),
+  priceLevel: int("priceLevel"),
+  types: json("types").$type<string[]>(),
+  phone: varchar("phone", { length: 32 }),
+  website: text("website"),
+  openNow: boolean("openNow"),
+  lastFetchedAt: timestamp("lastFetchedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => [
+  index("idx_places_location").on(table.latitude, table.longitude),
+]);
+
+export type GooglePlaceCache = typeof googlePlacesCache.$inferSelect;
+export type InsertGooglePlaceCache = typeof googlePlacesCache.$inferInsert;

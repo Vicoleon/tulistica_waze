@@ -20,10 +20,21 @@ export default function Scanner() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const scannerRef = useRef<HTMLDivElement>(null);
 
-  const { data: product, isLoading: loadingProduct } = trpc.products.getByBarcode.useQuery(
+  // First try local database, then external API
+  const { data: localProduct, isLoading: loadingLocal } = trpc.products.getByBarcode.useQuery(
     { barcode: scannedBarcode || "" },
     { enabled: !!scannedBarcode }
   );
+
+  const { data: externalLookup, isLoading: loadingExternal } = trpc.productLookup.byBarcode.useQuery(
+    { barcode: scannedBarcode || "" },
+    { enabled: !!scannedBarcode && !localProduct }
+  );
+
+  // Use local product if found, otherwise use external lookup result
+  const product = localProduct || externalLookup?.product;
+  const loadingProduct = loadingLocal || (loadingExternal && !localProduct);
+  const productSource = localProduct ? "local" : externalLookup?.source;
 
   const { data: nearbyStores } = trpc.stores.getNearby.useQuery(
     { latitude: userLocation?.lat || 0, longitude: userLocation?.lng || 0, radiusKm: 1 },
@@ -118,13 +129,13 @@ export default function Scanner() {
       return;
     }
 
-    if (!product) {
+    if (!product || !product.id) {
       toast.error("Product not found in database");
       return;
     }
 
     submitPrice.mutate({
-      storeId: selectedStoreId,
+      storeId: selectedStoreId!,
       productId: product.id,
       price: parseFloat(price),
       userLatitude: userLocation?.lat,
@@ -218,6 +229,15 @@ export default function Scanner() {
                   </div>
                 ) : product ? (
                   <div className="space-y-4">
+                    {productSource === "external" && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5" />
+                        <div className="text-sm">
+                          <p className="font-medium text-blue-800">Product found via Open Food Facts</p>
+                          <p className="text-blue-600">This product has been added to our database.</p>
+                        </div>
+                      </div>
+                    )}
                     <div className="flex items-center gap-4">
                       {product.imageUrl ? (
                         <img

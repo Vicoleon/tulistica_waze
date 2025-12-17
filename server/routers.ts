@@ -14,6 +14,15 @@ import {
   calculatePointsForPriceReport,
 } from "./services/smartCart";
 import { invokeLLM } from "./_core/llm";
+import {
+  searchNearbyGroceryStores,
+  getPlaceDetails,
+  searchStoresByText,
+  estimateStoreCrowdedness,
+  lookupProduct,
+  searchProductsOpenFoodFacts,
+} from "./services/externalApis";
+import { notifyOwner } from "./_core/notification";
 
 export const appRouter = router({
   system: systemRouter,
@@ -652,6 +661,264 @@ Only return valid JSON, no other text.`,
       .mutation(async ({ input }) => {
         await db.recordAdClick(input.adId);
         return { success: true };
+      }),
+  }),
+
+  // ============ GOOGLE PLACES INTEGRATION ============
+  googlePlaces: router({
+    searchNearby: publicProcedure
+      .input(z.object({
+        latitude: z.number(),
+        longitude: z.number(),
+        radiusMeters: z.number().default(5000),
+      }))
+      .query(async ({ input }) => {
+        const places = await searchNearbyGroceryStores(
+          input.latitude,
+          input.longitude,
+          input.radiusMeters
+        );
+        // Cache results
+        for (const place of places) {
+          await db.cacheGooglePlace({
+            placeId: place.placeId,
+            name: place.name,
+            address: place.address,
+            latitude: place.latitude,
+            longitude: place.longitude,
+            rating: place.rating,
+            userRatingsTotal: place.userRatingsTotal,
+            priceLevel: place.priceLevel,
+            types: place.types,
+            openNow: place.openNow,
+          });
+        }
+        return places;
+      }),
+
+    searchByText: publicProcedure
+      .input(z.object({
+        query: z.string(),
+        latitude: z.number().optional(),
+        longitude: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return searchStoresByText(input.query, input.latitude, input.longitude);
+      }),
+
+    getDetails: publicProcedure
+      .input(z.object({ placeId: z.string() }))
+      .query(async ({ input }) => {
+        const details = await getPlaceDetails(input.placeId);
+        if (details) {
+          // Update cache with detailed info
+          await db.cacheGooglePlace({
+            placeId: details.placeId,
+            name: details.name,
+            address: details.address,
+            latitude: details.latitude,
+            longitude: details.longitude,
+            rating: details.rating,
+            userRatingsTotal: details.userRatingsTotal,
+            priceLevel: details.priceLevel,
+            types: details.types,
+            phone: details.phone,
+            website: details.website,
+            openNow: details.openNow,
+          });
+        }
+        return details;
+      }),
+
+    importAsStore: protectedProcedure
+      .input(z.object({ placeId: z.string() }))
+      .mutation(async ({ input }) => {
+        const storeId = await db.importGooglePlaceAsStore(input.placeId);
+        return { storeId };
+      }),
+
+    getCached: publicProcedure
+      .input(z.object({
+        latitude: z.number(),
+        longitude: z.number(),
+        radiusKm: z.number().default(10),
+      }))
+      .query(async ({ input }) => {
+        return db.getNearbyGooglePlaces(input.latitude, input.longitude, input.radiusKm);
+      }),
+  }),
+
+  // ============ PRODUCT LOOKUP (EXTERNAL) ============
+  productLookup: router({
+    byBarcode: publicProcedure
+      .input(z.object({ barcode: z.string() }))
+      .query(async ({ input }) => {
+        // First check our database
+        const localProduct = await db.getProductByBarcode(input.barcode);
+        if (localProduct) {
+          return { source: "local" as const, product: localProduct };
+        }
+        // Fallback to external APIs
+        const externalProduct = await lookupProduct(input.barcode);
+        if (externalProduct) {
+          // Optionally save to our database
+          const id = await db.createProduct({
+            barcode: externalProduct.barcode,
+            name: externalProduct.name,
+            brand: externalProduct.brand,
+            category: externalProduct.category,
+            imageUrl: externalProduct.imageUrl,
+          });
+          return {
+            source: "external" as const,
+            product: { id, ...externalProduct },
+          };
+        }
+        return { source: "not_found" as const, product: null };
+      }),
+
+    searchExternal: publicProcedure
+      .input(z.object({ query: z.string(), limit: z.number().default(20) }))
+      .query(async ({ input }) => {
+        return searchProductsOpenFoodFacts(input.query, input.limit);
+      }),
+  }),
+
+  // ============ STORE CROWDEDNESS ============
+  crowdedness: router({
+    getCurrent: publicProcedure
+      .input(z.object({ storeId: z.number() }))
+      .query(async ({ input }) => {
+        // Get user-reported crowdedness
+        const userReport = await db.getStoreCrowdedness(input.storeId);
+        // Get store info for estimation
+        const store = await db.getStoreById(input.storeId);
+        // Estimate based on time/day patterns
+        const estimated = estimateStoreCrowdedness(
+          store?.avgRating ?? undefined,
+          store?.totalRatings ?? undefined
+        );
+        return {
+          userReport,
+          estimated,
+          // Use user report if recent, otherwise use estimate
+          current: userReport ? {
+            level: userReport.crowdednessLevel,
+            source: userReport.reportSource,
+            reportedAt: userReport.reportedAt,
+          } : {
+            level: estimated.currentPopularity,
+            source: "estimated" as const,
+            status: estimated.status,
+          },
+        };
+      }),
+
+    report: protectedProcedure
+      .input(z.object({
+        storeId: z.number(),
+        crowdednessLevel: z.number().min(0).max(100),
+        waitTimeMinutes: z.number().optional(),
+        comment: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const id = await db.reportStoreCrowdedness({
+          storeId: input.storeId,
+          userId: ctx.user.id,
+          crowdednessLevel: input.crowdednessLevel,
+          reportSource: "user",
+          waitTimeMinutes: input.waitTimeMinutes,
+          comment: input.comment,
+        });
+        return { id };
+      }),
+
+    getHistory: publicProcedure
+      .input(z.object({
+        storeId: z.number(),
+        hours: z.number().default(24),
+      }))
+      .query(async ({ input }) => {
+        return db.getRecentCrowdednessReports(input.storeId, input.hours);
+      }),
+  }),
+
+  // ============ PRICE ALERTS ============
+  priceAlerts: router({
+    getAll: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUserPriceAlerts(ctx.user.id);
+    }),
+
+    create: protectedProcedure
+      .input(z.object({
+        productId: z.number(),
+        targetPrice: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Get current lowest price
+        const prices = await db.getPricesForProduct(input.productId);
+        const lowestPrice = prices.length > 0
+          ? Math.min(...prices.map((p: { price: number }) => p.price))
+          : null;
+        const lowestStore = prices.find((p: { price: number; storeId: number }) => p.price === lowestPrice);
+
+        const id = await db.createPriceAlert({
+          userId: ctx.user.id,
+          productId: input.productId,
+          targetPrice: input.targetPrice,
+          currentLowestPrice: lowestPrice,
+          currentLowestStoreId: lowestStore?.storeId,
+        });
+        return { id };
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        targetPrice: z.number().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.updatePriceAlert(input.id, {
+          targetPrice: input.targetPrice,
+          isActive: input.isActive,
+        });
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deletePriceAlert(input.id);
+        return { success: true };
+      }),
+
+    checkAndNotify: protectedProcedure
+      .input(z.object({ productId: z.number() }))
+      .mutation(async ({ input }) => {
+        // Get all active alerts for this product
+        const alerts = await db.getActiveAlertsForProduct(input.productId);
+        // Get current prices
+        const prices = await db.getPricesForProduct(input.productId);
+        if (prices.length === 0) return { notified: 0 };
+
+        const lowestPrice = Math.min(...prices.map((p: { price: number }) => p.price));
+        let notified = 0;
+
+        for (const alert of alerts) {
+          if (lowestPrice <= alert.targetPrice) {
+            // Price dropped below target!
+            const product = await db.getProductById(input.productId);
+            await notifyOwner({
+              title: `Price Drop Alert: ${product?.name}`,
+              content: `${product?.name} is now $${lowestPrice.toFixed(2)} (your target: $${alert.targetPrice.toFixed(2)})`,
+            });
+            await db.markAlertNotified(alert.id);
+            notified++;
+          }
+        }
+
+        return { notified, lowestPrice };
       }),
   }),
 });

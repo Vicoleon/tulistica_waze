@@ -79,3 +79,14 @@
 - [x] API tests for stores router
 - [x] API tests for products router
 - [x] API tests for auth router
+
+## Dynamic Data Integration (New)
+- [x] Google Maps Places API for dynamic store discovery
+- [x] Auto-import nearby grocery stores from Google Maps
+- [x] Open Food Facts API integration for product data
+- [x] Barcode lookup with automatic product info population
+- [x] Store crowdedness indicator using Google Popular Times
+- [x] Real-time busyness display on store cards and map
+- [x] Price drop alerts notification system
+- [x] User price threshold settings
+- [x] Alert history and management

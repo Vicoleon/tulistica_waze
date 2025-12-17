@@ -17,6 +17,7 @@ import Recipes from "./pages/Recipes";
 import Leaderboard from "./pages/Leaderboard";
 import Profile from "./pages/Profile";
 import MapView from "./pages/MapView";
+import PriceAlerts from "./pages/PriceAlerts";
 
 function Router() {
   return (
@@ -34,6 +35,7 @@ function Router() {
       <Route path="/leaderboard" component={Leaderboard} />
       <Route path="/profile" component={Profile} />
       <Route path="/map" component={MapView} />
+      <Route path="/alerts" component={PriceAlerts} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

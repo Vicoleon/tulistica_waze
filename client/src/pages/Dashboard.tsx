@@ -52,6 +52,7 @@ export default function Dashboard() {
     { icon: List, label: "My Lists", href: "/lists" },
     { icon: Package, label: "Pantry", href: "/pantry" },
     { icon: ChefHat, label: "Recipes", href: "/recipes" },
+    { icon: Bell, label: "Price Alerts", href: "/alerts" },
     { icon: Trophy, label: "Leaderboard", href: "/leaderboard" },
   ];
 
@@ -67,9 +68,11 @@ export default function Dashboard() {
             <span className="text-xl font-bold">Grocery Waze</span>
           </Link>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon">
-              <Bell className="w-5 h-5" />
-            </Button>
+            <Link href="/alerts">
+              <Button variant="ghost" size="icon">
+                <Bell className="w-5 h-5" />
+              </Button>
+            </Link>
             <Link href="/profile">
               <Button variant="ghost" size="icon">
                 <Settings className="w-5 h-5" />

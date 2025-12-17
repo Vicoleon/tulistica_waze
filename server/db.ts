@@ -6,7 +6,8 @@ import {
   adCampaigns, achievements, userAchievements, leaderboard, priceVotes,
   savedRecipes, InsertStore, InsertProduct, InsertPriceEntry,
   InsertShoppingList, InsertListItem, InsertPantryItem, InsertAdCampaign,
-  InsertSavedRecipe
+  InsertSavedRecipe, priceAlerts, InsertPriceAlert, storeCrowdedness,
+  InsertStoreCrowdedness, googlePlacesCache, InsertGooglePlaceCache
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -733,4 +734,235 @@ export async function deleteRecipe(id: number) {
   const db = await getDb();
   if (!db) return;
   await db.delete(savedRecipes).where(eq(savedRecipes.id, id));
+}
+
+
+// ============ PRICE ALERTS HELPERS ============
+export async function createPriceAlert(alert: InsertPriceAlert) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(priceAlerts).values(alert);
+  return result[0]?.insertId ?? null;
+}
+
+export async function getUserPriceAlerts(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: priceAlerts.id,
+    productId: priceAlerts.productId,
+    targetPrice: priceAlerts.targetPrice,
+    currentLowestPrice: priceAlerts.currentLowestPrice,
+    currentLowestStoreId: priceAlerts.currentLowestStoreId,
+    isActive: priceAlerts.isActive,
+    lastNotifiedAt: priceAlerts.lastNotifiedAt,
+    notificationCount: priceAlerts.notificationCount,
+    createdAt: priceAlerts.createdAt,
+    productName: products.name,
+    productBrand: products.brand,
+    productImageUrl: products.imageUrl,
+    storeName: stores.name,
+  })
+    .from(priceAlerts)
+    .innerJoin(products, eq(priceAlerts.productId, products.id))
+    .leftJoin(stores, eq(priceAlerts.currentLowestStoreId, stores.id))
+    .where(eq(priceAlerts.userId, userId))
+    .orderBy(desc(priceAlerts.createdAt));
+}
+
+export async function updatePriceAlert(id: number, data: Partial<InsertPriceAlert>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(priceAlerts).set(data).where(eq(priceAlerts.id, id));
+}
+
+export async function deletePriceAlert(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(priceAlerts).where(eq(priceAlerts.id, id));
+}
+
+export async function getActiveAlertsForProduct(productId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: priceAlerts.id,
+    userId: priceAlerts.userId,
+    targetPrice: priceAlerts.targetPrice,
+    currentLowestPrice: priceAlerts.currentLowestPrice,
+    lastNotifiedAt: priceAlerts.lastNotifiedAt,
+  })
+    .from(priceAlerts)
+    .where(and(
+      eq(priceAlerts.productId, productId),
+      eq(priceAlerts.isActive, true)
+    ));
+}
+
+export async function markAlertNotified(alertId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(priceAlerts).set({
+    lastNotifiedAt: new Date(),
+    notificationCount: sql`${priceAlerts.notificationCount} + 1`,
+  }).where(eq(priceAlerts.id, alertId));
+}
+
+// ============ STORE CROWDEDNESS HELPERS ============
+export async function reportStoreCrowdedness(report: InsertStoreCrowdedness) {
+  const db = await getDb();
+  if (!db) return null;
+  // Set expiration to 30 minutes from now
+  const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+  const result = await db.insert(storeCrowdedness).values({
+    ...report,
+    expiresAt,
+  });
+  return result[0]?.insertId ?? null;
+}
+
+export async function getStoreCrowdedness(storeId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const now = new Date();
+  // Get the most recent non-expired report
+  const result = await db.select()
+    .from(storeCrowdedness)
+    .where(and(
+      eq(storeCrowdedness.storeId, storeId),
+      or(
+        gte(storeCrowdedness.expiresAt, now),
+        sql`${storeCrowdedness.expiresAt} IS NULL`
+      )
+    ))
+    .orderBy(desc(storeCrowdedness.reportedAt))
+    .limit(1);
+  return result[0];
+}
+
+export async function getRecentCrowdednessReports(storeId: number, hours = 24) {
+  const db = await getDb();
+  if (!db) return [];
+  const since = new Date(Date.now() - hours * 60 * 60 * 1000);
+  return db.select({
+    id: storeCrowdedness.id,
+    crowdednessLevel: storeCrowdedness.crowdednessLevel,
+    reportSource: storeCrowdedness.reportSource,
+    waitTimeMinutes: storeCrowdedness.waitTimeMinutes,
+    comment: storeCrowdedness.comment,
+    reportedAt: storeCrowdedness.reportedAt,
+    userName: users.name,
+  })
+    .from(storeCrowdedness)
+    .leftJoin(users, eq(storeCrowdedness.userId, users.id))
+    .where(and(
+      eq(storeCrowdedness.storeId, storeId),
+      gte(storeCrowdedness.reportedAt, since)
+    ))
+    .orderBy(desc(storeCrowdedness.reportedAt));
+}
+
+export async function getAverageCrowdedness(storeId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const now = new Date();
+  const result = await db.select({
+    avgLevel: sql<number>`AVG(${storeCrowdedness.crowdednessLevel})`,
+    reportCount: sql<number>`COUNT(*)`,
+  })
+    .from(storeCrowdedness)
+    .where(and(
+      eq(storeCrowdedness.storeId, storeId),
+      or(
+        gte(storeCrowdedness.expiresAt, now),
+        sql`${storeCrowdedness.expiresAt} IS NULL`
+      )
+    ));
+  return result[0];
+}
+
+// ============ GOOGLE PLACES CACHE HELPERS ============
+export async function cacheGooglePlace(place: InsertGooglePlaceCache) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(googlePlacesCache).values(place).onDuplicateKeyUpdate({
+    set: {
+      name: place.name,
+      address: place.address,
+      latitude: place.latitude,
+      longitude: place.longitude,
+      rating: place.rating,
+      userRatingsTotal: place.userRatingsTotal,
+      priceLevel: place.priceLevel,
+      types: place.types,
+      phone: place.phone,
+      website: place.website,
+      openNow: place.openNow,
+      lastFetchedAt: new Date(),
+    }
+  });
+  return result[0]?.insertId ?? null;
+}
+
+export async function getGooglePlaceByPlaceId(placeId: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(googlePlacesCache)
+    .where(eq(googlePlacesCache.placeId, placeId))
+    .limit(1);
+  return result[0];
+}
+
+export async function getNearbyGooglePlaces(latitude: number, longitude: number, radiusKm: number) {
+  const db = await getDb();
+  if (!db) return [];
+  // Simple bounding box query
+  const latDelta = radiusKm / 111;
+  const lngDelta = radiusKm / (111 * Math.cos(latitude * Math.PI / 180));
+  
+  return db.select()
+    .from(googlePlacesCache)
+    .where(and(
+      gte(googlePlacesCache.latitude, latitude - latDelta),
+      lte(googlePlacesCache.latitude, latitude + latDelta),
+      gte(googlePlacesCache.longitude, longitude - lngDelta),
+      lte(googlePlacesCache.longitude, longitude + lngDelta)
+    ))
+    .orderBy(desc(googlePlacesCache.rating));
+}
+
+export async function linkGooglePlaceToStore(placeId: string, storeId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(googlePlacesCache)
+    .set({ storeId })
+    .where(eq(googlePlacesCache.placeId, placeId));
+}
+
+export async function importGooglePlaceAsStore(placeId: string): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const cached = await getGooglePlaceByPlaceId(placeId);
+  if (!cached) return null;
+  
+  // Check if already linked
+  if (cached.storeId) return cached.storeId;
+  
+  // Create new store from cached data
+  const storeId = await createStore({
+    name: cached.name,
+    address: cached.address || undefined,
+    latitude: cached.latitude,
+    longitude: cached.longitude,
+    phone: cached.phone || undefined,
+    avgRating: cached.rating || undefined,
+    totalRatings: cached.userRatingsTotal || undefined,
+  });
+  
+  if (storeId) {
+    await linkGooglePlaceToStore(placeId, storeId);
+  }
+  
+  return storeId;
 }
