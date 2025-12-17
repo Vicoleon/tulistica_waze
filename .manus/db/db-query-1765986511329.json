@@ -1,0 +1,55 @@
+{
+  "query": "SELECT * FROM list_items WHERE listId = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2owHnBsQHYApYEi.3c53e27f50c7 --database FcLsQFuXBaNM3YVBsASU97 --execute SELECT * FROM list_items WHERE listId = 1;",
+  "rows": [
+    {
+      "id": "1",
+      "listId": "1",
+      "productId": "NULL",
+      "customName": "Arroz",
+      "quantity": "1",
+      "unit": "NULL",
+      "isChecked": "0",
+      "checkedByUserId": "NULL",
+      "checkedAt": "NULL",
+      "addedByUserId": "1",
+      "notes": "NULL",
+      "createdAt": "2025-12-17 14:24:02",
+      "updatedAt": "2025-12-17 14:25:01"
+    },
+    {
+      "id": "2",
+      "listId": "1",
+      "productId": "NULL",
+      "customName": "Frijoles",
+      "quantity": "1",
+      "unit": "NULL",
+      "isChecked": "0",
+      "checkedByUserId": "NULL",
+      "checkedAt": "NULL",
+      "addedByUserId": "1",
+      "notes": "NULL",
+      "createdAt": "2025-12-17 14:24:15",
+      "updatedAt": "2025-12-17 14:24:15"
+    },
+    {
+      "id": "3",
+      "listId": "1",
+      "productId": "NULL",
+      "customName": "Cafe",
+      "quantity": "1",
+      "unit": "NULL",
+      "isChecked": "0",
+      "checkedByUserId": "NULL",
+      "checkedAt": "NULL",
+      "addedByUserId": "1",
+      "notes": "NULL",
+      "createdAt": "2025-12-17 14:24:17",
+      "updatedAt": "2025-12-17 14:25:02"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tlistId\tproductId\tcustomName\tquantity\tunit\tisChecked\tcheckedByUserId\tcheckedAt\taddedByUserId\tnotes\tcreatedAt\tupdatedAt\n1\t1\tNULL\tArroz\t1\tNULL\t0\tNULL\tNULL\t1\tNULL\t2025-12-17 14:24:02\t2025-12-17 14:25:01\n2\t1\tNULL\tFrijoles\t1\tNULL\t0\tNULL\tNULL\t1\tNULL\t2025-12-17 14:24:15\t2025-12-17 14:24:15\n3\t1\tNULL\tCafe\t1\tNULL\t0\tNULL\tNULL\t1\tNULL\t2025-12-17 14:24:17\t2025-12-17 14:25:02\n",
+  "stderr": "",
+  "execution_time_ms": 79
+}

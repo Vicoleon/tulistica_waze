@@ -1,0 +1,90 @@
+{
+  "query": "SELECT id, name FROM products;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2owHnBsQHYApYEi.3c53e27f50c7 --database FcLsQFuXBaNM3YVBsASU97 --execute SELECT id, name FROM products;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Arroz Tío Pelón"
+    },
+    {
+      "id": "2",
+      "name": "Frijoles Negros Don Pedro"
+    },
+    {
+      "id": "3",
+      "name": "Leche Dos Pinos Entera"
+    },
+    {
+      "id": "4",
+      "name": "Café Britt Clásico"
+    },
+    {
+      "id": "5",
+      "name": "Salsa Lizano"
+    },
+    {
+      "id": "6",
+      "name": "Natilla Dos Pinos"
+    },
+    {
+      "id": "7",
+      "name": "Tortillas de Maíz Mexifoods"
+    },
+    {
+      "id": "8",
+      "name": "Queso Turrialba"
+    },
+    {
+      "id": "9",
+      "name": "Gallo Pinto Listo"
+    },
+    {
+      "id": "10",
+      "name": "Jugo de Naranja Del Campo"
+    },
+    {
+      "id": "11",
+      "name": "Pan Bimbo Blanco"
+    },
+    {
+      "id": "12",
+      "name": "Huevos Don Cristóbal"
+    },
+    {
+      "id": "13",
+      "name": "Aceite Clover"
+    },
+    {
+      "id": "14",
+      "name": "Azúcar Doña María"
+    },
+    {
+      "id": "15",
+      "name": "Atún Sardimar"
+    },
+    {
+      "id": "16",
+      "name": "Pasta Dental Colgate"
+    },
+    {
+      "id": "17",
+      "name": "Jabón Palmolive"
+    },
+    {
+      "id": "18",
+      "name": "Detergente Fab"
+    },
+    {
+      "id": "19",
+      "name": "Papel Higiénico Scott"
+    },
+    {
+      "id": "20",
+      "name": "Cerveza Imperial"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\n1\tArroz Tío Pelón\n2\tFrijoles Negros Don Pedro\n3\tLeche Dos Pinos Entera\n4\tCafé Britt Clásico\n5\tSalsa Lizano\n6\tNatilla Dos Pinos\n7\tTortillas de Maíz Mexifoods\n8\tQueso Turrialba\n9\tGallo Pinto Listo\n10\tJugo de Naranja Del Campo\n11\tPan Bimbo Blanco\n12\tHuevos Don Cristóbal\n13\tAceite Clover\n14\tAzúcar Doña María\n15\tAtún Sardimar\n16\tPasta Dental Colgate\n17\tJabón Palmolive\n18\tDetergente Fab\n19\tPapel Higiénico Scott\n20\tCerveza Imperial\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

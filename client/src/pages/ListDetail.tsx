@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { trpc } from "@/lib/trpc";
 import {
   ArrowLeft, Plus, Users, Share2, Copy, TrendingDown, Trash2,
-  ShoppingCart, Check
+  ShoppingCart, Check, Search, Package
 } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { toast } from "sonner";
@@ -22,6 +22,9 @@ export default function ListDetail() {
   const [newItemName, setNewItemName] = useState("");
   const [socket, setSocket] = useState<Socket | null>(null);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showProductSearch, setShowProductSearch] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<{ id: number; name: string } | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const utils = trpc.useUtils();
   const { data: list, isLoading } = trpc.lists.getById.useQuery(
@@ -29,10 +32,18 @@ export default function ListDetail() {
     { enabled: listId > 0 }
   );
 
+  // Search products as user types
+  const { data: searchResults } = trpc.products.search.useQuery(
+    { query: newItemName, limit: 5 },
+    { enabled: newItemName.length >= 2 && !selectedProduct }
+  );
+
   const addItem = trpc.lists.addItem.useMutation({
     onSuccess: () => {
       utils.lists.getById.invalidate({ id: listId });
       setNewItemName("");
+      setSelectedProduct(null);
+      setShowProductSearch(false);
       socket?.emit("list_update", {
         listId,
         action: "item_added",
@@ -125,6 +136,22 @@ export default function ListDetail() {
     }
   };
 
+  const handleAddItem = () => {
+    if (selectedProduct) {
+      // Add with productId for optimization
+      addItem.mutate({ listId, productId: selectedProduct.id, customName: selectedProduct.name });
+    } else if (newItemName.trim()) {
+      // Add as custom item (won't be optimizable)
+      addItem.mutate({ listId, customName: newItemName.trim() });
+    }
+  };
+
+  const selectProduct = (product: { id: number; name: string }) => {
+    setSelectedProduct(product);
+    setNewItemName(product.name);
+    setShowProductSearch(false);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -148,6 +175,7 @@ export default function ListDetail() {
 
   const uncheckedItems = list.items.filter((item) => !item.isChecked);
   const checkedItems = list.items.filter((item) => item.isChecked);
+  const hasProducts = searchResults && searchResults.length > 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -216,25 +244,82 @@ export default function ListDetail() {
         {/* Add Item */}
         <Card className="mb-6">
           <CardContent className="p-4">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (newItemName.trim()) {
-                  addItem.mutate({ listId, customName: newItemName.trim() });
-                }
-              }}
-              className="flex gap-2"
-            >
-              <Input
-                placeholder="Add an item..."
-                value={newItemName}
-                onChange={(e) => setNewItemName(e.target.value)}
-                className="flex-1"
-              />
-              <Button type="submit" disabled={!newItemName.trim() || addItem.isPending}>
-                <Plus className="w-4 h-4" />
-              </Button>
-            </form>
+            <div className="relative">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleAddItem();
+                }}
+                className="flex gap-2"
+              >
+                <div className="flex-1 relative">
+                  <Input
+                    ref={inputRef}
+                    placeholder="Search products or add custom item..."
+                    value={newItemName}
+                    onChange={(e) => {
+                      setNewItemName(e.target.value);
+                      setSelectedProduct(null);
+                      setShowProductSearch(true);
+                    }}
+                    onFocus={() => setShowProductSearch(true)}
+                    className={selectedProduct ? "pr-20" : ""}
+                  />
+                  {selectedProduct && (
+                    <Badge className="absolute right-2 top-1/2 -translate-y-1/2 bg-primary">
+                      <Package className="w-3 h-3 mr-1" /> Linked
+                    </Badge>
+                  )}
+                </div>
+                <Button type="submit" disabled={!newItemName.trim() || addItem.isPending}>
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </form>
+              
+              {/* Product Search Dropdown */}
+              {showProductSearch && hasProducts && newItemName.length >= 2 && !selectedProduct && (
+                <div className="absolute top-full left-0 right-12 mt-1 bg-card border rounded-lg shadow-lg z-50 overflow-hidden">
+                  <div className="p-2 border-b bg-muted/50">
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Search className="w-3 h-3" /> Select a product for price optimization
+                    </p>
+                  </div>
+                  {searchResults.map((product) => (
+                    <button
+                      key={product.id}
+                      type="button"
+                      className="w-full px-3 py-2 text-left hover:bg-muted flex items-center gap-3 transition-colors"
+                      onClick={() => selectProduct(product)}
+                    >
+                      <Package className="w-4 h-4 text-primary" />
+                      <div className="flex-1">
+                        <div className="font-medium">{product.name}</div>
+                        {product.brand && (
+                          <div className="text-xs text-muted-foreground">{product.brand}</div>
+                        )}
+                      </div>
+                      {product.category && (
+                        <Badge variant="secondary" className="text-xs">{product.category}</Badge>
+                      )}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    className="w-full px-3 py-2 text-left hover:bg-muted border-t text-sm text-muted-foreground"
+                    onClick={() => {
+                      setShowProductSearch(false);
+                    }}
+                  >
+                    Add "{newItemName}" as custom item (won't be optimized)
+                  </button>
+                </div>
+              )}
+            </div>
+            {!selectedProduct && newItemName.length >= 2 && (
+              <p className="text-xs text-muted-foreground mt-2">
+                💡 Tip: Select a product from the list to enable price optimization
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -269,6 +354,11 @@ export default function ListDetail() {
                         {item.quantity && item.quantity > 1 && (
                           <Badge variant="secondary" className="ml-2">
                             x{item.quantity}
+                          </Badge>
+                        )}
+                        {item.productId && (
+                          <Badge variant="outline" className="ml-2 text-xs">
+                            <Package className="w-3 h-3 mr-1" /> Optimizable
                           </Badge>
                         )}
                       </div>

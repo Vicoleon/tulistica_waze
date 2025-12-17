@@ -96,3 +96,6 @@
 - [x] Fetch stores from major Costa Rica cities via Google Maps
 - [x] Import stores into database (187 stores)
 - [x] Add sample products (20 Costa Rican products)
+
+## Bug Fixes
+- [ ] Fix Optimize button not working

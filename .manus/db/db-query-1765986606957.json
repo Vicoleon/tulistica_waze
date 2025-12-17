@@ -1,0 +1,60 @@
+{
+  "query": "SELECT id, name, barcode FROM products LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2owHnBsQHYApYEi.3c53e27f50c7 --database FcLsQFuXBaNM3YVBsASU97 --execute SELECT id, name, barcode FROM products LIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Arroz Tío Pelón",
+      "barcode": "7441001100017"
+    },
+    {
+      "id": "2",
+      "name": "Frijoles Negros Don Pedro",
+      "barcode": "7441001200014"
+    },
+    {
+      "id": "3",
+      "name": "Leche Dos Pinos Entera",
+      "barcode": "7441008100012"
+    },
+    {
+      "id": "4",
+      "name": "Café Britt Clásico",
+      "barcode": "7441009100019"
+    },
+    {
+      "id": "5",
+      "name": "Salsa Lizano",
+      "barcode": "7441010100016"
+    },
+    {
+      "id": "6",
+      "name": "Natilla Dos Pinos",
+      "barcode": "7441008200019"
+    },
+    {
+      "id": "7",
+      "name": "Tortillas de Maíz Mexifoods",
+      "barcode": "7441011100013"
+    },
+    {
+      "id": "8",
+      "name": "Queso Turrialba",
+      "barcode": "7441008300016"
+    },
+    {
+      "id": "9",
+      "name": "Gallo Pinto Listo",
+      "barcode": "7441012100010"
+    },
+    {
+      "id": "10",
+      "name": "Jugo de Naranja Del Campo",
+      "barcode": "7441013100017"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tbarcode\n1\tArroz Tío Pelón\t7441001100017\n2\tFrijoles Negros Don Pedro\t7441001200014\n3\tLeche Dos Pinos Entera\t7441008100012\n4\tCafé Britt Clásico\t7441009100019\n5\tSalsa Lizano\t7441010100016\n6\tNatilla Dos Pinos\t7441008200019\n7\tTortillas de Maíz Mexifoods\t7441011100013\n8\tQueso Turrialba\t7441008300016\n9\tGallo Pinto Listo\t7441012100010\n10\tJugo de Naranja Del Campo\t7441013100017\n",
+  "stderr": "",
+  "execution_time_ms": 53
+}

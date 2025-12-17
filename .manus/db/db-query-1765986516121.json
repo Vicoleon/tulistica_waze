@@ -1,0 +1,31 @@
+{
+  "query": "SELECT id, listId, productId, customName, isChecked FROM list_items WHERE listId = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2owHnBsQHYApYEi.3c53e27f50c7 --database FcLsQFuXBaNM3YVBsASU97 --execute SELECT id, listId, productId, customName, isChecked FROM list_items WHERE listId = 1;",
+  "rows": [
+    {
+      "id": "1",
+      "listId": "1",
+      "productId": "NULL",
+      "customName": "Arroz",
+      "isChecked": "0"
+    },
+    {
+      "id": "2",
+      "listId": "1",
+      "productId": "NULL",
+      "customName": "Frijoles",
+      "isChecked": "0"
+    },
+    {
+      "id": "3",
+      "listId": "1",
+      "productId": "NULL",
+      "customName": "Cafe",
+      "isChecked": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tlistId\tproductId\tcustomName\tisChecked\n1\t1\tNULL\tArroz\t0\n2\t1\tNULL\tFrijoles\t0\n3\t1\tNULL\tCafe\t0\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}
