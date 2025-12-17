@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COUNT(*) as total_stores FROM stores;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2owHnBsQHYApYEi.3c53e27f50c7 --database FcLsQFuXBaNM3YVBsASU97 --execute SELECT COUNT(*) as total_stores FROM stores;",
+  "rows": [
+    {
+      "total_stores": "362"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_stores\n362\n",
+  "stderr": "",
+  "execution_time_ms": 168
+}

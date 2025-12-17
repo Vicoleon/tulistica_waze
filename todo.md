@@ -90,3 +90,9 @@
 - [x] Price drop alerts notification system
 - [x] User price threshold settings
 - [x] Alert history and management
+
+## Seed Data
+- [x] Create seed script for Costa Rica grocery stores
+- [x] Fetch stores from major Costa Rica cities via Google Maps
+- [x] Import stores into database (187 stores)
+- [x] Add sample products (20 Costa Rican products)

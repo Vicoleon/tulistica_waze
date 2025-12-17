@@ -1,0 +1,80 @@
+{
+  "query": "SELECT id, name, address, latitude, longitude FROM stores LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2owHnBsQHYApYEi.3c53e27f50c7 --database FcLsQFuXBaNM3YVBsASU97 --execute SELECT id, name, address, latitude, longitude FROM stores LIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Fresh Market • Escalante",
+      "address": "San José, Bª Escalante, 400 mts Este de la Iglesia Santa Teresita., San José, Barrio Escalante, 10101, Costa Rica",
+      "latitude": "9.935722",
+      "longitude": "-84.06319"
+    },
+    {
+      "id": "2",
+      "name": "Auto Mercado Headquarters, San José",
+      "address": "San José, Avenida 3, Calle 3, San José, El Carmen, 10101, Costa Rica",
+      "latitude": "9.935591",
+      "longitude": "-84.0768"
+    },
+    {
+      "id": "3",
+      "name": "Super 24 Horas Vasconia",
+      "address": "norte del comercial sur antiguo gasolinero delta Vasconia frente tire kingdom Plaza Víquez San José, San José, Vasconia, 10105, Costa Rica",
+      "latitude": "9.92209",
+      "longitude": "-84.07257"
+    },
+    {
+      "id": "4",
+      "name": "Más X Menos - Sabana",
+      "address": "Av. 5, San José, Mántica, Costa Rica",
+      "latitude": "9.93945",
+      "longitude": "-84.09772"
+    },
+    {
+      "id": "5",
+      "name": "Cuesta de Moras Supermarket",
+      "address": "Av. Central, San José, El Carmen, 10101, Costa Rica",
+      "latitude": "9.933886",
+      "longitude": "-84.07302"
+    },
+    {
+      "id": "6",
+      "name": "Peri • Central Avenue",
+      "address": "3, Av. Central 3, San José Province, San José, El Carmen, 10101, Costa Rica",
+      "latitude": "9.934103",
+      "longitude": "-84.07748"
+    },
+    {
+      "id": "7",
+      "name": "Super Mega Compras San José",
+      "address": "WWJ9+P82, Av. 6, San José, Merced, Costa Rica",
+      "latitude": "9.931774",
+      "longitude": "-84.08174"
+    },
+    {
+      "id": "8",
+      "name": "Fresh Market • Geroma",
+      "address": "San José; Rohrmoser Oeste, la Amistad, 100 mts oeste y 200 mts norte de \"Plaza, San José, Rohrmoser Oeste, Geroma 2, Costa Rica",
+      "latitude": "9.94894",
+      "longitude": "-84.12276"
+    },
+    {
+      "id": "9",
+      "name": "Auto Mercado, Barrio Dent",
+      "address": "1, San José, San Pedro, Dent, Costa Rica",
+      "latitude": "9.932307",
+      "longitude": "-84.06102"
+    },
+    {
+      "id": "10",
+      "name": "Fresh Market",
+      "address": "frente a la Nunciatura, San José, Rohrmoser, Costa Rica",
+      "latitude": "9.93911",
+      "longitude": "-84.11012"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\taddress\tlatitude\tlongitude\n1\tFresh Market • Escalante\tSan José, Bª Escalante, 400 mts Este de la Iglesia Santa Teresita., San José, Barrio Escalante, 10101, Costa Rica\t9.935722\t-84.06319\n2\tAuto Mercado Headquarters, San José\tSan José, Avenida 3, Calle 3, San José, El Carmen, 10101, Costa Rica\t9.935591\t-84.0768\n3\tSuper 24 Horas Vasconia\tnorte del comercial sur antiguo gasolinero delta Vasconia frente tire kingdom Plaza Víquez San José, San José, Vasconia, 10105, Costa Rica\t9.92209\t-84.07257\n4\tMás X Menos - Sabana\tAv. 5, San José, Mántica, Costa Rica\t9.93945\t-84.09772\n5\tCuesta de Moras Supermarket\tAv. Central, San José, El Carmen, 10101, Costa Rica\t9.933886\t-84.07302\n6\tPeri • Central Avenue\t3, Av. Central 3, San José Province, San José, El Carmen, 10101, Costa Rica\t9.934103\t-84.07748\n7\tSuper Mega Compras San José\tWWJ9+P82, Av. 6, San José, Merced, Costa Rica\t9.931774\t-84.08174\n8\tFresh Market • Geroma\tSan José; Rohrmoser Oeste, la Amistad, 100 mts oeste y 200 mts norte de \"Plaza, San José, Rohrmoser Oeste, Geroma 2, Costa Rica\t9.94894\t-84.12276\n9\tAuto Mercado, Barrio Dent\t1, San José, San Pedro, Dent, Costa Rica\t9.932307\t-84.06102\n10\tFresh Market\tfrente a la Nunciatura, San José, Rohrmoser, Costa Rica\t9.93911\t-84.11012\n",
+  "stderr": "",
+  "execution_time_ms": 63
+}
