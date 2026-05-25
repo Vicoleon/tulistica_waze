@@ -40,6 +40,11 @@ export async function createContext(
 
   try {
     if (sdk.isMockAuth()) {
+      // In MOCK_AUTH mode, layer any in-memory preferences updates on top of
+      // the hardcoded mock user. Without this, trpc.profile.update would
+      // succeed but the next auth.me would return stale empty preferences,
+      // bouncing the user back to /onboarding.
+      const mockPrefs = db.getMockPreferences(1) ?? {};
       user = {
         id: 1,
         openId: ENV.ownerOpenId || "mock-user-id",
@@ -61,7 +66,7 @@ export async function createContext(
         priceReportsCount: 0,
         verifiedReportsCount: 0,
         defaultRadiusKm: 10,
-        preferences: {},
+        preferences: mockPrefs,
         updatedAt: new Date(),
       } as User;
     } else {

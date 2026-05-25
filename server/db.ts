@@ -165,16 +165,36 @@ export async function updateUserPreferences(userId: number, prefs: {
 }
 
 /**
+ * Process-memory fallback for user.preferences when no DB is connected.
+ * Lets MOCK_AUTH dev mode persist onboarding answers across requests within
+ * the same process (lost on server restart — that's the cost of no DB).
+ * Keyed by userId; never read in production where the DB is healthy.
+ */
+const _mockPreferencesStore = new Map<number, import("../shared/profile").UserPreferences>();
+
+export function getMockPreferences(userId: number): import("../shared/profile").UserPreferences | undefined {
+  return _mockPreferencesStore.get(userId);
+}
+
+/**
  * Merge the user's `preferences` JSON column with `patch`. Keeps any
  * existing keys (e.g. dietaryRestrictions, favoriteStores) and overwrites
  * only the keys present in `patch`. Used by trpc.profile.update.
+ *
+ * Falls back to an in-memory store when the DB is unavailable so the
+ * onboarding flow in MOCK_AUTH mode doesn't bounce the user back to the
+ * onboarding page after they submit.
  */
 export async function updateUserPreferencesJson(
   userId: number,
   patch: Partial<import("../shared/profile").UserPreferences>
 ) {
   const db = await getDb();
-  if (!db) return;
+  if (!db) {
+    const current = _mockPreferencesStore.get(userId) ?? {};
+    _mockPreferencesStore.set(userId, { ...current, ...patch });
+    return;
+  }
   const row = await db
     .select({ preferences: users.preferences })
     .from(users)
