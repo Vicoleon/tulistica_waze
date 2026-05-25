@@ -223,33 +223,152 @@ export const purchaseHistory = mysqlTable("purchase_history", {
 
 export type PurchaseHistoryEntry = typeof purchaseHistory.$inferSelect;
 
+// ============ BRANDS (advertiser accounts) ============
+export const brands = mysqlTable("brands", {
+  id: int("id").autoincrement().primaryKey(),
+  companyName: varchar("companyName", { length: 255 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull().unique(),
+  passwordHash: varchar("passwordHash", { length: 512 }).notNull(),
+  passwordSalt: varchar("passwordSalt", { length: 128 }).notNull(),
+  emailVerified: boolean("emailVerified").default(false).notNull(),
+  logoUrl: text("logoUrl"),
+  contactName: varchar("contactName", { length: 255 }),
+  phone: varchar("phone", { length: 32 }),
+  country: varchar("country", { length: 64 }),
+  status: mysqlEnum("status", ["active", "suspended", "pending"]).default("pending").notNull(),
+  // Billing
+  billingEmail: varchar("billingEmail", { length: 320 }),
+  taxId: varchar("taxId", { length: 64 }),
+  paymentMethodLast4: varchar("paymentMethodLast4", { length: 4 }),
+  paymentMethodBrand: varchar("paymentMethodBrand", { length: 32 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  lastSignedIn: timestamp("lastSignedIn"),
+}, (table) => [
+  index("idx_brands_email").on(table.email),
+  index("idx_brands_status").on(table.status),
+]);
+
+export type Brand = typeof brands.$inferSelect;
+export type InsertBrand = typeof brands.$inferInsert;
+
+// ============ BRAND TOKENS (email verify + password reset) ============
+export const brandTokens = mysqlTable("brand_tokens", {
+  id: int("id").autoincrement().primaryKey(),
+  brandId: int("brandId").notNull(),
+  token: varchar("token", { length: 128 }).notNull().unique(),
+  type: mysqlEnum("type", ["email_verify", "password_reset"]).notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  usedAt: timestamp("usedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => [
+  index("idx_brand_tokens_brand").on(table.brandId),
+  index("idx_brand_tokens_token").on(table.token),
+]);
+
+export type BrandToken = typeof brandTokens.$inferSelect;
+export type InsertBrandToken = typeof brandTokens.$inferInsert;
+
 // ============ AD CAMPAIGNS ============
 export const adCampaigns = mysqlTable("ad_campaigns", {
   id: int("id").autoincrement().primaryKey(),
+  brandId: int("brandId"), // nullable for legacy/system-owned campaigns
   productId: int("productId"),
+  name: varchar("name", { length: 255 }), // internal label distinct from creative title
   type: mysqlEnum("type", ["sponsored_search", "banner", "cart_suggestion"]).notNull(),
+  status: mysqlEnum("status", ["draft", "active", "paused", "ended"]).default("draft").notNull(),
   title: varchar("title", { length: 255 }),
   description: text("description"),
   imageUrl: text("imageUrl"),
   targetUrl: text("targetUrl"),
-  bidCpc: float("bidCpc").default(0), // Cost per click
+  bidCpc: float("bidCpc").default(0), // Cost per click (currency units)
+  dailyBudgetCents: int("dailyBudgetCents").default(0), // 0 = uncapped
+  totalSpentCents: int("totalSpentCents").default(0),
   // Targeting
   targetKeywords: json("targetKeywords").$type<string[]>(),
   targetCategories: json("targetCategories").$type<string[]>(),
   triggerCategories: json("triggerCategories").$type<string[]>(), // For cart-based suggestions
+  targetCities: json("targetCities").$type<string[]>(),
   // Schedule
   activeFrom: timestamp("activeFrom"),
   activeUntil: timestamp("activeUntil"),
   isActive: boolean("isActive").default(true),
-  // Stats
+  // Stats (running totals — daily detail lives in campaign_metrics)
   impressions: int("impressions").default(0),
   clicks: int("clicks").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => [
+  index("idx_campaigns_brand").on(table.brandId),
+  index("idx_campaigns_status").on(table.status),
+]);
 
 export type AdCampaign = typeof adCampaigns.$inferSelect;
 export type InsertAdCampaign = typeof adCampaigns.$inferInsert;
+
+// ============ CAMPAIGN METRICS (daily aggregation for graphs) ============
+export const campaignMetrics = mysqlTable("campaign_metrics", {
+  id: int("id").autoincrement().primaryKey(),
+  campaignId: int("campaignId").notNull(),
+  brandId: int("brandId"),
+  // Day bucket stored as YYYY-MM-DD string for cheap groupBy queries
+  day: varchar("day", { length: 10 }).notNull(),
+  impressions: int("impressions").default(0).notNull(),
+  clicks: int("clicks").default(0).notNull(),
+  spendCents: int("spendCents").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+  index("idx_metrics_campaign_day").on(table.campaignId, table.day),
+  index("idx_metrics_brand_day").on(table.brandId, table.day),
+]);
+
+export type CampaignMetric = typeof campaignMetrics.$inferSelect;
+export type InsertCampaignMetric = typeof campaignMetrics.$inferInsert;
+
+// ============ INVOICES (monthly billing) ============
+export const invoices = mysqlTable("invoices", {
+  id: int("id").autoincrement().primaryKey(),
+  brandId: int("brandId").notNull(),
+  // Period bucket as YYYY-MM
+  periodMonth: varchar("periodMonth", { length: 7 }).notNull(),
+  status: mysqlEnum("status", ["draft", "open", "paid", "uncollectible", "void"]).default("open").notNull(),
+  subtotalCents: int("subtotalCents").default(0).notNull(),
+  taxCents: int("taxCents").default(0).notNull(),
+  totalCents: int("totalCents").default(0).notNull(),
+  currency: varchar("currency", { length: 8 }).default("USD").notNull(),
+  issuedAt: timestamp("issuedAt").defaultNow().notNull(),
+  dueAt: timestamp("dueAt"),
+  paidAt: timestamp("paidAt"),
+  paymentProviderId: varchar("paymentProviderId", { length: 128 }),
+  paymentProvider: varchar("paymentProvider", { length: 64 }),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+  index("idx_invoices_brand_period").on(table.brandId, table.periodMonth),
+  index("idx_invoices_status").on(table.status),
+]);
+
+export type Invoice = typeof invoices.$inferSelect;
+export type InsertInvoice = typeof invoices.$inferInsert;
+
+// Line items per invoice — one row per campaign + day bucket aggregation
+export const invoiceLineItems = mysqlTable("invoice_line_items", {
+  id: int("id").autoincrement().primaryKey(),
+  invoiceId: int("invoiceId").notNull(),
+  campaignId: int("campaignId"),
+  description: varchar("description", { length: 512 }).notNull(),
+  quantity: int("quantity").default(1).notNull(),
+  unitPriceCents: int("unitPriceCents").default(0).notNull(),
+  amountCents: int("amountCents").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => [
+  index("idx_lineitems_invoice").on(table.invoiceId),
+]);
+
+export type InvoiceLineItem = typeof invoiceLineItems.$inferSelect;
+export type InsertInvoiceLineItem = typeof invoiceLineItems.$inferInsert;
 
 // ============ USER ACHIEVEMENTS ============
 export const achievements = mysqlTable("achievements", {

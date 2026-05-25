@@ -1,4 +1,9 @@
-import { NOT_ADMIN_ERR_MSG, UNAUTHED_ERR_MSG } from '@shared/const';
+import {
+  BRAND_NOT_VERIFIED_ERR_MSG,
+  BRAND_UNAUTHED_ERR_MSG,
+  NOT_ADMIN_ERR_MSG,
+  UNAUTHED_ERR_MSG,
+} from '@shared/const';
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import type { TrpcContext } from "./context";
@@ -39,6 +44,44 @@ export const adminProcedure = t.procedure.use(
       ctx: {
         ...ctx,
         user: ctx.user,
+      },
+    });
+  }),
+);
+
+const requireBrand = t.middleware(async opts => {
+  const { ctx, next } = opts;
+
+  if (!ctx.brand) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: BRAND_UNAUTHED_ERR_MSG });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      brand: ctx.brand,
+    },
+  });
+});
+
+export const brandProcedure = t.procedure.use(requireBrand);
+
+export const brandVerifiedProcedure = t.procedure.use(
+  t.middleware(async opts => {
+    const { ctx, next } = opts;
+
+    if (!ctx.brand) {
+      throw new TRPCError({ code: "UNAUTHORIZED", message: BRAND_UNAUTHED_ERR_MSG });
+    }
+
+    if (!ctx.brand.emailVerified) {
+      throw new TRPCError({ code: "FORBIDDEN", message: BRAND_NOT_VERIFIED_ERR_MSG });
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        brand: ctx.brand,
       },
     });
   }),

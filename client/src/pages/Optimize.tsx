@@ -21,7 +21,7 @@ export default function Optimize() {
   const listId = searchParams.get("list");
   const [radius, setRadius] = useState([user?.defaultRadiusKm || 10]);
   const [selectedResult, setSelectedResult] = useState<number | null>(null);
-  const [hasAutoRun, setHasAutoRun] = useState(false);
+  const [manualTrigger, setManualTrigger] = useState(false);
 
   const { data: list } = trpc.lists.getById.useQuery(
     { id: parseInt(listId || "0") },
@@ -30,11 +30,10 @@ export default function Optimize() {
 
   const productIds = useMemo(
     () => list?.items
-      .filter((item) => item.productId && !item.isChecked)
-      .map((item) => item.productId as number) || [],
+      ?.filter((item) => item.productId && !item.isChecked)
+      ?.map((item) => item.productId as number) ?? [],
     [list?.items]
   );
-  const productIdsKey = productIds.join(",");
 
   const optimize = trpc.optimization.optimize.useMutation({
     onError: (err) => toast.error(err.message),
@@ -45,16 +44,17 @@ export default function Optimize() {
       toast.error("No products to optimize");
       return;
     }
+    setManualTrigger(true);
     setSelectedResult(null);
+    optimize.reset();
     optimize.mutate({ productIds, radiusKm: radius[0] });
   };
 
   useEffect(() => {
-    if (!hasAutoRun && productIds.length > 0 && !optimize.isPending) {
-      setHasAutoRun(true);
+    if (!manualTrigger && productIds.length > 0 && !optimize.data && !optimize.isPending) {
       optimize.mutate({ productIds, radiusKm: radius[0] });
     }
-  }, [productIdsKey, hasAutoRun, optimize, productIds, radius]);
+  }, [productIds.length, manualTrigger]);
 
   const handleApplyStrategy = (index: number) => {
     const result = optimize.data?.[index];
@@ -70,7 +70,7 @@ export default function Optimize() {
           appliedAt: new Date().toISOString(),
         })
       );
-    } catch (err) {
+    } catch {
       // localStorage may be unavailable (private mode); fall through to navigation
     }
     toast.success(`Strategy applied — ${result.stores.length} store${result.stores.length > 1 ? "s" : ""}`);
@@ -176,11 +176,16 @@ export default function Optimize() {
               onClick={handleOptimize}
               disabled={optimize.isPending || productIds.length === 0}
               className="w-full gap-2"
+              variant={optimize.data ? "outline" : "default"}
             >
               {optimize.isPending ? (
                 <>
-                  <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                  <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
                   Optimizing...
+                </>
+              ) : optimize.data ? (
+                <>
+                  <Sparkles className="w-4 h-4" /> Re-optimize ({radius[0]} km)
                 </>
               ) : (
                 <>

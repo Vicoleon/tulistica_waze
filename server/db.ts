@@ -1,4 +1,4 @@
-import { eq, and, desc, asc, sql, gte, lte, like, or, inArray } from "drizzle-orm";
+import { eq, and, desc, asc, sql, gte, lte, like, or, inArray, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, stores, products, priceEntries, priceHistory,
@@ -7,7 +7,10 @@ import {
   savedRecipes, InsertStore, InsertProduct, InsertPriceEntry,
   InsertShoppingList, InsertListItem, InsertPantryItem, InsertAdCampaign,
   InsertSavedRecipe, priceAlerts, InsertPriceAlert, storeCrowdedness,
-  InsertStoreCrowdedness, googlePlacesCache, InsertGooglePlaceCache
+  InsertStoreCrowdedness, googlePlacesCache, InsertGooglePlaceCache,
+  brands, brandTokens, campaignMetrics, invoices, invoiceLineItems,
+  InsertBrand, InsertBrandToken, InsertCampaignMetric, InsertInvoice,
+  InsertInvoiceLineItem, Brand,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -620,14 +623,42 @@ export async function recordAdImpression(adId: number) {
   await db.update(adCampaigns)
     .set({ impressions: sql`${adCampaigns.impressions} + 1` })
     .where(eq(adCampaigns.id, adId));
+
+  const campaign = await db.select({ brandId: adCampaigns.brandId })
+    .from(adCampaigns)
+    .where(eq(adCampaigns.id, adId))
+    .limit(1);
+  await bumpCampaignMetric({
+    campaignId: adId,
+    brandId: campaign[0]?.brandId ?? null,
+    impressions: 1,
+  });
 }
 
 export async function recordAdClick(adId: number) {
   const db = await getDb();
   if (!db) return;
   await db.update(adCampaigns)
-    .set({ clicks: sql`${adCampaigns.clicks} + 1` })
+    .set({
+      clicks: sql`${adCampaigns.clicks} + 1`,
+      totalSpentCents: sql`${adCampaigns.totalSpentCents} + CAST(${adCampaigns.bidCpc} * 100 AS UNSIGNED)`,
+    })
     .where(eq(adCampaigns.id, adId));
+
+  const campaign = await db.select({
+    brandId: adCampaigns.brandId,
+    bidCpc: adCampaigns.bidCpc,
+  })
+    .from(adCampaigns)
+    .where(eq(adCampaigns.id, adId))
+    .limit(1);
+  const spendCents = Math.round((campaign[0]?.bidCpc ?? 0) * 100);
+  await bumpCampaignMetric({
+    campaignId: adId,
+    brandId: campaign[0]?.brandId ?? null,
+    clicks: 1,
+    spendCents,
+  });
 }
 
 // ============ GAMIFICATION HELPERS ============
@@ -1164,6 +1195,285 @@ export async function importGooglePlaceAsStore(placeId: string): Promise<number 
   if (storeId) {
     await linkGooglePlaceToStore(placeId, storeId);
   }
-  
+
   return storeId;
+}
+
+// ============ BRAND HELPERS ============
+export async function createBrand(data: InsertBrand): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(brands).values(data);
+  return result[0].insertId ?? null;
+}
+
+export async function getBrandById(id: number): Promise<Brand | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(brands).where(eq(brands.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getBrandByEmail(email: string): Promise<Brand | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const normalized = email.trim().toLowerCase();
+  const result = await db.select().from(brands).where(eq(brands.email, normalized)).limit(1);
+  return result[0];
+}
+
+export async function updateBrand(
+  id: number,
+  patch: Partial<InsertBrand>
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  if (Object.keys(patch).length === 0) return;
+  await db.update(brands).set(patch).where(eq(brands.id, id));
+}
+
+export async function markBrandVerified(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(brands)
+    .set({ emailVerified: true, status: "active" })
+    .where(eq(brands.id, id));
+}
+
+export async function recordBrandSignIn(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(brands).set({ lastSignedIn: new Date() }).where(eq(brands.id, id));
+}
+
+// ============ BRAND TOKEN HELPERS ============
+export async function createBrandToken(data: InsertBrandToken): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(brandTokens).values(data);
+}
+
+export async function getBrandToken(token: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(brandTokens).where(eq(brandTokens.token, token)).limit(1);
+  return result[0];
+}
+
+export async function markBrandTokenUsed(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(brandTokens).set({ usedAt: new Date() }).where(eq(brandTokens.id, id));
+}
+
+export async function invalidateBrandTokensOfType(
+  brandId: number,
+  type: "email_verify" | "password_reset"
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(brandTokens)
+    .set({ usedAt: new Date() })
+    .where(and(
+      eq(brandTokens.brandId, brandId),
+      eq(brandTokens.type, type),
+      isNull(brandTokens.usedAt),
+    ));
+}
+
+// ============ BRAND CAMPAIGN HELPERS ============
+export async function listCampaignsForBrand(brandId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select()
+    .from(adCampaigns)
+    .where(eq(adCampaigns.brandId, brandId))
+    .orderBy(desc(adCampaigns.createdAt));
+}
+
+export async function getCampaignForBrand(brandId: number, campaignId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select()
+    .from(adCampaigns)
+    .where(and(eq(adCampaigns.id, campaignId), eq(adCampaigns.brandId, brandId)))
+    .limit(1);
+  return result[0];
+}
+
+export async function createCampaign(data: InsertAdCampaign): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(adCampaigns).values(data);
+  return result[0].insertId ?? null;
+}
+
+export async function updateCampaignForBrand(
+  brandId: number,
+  campaignId: number,
+  patch: Partial<InsertAdCampaign>
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  if (Object.keys(patch).length === 0) return;
+  await db.update(adCampaigns)
+    .set(patch)
+    .where(and(eq(adCampaigns.id, campaignId), eq(adCampaigns.brandId, brandId)));
+}
+
+export async function deleteCampaignForBrand(brandId: number, campaignId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(adCampaigns)
+    .where(and(eq(adCampaigns.id, campaignId), eq(adCampaigns.brandId, brandId)));
+}
+
+// ============ CAMPAIGN METRICS HELPERS ============
+function todayKey(date: Date = new Date()): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function periodKey(date: Date = new Date()): string {
+  return date.toISOString().slice(0, 7);
+}
+
+export async function bumpCampaignMetric(opts: {
+  campaignId: number;
+  brandId: number | null;
+  impressions?: number;
+  clicks?: number;
+  spendCents?: number;
+  day?: string;
+}): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const day = opts.day ?? todayKey();
+  const impressions = opts.impressions ?? 0;
+  const clicks = opts.clicks ?? 0;
+  const spendCents = opts.spendCents ?? 0;
+
+  await db.insert(campaignMetrics)
+    .values({
+      campaignId: opts.campaignId,
+      brandId: opts.brandId,
+      day,
+      impressions,
+      clicks,
+      spendCents,
+    })
+    .onDuplicateKeyUpdate({
+      set: {
+        impressions: sql`${campaignMetrics.impressions} + ${impressions}`,
+        clicks: sql`${campaignMetrics.clicks} + ${clicks}`,
+        spendCents: sql`${campaignMetrics.spendCents} + ${spendCents}`,
+      },
+    });
+}
+
+export async function getCampaignMetricsTimeseries(opts: {
+  campaignId: number;
+  brandId: number;
+  fromDay: string;
+  toDay: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select()
+    .from(campaignMetrics)
+    .where(and(
+      eq(campaignMetrics.campaignId, opts.campaignId),
+      eq(campaignMetrics.brandId, opts.brandId),
+      gte(campaignMetrics.day, opts.fromDay),
+      lte(campaignMetrics.day, opts.toDay),
+    ))
+    .orderBy(asc(campaignMetrics.day));
+}
+
+export async function getBrandSpendByPeriod(opts: {
+  brandId: number;
+  periodMonth: string; // YYYY-MM
+}) {
+  const db = await getDb();
+  if (!db) return [];
+  const dayPrefix = `${opts.periodMonth}-`;
+  return db.select({
+    campaignId: campaignMetrics.campaignId,
+    impressions: sql<number>`SUM(${campaignMetrics.impressions})`,
+    clicks: sql<number>`SUM(${campaignMetrics.clicks})`,
+    spendCents: sql<number>`SUM(${campaignMetrics.spendCents})`,
+  })
+    .from(campaignMetrics)
+    .where(and(
+      eq(campaignMetrics.brandId, opts.brandId),
+      like(campaignMetrics.day, `${dayPrefix}%`),
+    ))
+    .groupBy(campaignMetrics.campaignId);
+}
+
+// ============ INVOICE HELPERS ============
+export async function listInvoicesForBrand(brandId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select()
+    .from(invoices)
+    .where(eq(invoices.brandId, brandId))
+    .orderBy(desc(invoices.periodMonth));
+}
+
+export async function getInvoiceForBrand(brandId: number, invoiceId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select()
+    .from(invoices)
+    .where(and(eq(invoices.id, invoiceId), eq(invoices.brandId, brandId)))
+    .limit(1);
+  return result[0];
+}
+
+export async function getInvoiceForBrandByPeriod(brandId: number, periodMonth: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select()
+    .from(invoices)
+    .where(and(eq(invoices.brandId, brandId), eq(invoices.periodMonth, periodMonth)))
+    .limit(1);
+  return result[0];
+}
+
+export async function listInvoiceLineItems(invoiceId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select()
+    .from(invoiceLineItems)
+    .where(eq(invoiceLineItems.invoiceId, invoiceId))
+    .orderBy(asc(invoiceLineItems.id));
+}
+
+export async function createInvoice(data: InsertInvoice): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(invoices).values(data);
+  return result[0].insertId ?? null;
+}
+
+export async function createInvoiceLineItems(items: InsertInvoiceLineItem[]): Promise<void> {
+  if (items.length === 0) return;
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(invoiceLineItems).values(items);
+}
+
+export async function updateInvoice(invoiceId: number, patch: Partial<InsertInvoice>): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  if (Object.keys(patch).length === 0) return;
+  await db.update(invoices).set(patch).where(eq(invoices.id, invoiceId));
+}
+
+export function currentPeriodMonth(date: Date = new Date()): string {
+  return periodKey(date);
+}
+
+export function currentDayKey(date: Date = new Date()): string {
+  return todayKey(date);
 }

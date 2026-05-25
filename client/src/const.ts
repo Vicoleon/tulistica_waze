@@ -1,11 +1,15 @@
 export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 
 // Generate login URL at runtime so redirect URI reflects the current origin.
-// Returns null when OAuth env vars are missing so callers can degrade gracefully.
+// When OAuth env vars are missing, falls back to /api/oauth/login (mock-auth dev route).
+// Returns null only if env is partially configured and URL construction fails.
 export const getLoginUrl = (): string | null => {
   const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL;
   const appId = import.meta.env.VITE_APP_ID;
-  if (!oauthPortalUrl || !appId) return null;
+
+  if (!oauthPortalUrl || !appId) {
+    return "/api/oauth/login";
+  }
 
   const redirectUri = `${window.location.origin}/api/oauth/callback`;
   const state = btoa(redirectUri);
