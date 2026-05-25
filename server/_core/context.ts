@@ -85,11 +85,11 @@ export async function createContext(
   // first membership.
   if (user) {
     try {
-      const memberships = await db.getVendorMembershipsForUser(user.id);
+      const memberships = await db.getAllMembershipsForUser(user.id);
       if (memberships.length > 0) {
         const activeId = getActiveBrandIdFromRequest(opts.req);
         const active =
-          memberships.find((m: { brand: Brand }) => m.brand.id === activeId) ?? memberships[0];
+          memberships.find(m => m.brand.id === activeId) ?? memberships[0];
         brand = active.brand;
       }
     } catch (error) {

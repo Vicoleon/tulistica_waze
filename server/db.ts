@@ -2445,3 +2445,19 @@ export async function getAdvertiserMembershipsForUser(userId: number): Promise<V
     .where(and(eq(brandMembers.userId, userId), eq(brands.kind, "advertiser")));
   return rows.map(r => ({ brand: r.brand, membershipRole: r.membershipRole }));
 }
+
+export type AnyMembership = { brand: Brand; membershipRole: "owner" | "admin" | "staff" };
+
+export async function getAllMembershipsForUser(userId: number): Promise<AnyMembership[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({
+      brand: brands,
+      membershipRole: brandMembers.membershipRole,
+    })
+    .from(brandMembers)
+    .innerJoin(brands, eq(brandMembers.brandId, brands.id))
+    .where(eq(brandMembers.userId, userId));
+  return rows.map(r => ({ brand: r.brand, membershipRole: r.membershipRole }));
+}
