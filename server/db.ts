@@ -14,8 +14,9 @@ import {
   analyticsEvents, InsertAnalyticsEvent,
   integrationCredentials, InsertIntegrationCredential, appSettings,
   userTokens, brandMembers,
+  vendorApplications,
 } from "../drizzle/schema";
-import type { User, Brand, UserToken, InsertUserToken, BrandMember, InsertBrandMember } from "../drizzle/schema";
+import type { User, Brand, UserToken, InsertUserToken, BrandMember, InsertBrandMember, VendorApplication, InsertVendorApplication } from "../drizzle/schema";
 import type { AnalyticsProperties } from "../shared/analytics";
 import { ENV } from './_core/env';
 
@@ -2466,4 +2467,94 @@ export async function createBrandMember(data: InsertBrandMember): Promise<void> 
   const db = await getDb();
   if (!db) return;
   await db.insert(brandMembers).values(data);
+}
+
+// ============ VENDOR APPLICATION HELPERS ============
+
+export async function createVendorApplication(data: InsertVendorApplication): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(vendorApplications).values(data);
+  return (result as any)[0]?.insertId ?? null;
+}
+
+export async function getPendingApplicationForUser(userId: number): Promise<VendorApplication | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db
+    .select()
+    .from(vendorApplications)
+    .where(and(
+      eq(vendorApplications.applicantUserId, userId),
+      eq(vendorApplications.status, "pending"),
+    ))
+    .limit(1);
+  return rows[0];
+}
+
+export async function getLatestApplicationForUser(userId: number): Promise<VendorApplication | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db
+    .select()
+    .from(vendorApplications)
+    .where(eq(vendorApplications.applicantUserId, userId))
+    .orderBy(desc(vendorApplications.createdAt))
+    .limit(1);
+  return rows[0];
+}
+
+export async function listPendingApplications(): Promise<VendorApplication[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(vendorApplications)
+    .where(eq(vendorApplications.status, "pending"))
+    .orderBy(desc(vendorApplications.createdAt));
+}
+
+export async function getVendorApplicationById(id: number): Promise<VendorApplication | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db
+    .select()
+    .from(vendorApplications)
+    .where(eq(vendorApplications.id, id))
+    .limit(1);
+  return rows[0];
+}
+
+export async function markApplicationDecided(opts: {
+  id: number;
+  status: "approved" | "rejected";
+  reviewerNote?: string;
+  reviewedByUserId: number;
+  resultingBrandId?: number;
+}): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(vendorApplications)
+    .set({
+      status: opts.status,
+      reviewerNote: opts.reviewerNote ?? null,
+      reviewedByUserId: opts.reviewedByUserId,
+      reviewedAt: new Date(),
+      resultingBrandId: opts.resultingBrandId ?? null,
+    })
+    .where(eq(vendorApplications.id, opts.id));
+}
+
+/**
+ * Promote a user from consumer to vendor_admin. Never downgrades — if the
+ * user is super_admin, vendor_admin, or vendor_staff, leave the role alone.
+ */
+export async function promoteUserToVendorAdmin(userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(users)
+    .set({ role: "vendor_admin" })
+    .where(and(eq(users.id, userId), eq(users.role, "consumer")));
 }
