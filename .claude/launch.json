@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "grocery-waze-dev",
+      "name": "tulistica-dev",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["dev"],
       "port": 3001
