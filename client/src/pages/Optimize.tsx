@@ -25,26 +25,32 @@ export default function Optimize() {
   );
 
   const productIds = list?.items
-    .filter((item) => item.productId && !item.isChecked)
-    .map((item) => item.productId as number) || [];
+    ?.filter((item) => item.productId && !item.isChecked)
+    ?.map((item) => item.productId as number) ?? [];
 
   const optimize = trpc.optimization.optimize.useMutation({
     onError: (err) => toast.error(err.message),
   });
+
+  // Track whether user manually triggered optimization (vs auto-trigger)
+  const [manualTrigger, setManualTrigger] = useState(false);
 
   const handleOptimize = () => {
     if (productIds.length === 0) {
       toast.error("No products to optimize");
       return;
     }
+    setManualTrigger(true);
+    optimize.reset(); // Clear previous results before re-running
     optimize.mutate({ productIds, radiusKm: radius[0] });
   };
 
   useEffect(() => {
-    if (productIds.length > 0 && !optimize.data && !optimize.isPending) {
-      handleOptimize();
+    // Auto-trigger only on initial load, never after manual interaction
+    if (!manualTrigger && productIds.length > 0 && !optimize.data && !optimize.isPending) {
+      optimize.mutate({ productIds, radiusKm: radius[0] });
     }
-  }, [productIds.length]);
+  }, [productIds.length, manualTrigger]);
 
   if (!isAuthenticated) {
     return (
@@ -144,11 +150,16 @@ export default function Optimize() {
               onClick={handleOptimize}
               disabled={optimize.isPending || productIds.length === 0}
               className="w-full gap-2"
+              variant={optimize.data ? "outline" : "default"}
             >
               {optimize.isPending ? (
                 <>
-                  <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                  <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
                   Optimizing...
+                </>
+              ) : optimize.data ? (
+                <>
+                  <Sparkles className="w-4 h-4" /> Re-optimize ({radius[0]} km)
                 </>
               ) : (
                 <>
