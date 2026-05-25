@@ -664,3 +664,25 @@ export const vendorApplications = mysqlTable("vendor_applications", {
 
 export type VendorApplication = typeof vendorApplications.$inferSelect;
 export type InsertVendorApplication = typeof vendorApplications.$inferInsert;
+
+// ============ STORE CLAIMS ============
+export const storeClaims = mysqlTable("store_claims", {
+  id: int("id").autoincrement().primaryKey(),
+  brandId: int("brandId").notNull(),
+  storeId: int("storeId").notNull(),
+  claimantUserId: int("claimantUserId").notNull(),
+  justification: text("justification"),
+  status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  reviewerNote: text("reviewerNote"),
+  reviewedByUserId: int("reviewedByUserId"),
+  reviewedAt: timestamp("reviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+  index("idx_store_claims_brand").on(table.brandId),
+  index("idx_store_claims_store").on(table.storeId),
+  index("idx_store_claims_status").on(table.status),
+]);
+
+export type StoreClaim = typeof storeClaims.$inferSelect;
+export type InsertStoreClaim = typeof storeClaims.$inferInsert;
