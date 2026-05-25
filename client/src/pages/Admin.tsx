@@ -51,11 +51,11 @@ export default function Admin() {
   const { user, loading } = useAuth();
   const { data, isLoading } = trpc.analytics.summary.useQuery(
     { days: 7 },
-    { enabled: !loading && user?.role === "admin", refetchInterval: 30_000 }
+    { enabled: !loading && user?.role === "super_admin", refetchInterval: 30_000 }
   );
   const { data: campaigns, isLoading: campaignsLoading } =
     trpc.campaigns.adminSummary.useQuery(undefined, {
-      enabled: !loading && user?.role === "admin",
+      enabled: !loading && user?.role === "super_admin",
       refetchInterval: 30_000,
     });
 
@@ -67,7 +67,7 @@ export default function Admin() {
     );
   }
 
-  if (!user || user.role !== "admin") {
+  if (!user || user.role !== "super_admin") {
     return (
       <div className="container py-12">
         <Card className="rounded-3xl border bg-card p-10 shadow-paper text-center">

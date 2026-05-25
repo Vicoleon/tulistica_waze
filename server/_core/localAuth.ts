@@ -87,7 +87,7 @@ export function registerLocalAuthRoutes(app: Express) {
         passwordHash,
         loginMethod: "local",
         lastSignedIn: new Date(),
-        role: ENV.ownerOpenId === openId ? "admin" : "user",
+        role: ENV.ownerOpenId === openId ? "super_admin" : "consumer",
       });
     }
 
