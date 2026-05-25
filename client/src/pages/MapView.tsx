@@ -135,10 +135,10 @@ export default function MapPage() {
 
   // Get crowdedness color
   const getCrowdednessColor = (level: number) => {
-    if (level < 30) return { bg: "bg-green-500", text: "text-green-600", label: "Not Busy" };
-    if (level < 50) return { bg: "bg-yellow-500", text: "text-yellow-600", label: "Somewhat Busy" };
-    if (level < 75) return { bg: "bg-orange-500", text: "text-orange-600", label: "Busy" };
-    return { bg: "bg-red-500", text: "text-red-600", label: "Very Busy" };
+    if (level < 30) return { bg: "bg-green-500", text: "text-green-600", label: "Tranquila" };
+    if (level < 50) return { bg: "bg-yellow-500", text: "text-yellow-600", label: "Algo llena" };
+    if (level < 75) return { bg: "bg-orange-500", text: "text-orange-600", label: "Llena" };
+    return { bg: "bg-red-500", text: "text-red-600", label: "Llenísima" };
   };
 
   // Update markers when stores change
@@ -279,7 +279,7 @@ export default function MapPage() {
               <ArrowLeft className="w-5 h-5" />
             </Button>
           </Link>
-          <h1 className="text-xl font-bold">Store Map</h1>
+          <h1 className="text-xl font-bold">Mapa de tiendas</h1>
           <div className="ml-auto flex items-center gap-4">
             <Button
               variant={showGooglePlaces ? "default" : "outline"}
@@ -287,10 +287,10 @@ export default function MapPage() {
               onClick={() => setShowGooglePlaces(!showGooglePlaces)}
             >
               <Search className="w-4 h-4 mr-1" />
-              {showGooglePlaces ? "Hide" : "Show"} Google Places
+              {showGooglePlaces ? "Ocultar" : "Mostrar"} Google Places
             </Button>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Radius:</span>
+              <span className="text-sm text-muted-foreground">Radio:</span>
               <div className="w-32">
                 <Slider
                   value={radius}
@@ -319,7 +319,7 @@ export default function MapPage() {
           <div className="w-full h-full flex items-center justify-center bg-muted">
             <div className="text-center">
               <MapPin className="w-12 h-12 mx-auto mb-4 text-muted-foreground animate-pulse" />
-              <p className="text-muted-foreground">Getting your location...</p>
+              <p className="text-muted-foreground">Obteniendo tu ubicación...</p>
             </div>
           </div>
         )}
@@ -328,22 +328,22 @@ export default function MapPage() {
         <div className="absolute top-4 left-4 z-10 space-y-2">
           <Badge variant="secondary" className="shadow-lg">
             <Store className="w-3 h-3 mr-1" />
-            {nearbyStores?.length || 0} stores in database
+            {nearbyStores?.length || 0} tiendas en nuestra base
           </Badge>
           {showGooglePlaces && googlePlaces && (
             <Badge variant="outline" className="shadow-lg bg-white">
               <MapPin className="w-3 h-3 mr-1 text-blue-500" />
-              {googlePlaces.length} from Google
+              {googlePlaces.length} desde Google
             </Badge>
           )}
         </div>
 
         {/* Marker Legend */}
         <div className="absolute top-4 right-4 z-10 bg-white rounded-lg shadow-lg p-3 text-xs">
-          <p className="font-semibold mb-2">Legend</p>
+          <p className="font-semibold mb-2">Referencias</p>
           <div className="flex items-center gap-2 mb-1">
             <div className="w-4 h-4 rounded-full bg-green-600"></div>
-            <span>Our Database</span>
+            <span>Nuestra base</span>
           </div>
           <div className="flex items-center gap-2 mb-1">
             <div className="w-4 h-4 rounded-full bg-blue-500 opacity-80"></div>
@@ -351,7 +351,7 @@ export default function MapPage() {
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full bg-blue-600 border-2 border-white"></div>
-            <span>Your Location</span>
+            <span>Vos</span>
           </div>
         </div>
 
@@ -398,7 +398,7 @@ export default function MapPage() {
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <Users className="w-4 h-4" />
-                        <span className="font-medium">Current Busyness</span>
+                        <span className="font-medium">Qué tan llena está</span>
                       </div>
                       <Badge className={getCrowdednessColor(crowdednessData.current.level).bg}>
                         {getCrowdednessColor(crowdednessData.current.level).label}
@@ -411,9 +411,9 @@ export default function MapPage() {
                       ></div>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {crowdednessData.current.source === "user" 
-                        ? `Reported ${new Date(crowdednessData.current.reportedAt!).toLocaleTimeString()}`
-                        : "Estimated based on typical patterns"}
+                      {crowdednessData.current.source === "user"
+                        ? `Reportado a las ${new Date(crowdednessData.current.reportedAt!).toLocaleTimeString("es-CR")}`
+                        : "Estimado según patrones típicos"}
                     </p>
                   </div>
                 )}
@@ -427,7 +427,7 @@ export default function MapPage() {
                       window.open(url, "_blank");
                     }}
                   >
-                    <Navigation className="w-4 h-4 mr-1" /> Directions
+                    <Navigation className="w-4 h-4 mr-1" /> Cómo llegar
                   </Button>
                   {isAuthenticated && (
                     <Button
@@ -435,12 +435,12 @@ export default function MapPage() {
                       size="sm"
                       onClick={() => setCrowdednessDialogOpen(true)}
                     >
-                      <Users className="w-4 h-4 mr-1" /> Report Busyness
+                      <Users className="w-4 h-4 mr-1" /> Reportar afluencia
                     </Button>
                   )}
                   <Link href={`/stores?id=${selectedStore.id}`}>
                     <Button size="sm">
-                      View Prices <ChevronRight className="w-4 h-4 ml-1" />
+                      Ver precios <ChevronRight className="w-4 h-4 ml-1" />
                     </Button>
                   </Link>
                 </div>
@@ -488,7 +488,7 @@ export default function MapPage() {
                   )}
                   {selectedGooglePlace.openNow !== undefined && (
                     <Badge variant={selectedGooglePlace.openNow ? "default" : "secondary"}>
-                      {selectedGooglePlace.openNow ? "Open Now" : "Closed"}
+                      {selectedGooglePlace.openNow ? "Abierto ahora" : "Cerrado"}
                     </Badge>
                   )}
                 </div>
@@ -497,9 +497,9 @@ export default function MapPage() {
                   <div className="flex items-start gap-2">
                     <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5" />
                     <div className="text-sm">
-                      <p className="font-medium text-blue-800">Not in our database yet</p>
+                      <p className="font-medium text-blue-800">Aún no está en nuestra base</p>
                       <p className="text-blue-600">
-                        Import this store to start tracking prices and crowdedness.
+                        Importá esta tienda para empezar a registrar precios y afluencia.
                       </p>
                     </div>
                   </div>
@@ -514,7 +514,7 @@ export default function MapPage() {
                       window.open(url, "_blank");
                     }}
                   >
-                    <Navigation className="w-4 h-4 mr-1" /> Directions
+                    <Navigation className="w-4 h-4 mr-1" /> Cómo llegar
                   </Button>
                   {isAuthenticated && (
                     <Button
@@ -523,7 +523,7 @@ export default function MapPage() {
                       disabled={importPlace.isPending}
                     >
                       <Plus className="w-4 h-4 mr-1" />
-                      {importPlace.isPending ? "Importing..." : "Import Store"}
+                      {importPlace.isPending ? "Importando..." : "Importar tienda"}
                     </Button>
                   )}
                 </div>
@@ -544,14 +544,14 @@ export default function MapPage() {
       <Dialog open={crowdednessDialogOpen} onOpenChange={setCrowdednessDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Report Store Busyness</DialogTitle>
+            <DialogTitle>Reportar afluencia de la tienda</DialogTitle>
             <DialogDescription>
-              Help others know how busy {selectedStore?.name} is right now.
+              Ayudá a otros a saber cuán llena está {selectedStore?.name} en este momento.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>How busy is it? ({crowdednessLevel[0]}%)</Label>
+              <Label>¿Qué tan llena está? ({crowdednessLevel[0]}%)</Label>
               <Slider
                 value={crowdednessLevel}
                 onValueChange={setCrowdednessLevel}
@@ -560,28 +560,28 @@ export default function MapPage() {
                 step={5}
               />
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Empty</span>
-                <span>Moderate</span>
-                <span>Packed</span>
+                <span>Vacía</span>
+                <span>Moderada</span>
+                <span>Llenísima</span>
               </div>
               <Badge className={`${getCrowdednessColor(crowdednessLevel[0]).bg} mt-2`}>
                 {getCrowdednessColor(crowdednessLevel[0]).label}
               </Badge>
             </div>
             <div className="space-y-2">
-              <Label>Estimated wait time (minutes, optional)</Label>
+              <Label>Tiempo estimado de espera (minutos, opcional)</Label>
               <input
                 type="number"
                 className="w-full px-3 py-2 border rounded-md"
-                placeholder="e.g., 10"
+                placeholder="ej. 10"
                 value={waitTime}
                 onChange={(e) => setWaitTime(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label>Additional comments (optional)</Label>
+              <Label>Comentarios (opcional)</Label>
               <Textarea
-                placeholder="e.g., Long lines at checkout, parking lot full..."
+                placeholder="ej. filas largas en caja, parqueo lleno..."
                 value={crowdednessComment}
                 onChange={(e) => setCrowdednessComment(e.target.value)}
               />
@@ -589,13 +589,13 @@ export default function MapPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCrowdednessDialogOpen(false)}>
-              Cancel
+              Cancelar
             </Button>
-            <Button 
+            <Button
               onClick={handleReportCrowdedness}
               disabled={reportCrowdedness.isPending}
             >
-              {reportCrowdedness.isPending ? "Submitting..." : "Submit Report"}
+              {reportCrowdedness.isPending ? "Enviando..." : "Enviar reporte"}
             </Button>
           </DialogFooter>
         </DialogContent>

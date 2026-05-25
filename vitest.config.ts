@@ -5,6 +5,13 @@ const templateRoot = path.resolve(import.meta.dirname);
 
 export default defineConfig({
   root: templateRoot,
+  // Server-side tests do not need CSS processing — pinning the config search
+  // to this directory prevents picking up parent-folder postcss configs.
+  css: {
+    postcss: {
+      plugins: [],
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(templateRoot, "client", "src"),
@@ -15,5 +22,6 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["server/**/*.test.ts", "server/**/*.spec.ts"],
+    css: false,
   },
 });

@@ -2,17 +2,17 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { getLoginUrl } from "@/const";
 import {
   MapPin, Barcode, ShoppingCart, Users, TrendingDown, Trophy,
   ChefHat, Package, Plus, ArrowRight, Bell, Settings, LogOut,
   Store, Search, List, Sparkles
 } from "lucide-react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 
 export default function Dashboard() {
-  const { user, loading, isAuthenticated, logout } = useAuth();
-  const [, setLocation] = useLocation();
+  const { user, loading, isAuthenticated, logout } = useAuth({
+    redirectOnUnauthenticated: true,
+  });
 
   const { data: stats } = trpc.user.getStats.useQuery(undefined, {
     enabled: isAuthenticated,
@@ -26,7 +26,7 @@ export default function Dashboard() {
     enabled: isAuthenticated,
   });
 
-  if (loading) {
+  if (loading || !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
@@ -34,26 +34,21 @@ export default function Dashboard() {
     );
   }
 
-  if (!isAuthenticated) {
-    window.location.href = getLoginUrl();
-    return null;
-  }
-
   const quickActions = [
-    { icon: List, label: "New List", href: "/lists", color: "bg-blue-500" },
-    { icon: Barcode, label: "Scan Price", href: "/scanner", color: "bg-green-500" },
-    { icon: TrendingDown, label: "Optimize", href: "/optimize", color: "bg-purple-500" },
-    { icon: MapPin, label: "Find Stores", href: "/map", color: "bg-orange-500" },
+    { icon: List, label: "Nueva lista", href: "/lists", color: "bg-blue-500" },
+    { icon: Barcode, label: "Escanear precio", href: "/scanner", color: "bg-green-500" },
+    { icon: TrendingDown, label: "Optimizar", href: "/optimize", color: "bg-purple-500" },
+    { icon: MapPin, label: "Tiendas cerca", href: "/map", color: "bg-orange-500" },
   ];
 
   const navItems = [
-    { icon: Store, label: "Stores", href: "/stores" },
-    { icon: Search, label: "Products", href: "/products" },
-    { icon: List, label: "My Lists", href: "/lists" },
-    { icon: Package, label: "Pantry", href: "/pantry" },
-    { icon: ChefHat, label: "Recipes", href: "/recipes" },
-    { icon: Bell, label: "Price Alerts", href: "/alerts" },
-    { icon: Trophy, label: "Leaderboard", href: "/leaderboard" },
+    { icon: Store, label: "Tiendas", href: "/stores" },
+    { icon: Search, label: "Productos", href: "/products" },
+    { icon: List, label: "Mis listas", href: "/lists" },
+    { icon: Package, label: "Despensa", href: "/pantry" },
+    { icon: ChefHat, label: "Recetas", href: "/recipes" },
+    { icon: Bell, label: "Alertas de precio", href: "/alerts" },
+    { icon: Trophy, label: "Tabla de líderes", href: "/leaderboard" },
   ];
 
   return (
@@ -88,8 +83,8 @@ export default function Dashboard() {
       <main className="container py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.name || "Shopper"}!</h1>
-          <p className="text-muted-foreground">Ready to save on your next grocery trip?</p>
+          <h1 className="text-3xl font-bold mb-2">Hola, {user?.name || "comprador"}</h1>
+          <p className="text-muted-foreground">Lista la próxima compra y empezá a ahorrar.</p>
         </div>
 
         {/* Quick Actions */}
@@ -115,26 +110,26 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Card>
                 <CardContent className="p-4">
-                  <div className="text-2xl font-bold text-primary">{stats?.trustScore || 10}</div>
-                  <div className="text-sm text-muted-foreground">Trust Score</div>
+                  <div className="text-2xl font-bold text-primary">{stats?.trustScore ?? 10}</div>
+                  <div className="text-sm text-muted-foreground">Confianza</div>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4">
-                  <div className="text-2xl font-bold text-primary">{stats?.totalPoints || 0}</div>
-                  <div className="text-sm text-muted-foreground">Points</div>
+                  <div className="text-2xl font-bold text-primary">{stats?.totalPoints ?? 0}</div>
+                  <div className="text-sm text-muted-foreground">Puntos</div>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4">
-                  <div className="text-2xl font-bold text-primary">{stats?.priceReportsCount || 0}</div>
-                  <div className="text-sm text-muted-foreground">Reports</div>
+                  <div className="text-2xl font-bold text-primary">{stats?.priceReportsCount ?? 0}</div>
+                  <div className="text-sm text-muted-foreground">Reportes</div>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4">
-                  <div className="text-2xl font-bold text-primary">#{stats?.weeklyRank || "-"}</div>
-                  <div className="text-sm text-muted-foreground">Weekly Rank</div>
+                  <div className="text-2xl font-bold text-primary">#{stats?.weeklyRank ?? "-"}</div>
+                  <div className="text-sm text-muted-foreground">Ranking semanal</div>
                 </CardContent>
               </Card>
             </div>
@@ -143,12 +138,12 @@ export default function Dashboard() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>My Shopping Lists</CardTitle>
-                  <CardDescription>Manage your shopping lists</CardDescription>
+                  <CardTitle>Mis listas</CardTitle>
+                  <CardDescription>Organizá tus compras y compartilas</CardDescription>
                 </div>
                 <Link href="/lists">
                   <Button size="sm" className="gap-1">
-                    <Plus className="w-4 h-4" /> New List
+                    <Plus className="w-4 h-4" /> Nueva lista
                   </Button>
                 </Link>
               </CardHeader>
@@ -164,7 +159,7 @@ export default function Dashboard() {
                               <div className="font-medium">{list.name}</div>
                               <div className="text-sm text-muted-foreground">
                                 {list.isShared && <Users className="w-3 h-3 inline mr-1" />}
-                                {list.isShared ? "Shared" : "Personal"}
+                                {list.isShared ? "Compartida" : "Personal"}
                               </div>
                             </div>
                           </div>
@@ -176,9 +171,9 @@ export default function Dashboard() {
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     <List className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <p>No shopping lists yet</p>
+                    <p>Aún no tenés listas</p>
                     <Link href="/lists">
-                      <Button variant="link">Create your first list</Button>
+                      <Button variant="link">Creá tu primera lista</Button>
                     </Link>
                   </div>
                 )}
@@ -191,9 +186,9 @@ export default function Dashboard() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-accent" />
-                    Restock Suggestions
+                    Sugerencias de reposición
                   </CardTitle>
-                  <CardDescription>Items you might need to buy soon</CardDescription>
+                  <CardDescription>Productos que podrías necesitar pronto</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -202,10 +197,10 @@ export default function Dashboard() {
                         <div>
                           <div className="font-medium">{item.productName || item.customName}</div>
                           <div className="text-sm text-muted-foreground">
-                            Last bought {item.daysSinceLastPurchase} days ago
+                            Última compra hace {item.daysSinceLastPurchase} días
                           </div>
                         </div>
-                        <Button size="sm" variant="outline">Add to List</Button>
+                        <Button size="sm" variant="outline">Agregar a lista</Button>
                       </div>
                     ))}
                   </div>
@@ -219,7 +214,7 @@ export default function Dashboard() {
             {/* Navigation */}
             <Card>
               <CardHeader>
-                <CardTitle>Quick Navigation</CardTitle>
+                <CardTitle>Accesos rápidos</CardTitle>
               </CardHeader>
               <CardContent className="p-2">
                 <nav className="space-y-1">
@@ -241,7 +236,7 @@ export default function Dashboard() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Trophy className="w-5 h-5 text-accent" />
-                    Recent Achievements
+                    Logros recientes
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

@@ -6,14 +6,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { trpc } from "@/lib/trpc";
-import { Bell, BellOff, Plus, Trash2, TrendingDown, DollarSign, AlertCircle } from "lucide-react";
+import { Bell, BellOff, Plus, Trash2, TrendingDown, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";
 import { toast } from "sonner";
-import { getLoginUrl } from "@/const";
+import { formatCurrency } from "@/lib/currency";
 
 export default function PriceAlerts() {
-  const { user, loading: authLoading, isAuthenticated } = useAuth();
+  const { loading: authLoading, isAuthenticated } = useAuth({
+    redirectOnUnauthenticated: true,
+  });
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const [targetPrice, setTargetPrice] = useState("");
@@ -31,33 +33,31 @@ export default function PriceAlerts() {
 
   const createAlert = trpc.priceAlerts.create.useMutation({
     onSuccess: () => {
-      toast.success("Price alert created!");
+      toast.success("Alerta de precio creada");
       refetch();
       setIsAddDialogOpen(false);
       setSelectedProductId(null);
       setTargetPrice("");
       setSearchQuery("");
     },
-    onError: (error) => {
-      toast.error(error.message);
-    },
+    onError: (error) => toast.error(error.message),
   });
 
   const updateAlert = trpc.priceAlerts.update.useMutation({
     onSuccess: () => {
-      toast.success("Alert updated");
+      toast.success("Alerta actualizada");
       refetch();
     },
   });
 
   const deleteAlert = trpc.priceAlerts.delete.useMutation({
     onSuccess: () => {
-      toast.success("Alert deleted");
+      toast.success("Alerta eliminada");
       refetch();
     },
   });
 
-  if (authLoading) {
+  if (authLoading || !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -65,26 +65,9 @@ export default function PriceAlerts() {
     );
   }
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
-        <div className="container py-16 text-center">
-          <Bell className="h-16 w-16 text-primary mx-auto mb-4" />
-          <h1 className="text-3xl font-bold mb-4">Price Drop Alerts</h1>
-          <p className="text-muted-foreground mb-8">
-            Get notified when products you're watching drop below your target price.
-          </p>
-          <Button asChild size="lg">
-            <a href={getLoginUrl()}>Sign In to Set Alerts</a>
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   const handleCreateAlert = () => {
     if (!selectedProductId || !targetPrice) {
-      toast.error("Please select a product and set a target price");
+      toast.error("Elegí un producto y un precio objetivo");
       return;
     }
     createAlert.mutate({
@@ -93,31 +76,23 @@ export default function PriceAlerts() {
     });
   };
 
-  const getCrowdednessColor = (level: number) => {
-    if (level < 30) return "text-green-600";
-    if (level < 60) return "text-yellow-600";
-    return "text-red-600";
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
-      {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2">
             <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
               <Bell className="h-5 w-5 text-white" />
             </div>
-            <span className="font-bold text-lg">Price Alerts</span>
+            <span className="font-bold text-lg">Alertas de precio</span>
           </Link>
           <Link href="/dashboard">
-            <Button variant="outline">Back to Dashboard</Button>
+            <Button variant="outline">Volver al tablero</Button>
           </Link>
         </div>
       </header>
 
       <main className="container py-8">
-        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <Card>
             <CardContent className="pt-6">
@@ -127,7 +102,7 @@ export default function PriceAlerts() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{alerts?.length || 0}</p>
-                  <p className="text-sm text-muted-foreground">Active Alerts</p>
+                  <p className="text-sm text-muted-foreground">Alertas activas</p>
                 </div>
               </div>
             </CardContent>
@@ -140,11 +115,11 @@ export default function PriceAlerts() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">
-                    {alerts?.filter(a => 
+                    {alerts?.filter(a =>
                       a.currentLowestPrice && a.currentLowestPrice <= a.targetPrice
                     ).length || 0}
                   </p>
-                  <p className="text-sm text-muted-foreground">Price Drops Found</p>
+                  <p className="text-sm text-muted-foreground">Bajadas detectadas</p>
                 </div>
               </div>
             </CardContent>
@@ -153,46 +128,47 @@ export default function PriceAlerts() {
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-blue-100 rounded-full">
-                  <DollarSign className="h-6 w-6 text-blue-600" />
+                  <span className="text-2xl text-blue-600">₡</span>
                 </div>
                 <div>
                   <p className="text-2xl font-bold">
-                    ${alerts?.reduce((sum, a) => {
-                      if (a.currentLowestPrice && a.currentLowestPrice < a.targetPrice) {
-                        return sum + (a.targetPrice - a.currentLowestPrice);
-                      }
-                      return sum;
-                    }, 0).toFixed(2) || "0.00"}
+                    {formatCurrency(
+                      alerts?.reduce((sum, a) => {
+                        if (a.currentLowestPrice && a.currentLowestPrice < a.targetPrice) {
+                          return sum + (a.targetPrice - a.currentLowestPrice);
+                        }
+                        return sum;
+                      }, 0) ?? 0
+                    )}
                   </p>
-                  <p className="text-sm text-muted-foreground">Potential Savings</p>
+                  <p className="text-sm text-muted-foreground">Ahorro potencial</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Add Alert Button */}
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Your Price Alerts</h2>
+          <h2 className="text-2xl font-bold">Tus alertas</h2>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Alert
+                Nueva alerta
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>Create Price Alert</DialogTitle>
+                <DialogTitle>Crear alerta de precio</DialogTitle>
                 <DialogDescription>
-                  Get notified when a product drops below your target price.
+                  Te avisamos cuando el precio baje de tu objetivo.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label>Search Product</Label>
+                  <Label>Buscar producto</Label>
                   <Input
-                    placeholder="Search for a product..."
+                    placeholder="Ej. arroz, leche..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -219,35 +195,34 @@ export default function PriceAlerts() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label>Target Price ($)</Label>
+                  <Label>Precio objetivo (₡)</Label>
                   <Input
                     type="number"
-                    step="0.01"
-                    placeholder="e.g., 2.99"
+                    step="10"
+                    placeholder="Ej. 1500"
                     value={targetPrice}
                     onChange={(e) => setTargetPrice(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    You'll be notified when the price drops below this amount.
+                    Te notificamos cuando el precio en alguna tienda baje de este monto.
                   </p>
                 </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Cancel
+                  Cancelar
                 </Button>
-                <Button 
+                <Button
                   onClick={handleCreateAlert}
                   disabled={!selectedProductId || !targetPrice || createAlert.isPending}
                 >
-                  {createAlert.isPending ? "Creating..." : "Create Alert"}
+                  {createAlert.isPending ? "Creando..." : "Crear alerta"}
                 </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
 
-        {/* Alerts List */}
         {isLoading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -264,12 +239,12 @@ export default function PriceAlerts() {
                         {alert.productImageUrl ? (
                           <img
                             src={alert.productImageUrl}
-                            alt={alert.productName || "Product"}
+                            alt={alert.productName || "Producto"}
                             className="w-16 h-16 object-cover rounded-lg"
                           />
                         ) : (
                           <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
-                            <DollarSign className="h-8 w-8 text-muted-foreground" />
+                            <span className="text-2xl text-muted-foreground">₡</span>
                           </div>
                         )}
                         <div>
@@ -279,20 +254,22 @@ export default function PriceAlerts() {
                           )}
                           <div className="flex items-center gap-4 mt-2">
                             <div>
-                              <p className="text-xs text-muted-foreground">Target</p>
-                              <p className="font-bold text-primary">${alert.targetPrice.toFixed(2)}</p>
+                              <p className="text-xs text-muted-foreground">Objetivo</p>
+                              <p className="font-bold text-primary">
+                                {formatCurrency(alert.targetPrice)}
+                              </p>
                             </div>
                             <div>
-                              <p className="text-xs text-muted-foreground">Current Lowest</p>
+                              <p className="text-xs text-muted-foreground">Más bajo actual</p>
                               <p className={`font-bold ${isPriceDropped ? "text-green-600" : ""}`}>
-                                {alert.currentLowestPrice 
-                                  ? `$${alert.currentLowestPrice.toFixed(2)}`
-                                  : "N/A"}
+                                {alert.currentLowestPrice
+                                  ? formatCurrency(alert.currentLowestPrice)
+                                  : "—"}
                               </p>
                             </div>
                             {alert.storeName && (
                               <div>
-                                <p className="text-xs text-muted-foreground">At</p>
+                                <p className="text-xs text-muted-foreground">En</p>
                                 <p className="text-sm">{alert.storeName}</p>
                               </div>
                             )}
@@ -301,7 +278,7 @@ export default function PriceAlerts() {
                             <div className="mt-2 flex items-center gap-2 text-green-600">
                               <TrendingDown className="h-4 w-4" />
                               <span className="text-sm font-medium">
-                                Price dropped! Save ${(alert.targetPrice - (alert.currentLowestPrice || 0)).toFixed(2)}
+                                ¡Bajó! Ahorrá {formatCurrency(alert.targetPrice - (alert.currentLowestPrice || 0))}
                               </span>
                             </div>
                           )}
@@ -311,18 +288,19 @@ export default function PriceAlerts() {
                         <div className="flex items-center gap-2">
                           <Switch
                             checked={alert.isActive ?? true}
-                            onCheckedChange={(checked) => 
+                            onCheckedChange={(checked) =>
                               updateAlert.mutate({ id: alert.id, isActive: checked })
                             }
                           />
                           <span className="text-sm text-muted-foreground">
-                            {alert.isActive ? "Active" : "Paused"}
+                            {alert.isActive ? "Activa" : "Pausada"}
                           </span>
                         </div>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => deleteAlert.mutate({ id: alert.id })}
+                          aria-label="Eliminar alerta"
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -337,44 +315,43 @@ export default function PriceAlerts() {
           <Card>
             <CardContent className="py-12 text-center">
               <BellOff className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Price Alerts Yet</h3>
+              <h3 className="text-lg font-semibold mb-2">Aún no tenés alertas</h3>
               <p className="text-muted-foreground mb-4">
-                Start tracking products to get notified when prices drop.
+                Seguí productos para enterarte cuando bajen de precio.
               </p>
               <Button onClick={() => setIsAddDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Create Your First Alert
+                Crear mi primera alerta
               </Button>
             </CardContent>
           </Card>
         )}
 
-        {/* Info Section */}
         <Card className="mt-8">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5" />
-              How Price Alerts Work
+              ¿Cómo funcionan las alertas?
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-3 gap-6">
               <div>
-                <h4 className="font-semibold mb-2">1. Set Your Target</h4>
+                <h4 className="font-semibold mb-2">1. Definí tu objetivo</h4>
                 <p className="text-sm text-muted-foreground">
-                  Choose a product and set the price you want to pay. We'll monitor prices across all stores.
+                  Elegí un producto y el precio que querés pagar. Monitoreamos todas las tiendas.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold mb-2">2. We Monitor Prices</h4>
+                <h4 className="font-semibold mb-2">2. La comunidad reporta</h4>
                 <p className="text-sm text-muted-foreground">
-                  Our community reports prices daily. We track every update and compare against your target.
+                  Cada día llegan precios nuevos. Comparamos contra tu objetivo automáticamente.
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold mb-2">3. Get Notified</h4>
+                <h4 className="font-semibold mb-2">3. Te avisamos</h4>
                 <p className="text-sm text-muted-foreground">
-                  When the price drops below your target, you'll receive a notification with the store location.
+                  Cuando el precio baje de tu objetivo, recibís un aviso con la tienda y el monto.
                 </p>
               </div>
             </div>

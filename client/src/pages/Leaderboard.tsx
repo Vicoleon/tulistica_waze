@@ -45,7 +45,7 @@ export default function Leaderboard() {
               <ArrowLeft className="w-5 h-5" />
             </Button>
           </Link>
-          <h1 className="text-xl font-bold">Leaderboard</h1>
+          <h1 className="text-xl font-bold">Tabla de líderes</h1>
         </div>
       </header>
 
@@ -59,15 +59,15 @@ export default function Leaderboard() {
                   <Trophy className="w-8 h-8 text-primary-foreground" />
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-xl font-bold">{user?.name || "You"}</h2>
+                  <h2 className="text-xl font-bold">{user?.name || "Vos"}</h2>
                   <div className="flex items-center gap-4 mt-1">
                     <div className="flex items-center gap-1">
                       <Star className="w-4 h-4 text-yellow-500" />
-                      <span className="font-medium">{userStats.totalPoints} points</span>
+                      <span className="font-medium">{userStats.totalPoints} puntos</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <TrendingUp className="w-4 h-4 text-primary" />
-                      <span>Trust Score: {userStats.trustScore}</span>
+                      <span>Confianza: {userStats.trustScore}</span>
                     </div>
                   </div>
                 </div>
@@ -75,7 +75,7 @@ export default function Leaderboard() {
                   <div className="text-3xl font-bold text-primary">
                     #{userStats.weeklyRank || "-"}
                   </div>
-                  <div className="text-sm text-muted-foreground">This Week</div>
+                  <div className="text-sm text-muted-foreground">Esta semana</div>
                 </div>
               </div>
 
@@ -84,7 +84,7 @@ export default function Leaderboard() {
                 <div className="mt-4 pt-4 border-t">
                   <div className="flex items-center gap-2 mb-2">
                     <Award className="w-4 h-4 text-accent" />
-                    <span className="text-sm font-medium">Achievements</span>
+                    <span className="text-sm font-medium">Logros</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {userStats.achievements.map((achievement) => (
@@ -102,9 +102,9 @@ export default function Leaderboard() {
         {/* Leaderboard Tabs */}
         <Tabs value={period} onValueChange={(v) => setPeriod(v as any)}>
           <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="weekly">This Week</TabsTrigger>
-            <TabsTrigger value="monthly">This Month</TabsTrigger>
-            <TabsTrigger value="allTime">All Time</TabsTrigger>
+            <TabsTrigger value="weekly">Semana</TabsTrigger>
+            <TabsTrigger value="monthly">Mes</TabsTrigger>
+            <TabsTrigger value="alltime">Total</TabsTrigger>
           </TabsList>
 
           <TabsContent value={period}>
@@ -130,20 +130,20 @@ export default function Leaderboard() {
                         </div>
                         <div className="flex-1">
                           <div className="font-semibold flex items-center gap-2">
-                            {entry.userName || `User ${entry.userId}`}
+                            {entry.userName || `Reportero #${entry.userId}`}
                             {isCurrentUser && (
-                              <Badge variant="outline" className="text-xs">You</Badge>
+                              <Badge variant="outline" className="text-xs">Vos</Badge>
                             )}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            Trust Score: {entry.trustScore}
+                            Confianza: {entry.trustScore}
                           </div>
                         </div>
                         <div className="text-right">
                           <div className="text-xl font-bold text-primary">
-                            {(entry.points || 0).toLocaleString()}
+                            {(entry.points || 0).toLocaleString("es-CR")}
                           </div>
-                          <div className="text-sm text-muted-foreground">points</div>
+                          <div className="text-sm text-muted-foreground">puntos</div>
                         </div>
                       </CardContent>
                     </Card>
@@ -153,9 +153,9 @@ export default function Leaderboard() {
             ) : (
               <div className="text-center py-12">
                 <Trophy className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-30" />
-                <h3 className="text-lg font-medium mb-2">No Rankings Yet</h3>
+                <h3 className="text-lg font-medium mb-2">Aún no hay ranking</h3>
                 <p className="text-muted-foreground">
-                  Start reporting prices to earn points and climb the leaderboard!
+                  Reportá precios para ganar puntos y subir en la tabla.
                 </p>
               </div>
             )}
@@ -165,7 +165,7 @@ export default function Leaderboard() {
         {/* How to Earn Points */}
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle className="text-base">How to Earn Points</CardTitle>
+            <CardTitle className="text-base">¿Cómo ganás puntos?</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 gap-4 text-sm">
@@ -174,8 +174,8 @@ export default function Leaderboard() {
                   <span className="font-bold text-primary">+10</span>
                 </div>
                 <div>
-                  <div className="font-medium">Report a Price</div>
-                  <div className="text-muted-foreground">Submit a verified price report</div>
+                  <div className="font-medium">Reportar precio</div>
+                  <div className="text-muted-foreground">Subí un precio verificado</div>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -183,8 +183,8 @@ export default function Leaderboard() {
                   <span className="font-bold text-primary">+5</span>
                 </div>
                 <div>
-                  <div className="font-medium">Verify Others</div>
-                  <div className="text-muted-foreground">Confirm another user's price</div>
+                  <div className="font-medium">Verificar a otros</div>
+                  <div className="text-muted-foreground">Confirmá el precio de otra persona</div>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -192,8 +192,8 @@ export default function Leaderboard() {
                   <span className="font-bold text-primary">+25</span>
                 </div>
                 <div>
-                  <div className="font-medium">First Price</div>
-                  <div className="text-muted-foreground">Be first to report a new product</div>
+                  <div className="font-medium">Primer precio</div>
+                  <div className="text-muted-foreground">Sé el primero en reportar un producto</div>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -201,8 +201,8 @@ export default function Leaderboard() {
                   <span className="font-bold text-accent-foreground">x2</span>
                 </div>
                 <div>
-                  <div className="font-medium">Trust Multiplier</div>
-                  <div className="text-muted-foreground">Higher trust = more points</div>
+                  <div className="font-medium">Multiplicador de confianza</div>
+                  <div className="text-muted-foreground">A más confianza, más puntos</div>
                 </div>
               </div>
             </div>

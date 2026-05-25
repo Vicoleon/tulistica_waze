@@ -6,8 +6,13 @@ import path from "path";
 import { defineConfig } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 
+const isProduction = process.env.NODE_ENV === "production";
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime()];
+// Manus runtime + JSX loc are dev-only iteration helpers — keep them out
+// of production builds so we don't ship a multi-hundred-KB inlined runtime.
+const devOnlyPlugins = isProduction ? [] : [jsxLocPlugin(), vitePluginManusRuntime()];
+
+const plugins = [react(), tailwindcss(), ...devOnlyPlugins];
 
 export default defineConfig({
   plugins,
@@ -24,6 +29,25 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split heavy vendor groups so the initial bundle stays manageable.
+          react: ["react", "react-dom"],
+          radix: [
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-dropdown-menu",
+            "@radix-ui/react-popover",
+            "@radix-ui/react-tabs",
+            "@radix-ui/react-tooltip",
+            "@radix-ui/react-select",
+          ],
+          query: ["@tanstack/react-query", "@trpc/client", "@trpc/react-query"],
+          charts: ["recharts"],
+        },
+      },
+    },
   },
   server: {
     host: true,

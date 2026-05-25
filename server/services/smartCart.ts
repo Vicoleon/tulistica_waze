@@ -17,6 +17,10 @@ interface OptimizationResult {
   savings?: number;
   itemBreakdown: { productId: number; productName: string; storeId: number; storeName: string; price: number }[];
   missingItems: number[];
+  /** Total items requested by the user. */
+  requestedItemCount: number;
+  /** Items found at this store / combination of stores. */
+  foundItemCount: number;
 }
 
 interface UserPreferences {
@@ -91,21 +95,24 @@ export class SmartCartEngine {
     }
 
     const results: OptimizationResult[] = [];
-    const MISSING_PRICE = 999999;
 
     // 4. Strategy A: Single Store Best Price
     const singleStoreResults: (OptimizationResult & { storeId: number })[] = [];
+    const requestedItemCount = productIds.length;
+    // Drop stores that miss more than this fraction of the cart — they're
+    // not realistic alternatives even if the few items they do carry are cheap.
+    const MAX_MISSING_RATIO = 0.5;
 
     for (const store of nearbyStores) {
       const storePrices = priceMatrix.get(store.id) || new Map();
-      let cartTotal = 0;
+      let realCartTotal = 0; // money the user would actually pay
       const itemBreakdown: OptimizationResult["itemBreakdown"] = [];
       const missingItems: number[] = [];
 
       for (const productId of productIds) {
         const price = storePrices.get(productId);
         if (price !== undefined) {
-          cartTotal += price;
+          realCartTotal += price;
           itemBreakdown.push({
             productId,
             productName: productMap.get(productId)?.name || "Unknown",
@@ -114,10 +121,14 @@ export class SmartCartEngine {
             price,
           });
         } else {
-          cartTotal += MISSING_PRICE;
           missingItems.push(productId);
         }
       }
+
+      // Stores that miss more than half the cart aren't useful suggestions.
+      if (missingItems.length / requestedItemCount > MAX_MISSING_RATIO) continue;
+      // Stores with nothing matched aren't useful either.
+      if (itemBreakdown.length === 0) continue;
 
       const roundTripDistance = store.distanceKm * 2;
       const tripCost = this.calculateTripCost(roundTripDistance);
@@ -125,20 +136,30 @@ export class SmartCartEngine {
       singleStoreResults.push({
         type: "SINGLE",
         storeId: store.id,
-        stores: [{ id: store.id, name: store.name, distanceKm: store.distanceKm, items: productIds.filter(id => !missingItems.includes(id)) }],
-        cartTotal: missingItems.length > 0 ? cartTotal - (missingItems.length * MISSING_PRICE) : cartTotal,
+        stores: [
+          {
+            id: store.id,
+            name: store.name,
+            distanceKm: store.distanceKm,
+            items: productIds.filter((id) => !missingItems.includes(id)),
+          },
+        ],
+        cartTotal: Math.round(realCartTotal * 100) / 100,
         tripCost: Math.round(tripCost * 100) / 100,
-        grandTotal: Math.round((cartTotal + tripCost) * 100) / 100,
+        grandTotal: Math.round((realCartTotal + tripCost) * 100) / 100,
         itemBreakdown,
         missingItems,
+        requestedItemCount,
+        foundItemCount: itemBreakdown.length,
       });
     }
 
-    // Sort by grand total (excluding missing items penalty for fair comparison)
+    // Sort by completeness first (fewer missing items wins), then by total cost.
     singleStoreResults.sort((a, b) => {
-      const aEffective = a.cartTotal + a.tripCost;
-      const bEffective = b.cartTotal + b.tripCost;
-      return aEffective - bEffective;
+      if (a.missingItems.length !== b.missingItems.length) {
+        return a.missingItems.length - b.missingItems.length;
+      }
+      return a.grandTotal - b.grandTotal;
     });
 
     results.push(...singleStoreResults.slice(0, 5));
@@ -170,31 +191,36 @@ export class SmartCartEngine {
             continue;
           }
 
-          const effectivePriceA = priceA ?? MISSING_PRICE;
-          const effectivePriceB = priceB ?? MISSING_PRICE;
+          // Pick the cheaper *real* price. If only one store has it, that store wins.
+          const aHas = priceA !== undefined;
+          const bHas = priceB !== undefined;
+          const pickA = aHas && (!bHas || priceA! <= priceB!);
 
-          if (effectivePriceA <= effectivePriceB) {
-            hybridTotal += effectivePriceA;
+          if (pickA) {
+            hybridTotal += priceA!;
             storeAItems.push(productId);
             itemBreakdown.push({
               productId,
               productName: productMap.get(productId)?.name || "Unknown",
               storeId: storeA.id,
               storeName: storeA.name,
-              price: effectivePriceA,
+              price: priceA!,
             });
           } else {
-            hybridTotal += effectivePriceB;
+            hybridTotal += priceB!;
             storeBItems.push(productId);
             itemBreakdown.push({
               productId,
               productName: productMap.get(productId)?.name || "Unknown",
               storeId: storeB.id,
               storeName: storeB.name,
-              price: effectivePriceB,
+              price: priceB!,
             });
           }
         }
+
+        if (missingItems.length / requestedItemCount > MAX_MISSING_RATIO) continue;
+        if (storeAItems.length === 0 || storeBItems.length === 0) continue;
 
         // Calculate multi-stop route: Home -> A -> B -> Home
         const distHomeToA = storeA.distanceKm;
@@ -207,8 +233,7 @@ export class SmartCartEngine {
         const bestSingleTotal = topCandidates[0].cartTotal + topCandidates[0].tripCost;
         const savings = bestSingleTotal - grandTotal;
 
-        // Only include if there are actual savings
-        if (savings > 0.5 && storeAItems.length > 0 && storeBItems.length > 0) {
+        if (savings > 0.5) {
           results.push({
             type: "SPLIT",
             stores: [
@@ -221,13 +246,20 @@ export class SmartCartEngine {
             savings: Math.round(savings * 100) / 100,
             itemBreakdown,
             missingItems,
+            requestedItemCount,
+            foundItemCount: itemBreakdown.length,
           });
         }
       }
     }
 
-    // Sort all results by grand total
-    results.sort((a, b) => a.grandTotal - b.grandTotal);
+    // Final ranking: completeness first, then total cost.
+    results.sort((a, b) => {
+      if (a.missingItems.length !== b.missingItems.length) {
+        return a.missingItems.length - b.missingItems.length;
+      }
+      return a.grandTotal - b.grandTotal;
+    });
 
     return results.slice(0, 10);
   }

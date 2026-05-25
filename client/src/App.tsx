@@ -18,6 +18,9 @@ import Leaderboard from "./pages/Leaderboard";
 import Profile from "./pages/Profile";
 import MapView from "./pages/MapView";
 import PriceAlerts from "./pages/PriceAlerts";
+import SignIn from "./pages/SignIn";
+import Terms from "./pages/legal/Terms";
+import Privacy from "./pages/legal/Privacy";
 
 function Router() {
   return (
@@ -36,6 +39,10 @@ function Router() {
       <Route path="/profile" component={Profile} />
       <Route path="/map" component={MapView} />
       <Route path="/alerts" component={PriceAlerts} />
+      <Route path="/signin" component={SignIn} />
+      <Route path="/signup" component={SignIn} />
+      <Route path="/legal/terms" component={Terms} />
+      <Route path="/legal/privacy" component={Privacy} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

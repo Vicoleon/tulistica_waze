@@ -7,8 +7,10 @@ import {
   savedRecipes, InsertStore, InsertProduct, InsertPriceEntry,
   InsertShoppingList, InsertListItem, InsertPantryItem, InsertAdCampaign,
   InsertSavedRecipe, priceAlerts, InsertPriceAlert, storeCrowdedness,
-  InsertStoreCrowdedness, googlePlacesCache, InsertGooglePlaceCache
+  InsertStoreCrowdedness, googlePlacesCache, InsertGooglePlaceCache,
+  integrationCredentials, InsertIntegrationCredential, appSettings,
 } from "../drizzle/schema";
+import { isNull } from "drizzle-orm";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -965,4 +967,187 @@ export async function importGooglePlaceAsStore(placeId: string): Promise<number 
   }
   
   return storeId;
+}
+
+// ============ INTEGRATION CREDENTIALS ============
+export async function listIntegrationCredentials(userId: number, integration?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = integration
+    ? and(eq(integrationCredentials.userId, userId), eq(integrationCredentials.integration, integration))
+    : eq(integrationCredentials.userId, userId);
+  const rows = await db
+    .select({
+      id: integrationCredentials.id,
+      integration: integrationCredentials.integration,
+      label: integrationCredentials.label,
+      lastVerifiedAt: integrationCredentials.lastVerifiedAt,
+      lastError: integrationCredentials.lastError,
+      createdAt: integrationCredentials.createdAt,
+      updatedAt: integrationCredentials.updatedAt,
+    })
+    .from(integrationCredentials)
+    .where(conditions);
+  return rows;
+}
+
+export async function getIntegrationCredentialCiphertext(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select()
+    .from(integrationCredentials)
+    .where(and(eq(integrationCredentials.id, id), eq(integrationCredentials.userId, userId)))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function findIntegrationCredential(userId: number, integration: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select()
+    .from(integrationCredentials)
+    .where(and(eq(integrationCredentials.userId, userId), eq(integrationCredentials.integration, integration)))
+    .orderBy(desc(integrationCredentials.updatedAt))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function upsertIntegrationCredential(values: InsertIntegrationCredential): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  // Insert; if a (userId, integration) already exists, replace its ciphertext.
+  const existing = values.userId
+    ? await findIntegrationCredential(values.userId, values.integration)
+    : null;
+  if (existing) {
+    await db
+      .update(integrationCredentials)
+      .set({
+        ciphertext: values.ciphertext,
+        label: values.label ?? existing.label,
+        lastError: null,
+      })
+      .where(eq(integrationCredentials.id, existing.id));
+    return existing.id;
+  }
+  const inserted = await db.insert(integrationCredentials).values(values);
+  return inserted[0]?.insertId ?? null;
+}
+
+export async function deleteIntegrationCredential(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .delete(integrationCredentials)
+    .where(and(eq(integrationCredentials.id, id), eq(integrationCredentials.userId, userId)));
+}
+
+export async function markIntegrationCredentialVerified(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(integrationCredentials)
+    .set({ lastVerifiedAt: new Date(), lastError: null })
+    .where(eq(integrationCredentials.id, id));
+}
+
+export async function markIntegrationCredentialError(id: number, error: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(integrationCredentials)
+    .set({ lastError: error.slice(0, 500) })
+    .where(eq(integrationCredentials.id, id));
+}
+
+// ============ APP-WIDE INTEGRATION CREDENTIALS (admin/llm keys) ============
+/**
+ * Look up a credential whose userId is null — used for app-wide secrets like
+ * LLM API keys that the admin manages and that aren't tied to a specific user.
+ */
+export async function findAppIntegrationCredential(integration: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select()
+    .from(integrationCredentials)
+    .where(and(isNull(integrationCredentials.userId), eq(integrationCredentials.integration, integration)))
+    .orderBy(desc(integrationCredentials.updatedAt))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function upsertAppIntegrationCredential(integration: string, ciphertext: string, label?: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const existing = await findAppIntegrationCredential(integration);
+  if (existing) {
+    await db
+      .update(integrationCredentials)
+      .set({ ciphertext, label: label ?? existing.label, lastError: null })
+      .where(eq(integrationCredentials.id, existing.id));
+    return existing.id;
+  }
+  const inserted = await db.insert(integrationCredentials).values({
+    userId: null,
+    integration,
+    label: label ?? null,
+    ciphertext,
+  });
+  return inserted[0]?.insertId ?? null;
+}
+
+export async function deleteAppIntegrationCredential(integration: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .delete(integrationCredentials)
+    .where(and(isNull(integrationCredentials.userId), eq(integrationCredentials.integration, integration)));
+}
+
+export async function listAppIntegrationCredentials() {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: integrationCredentials.id,
+      integration: integrationCredentials.integration,
+      label: integrationCredentials.label,
+      lastVerifiedAt: integrationCredentials.lastVerifiedAt,
+      lastError: integrationCredentials.lastError,
+      updatedAt: integrationCredentials.updatedAt,
+    })
+    .from(integrationCredentials)
+    .where(isNull(integrationCredentials.userId));
+}
+
+// ============ APP SETTINGS (non-sensitive key/value) ============
+export async function getAppSetting(key: string): Promise<string | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(appSettings).where(eq(appSettings.key, key)).limit(1);
+  return rows[0]?.value ?? null;
+}
+
+export async function setAppSetting(key: string, value: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .insert(appSettings)
+    .values({ key, value })
+    .onDuplicateKeyUpdate({ set: { value } });
+}
+
+export async function getAppSettings(prefix?: string): Promise<Record<string, string>> {
+  const db = await getDb();
+  if (!db) return {};
+  const rows = await db.select().from(appSettings);
+  const out: Record<string, string> = {};
+  for (const row of rows) {
+    if (prefix && !row.key.startsWith(prefix)) continue;
+    if (row.value !== null) out[row.key] = row.value;
+  }
+  return out;
 }

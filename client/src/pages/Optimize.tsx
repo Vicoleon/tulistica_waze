@@ -1,13 +1,14 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
+import { formatCurrency } from "@/lib/currency";
 import {
-  ArrowLeft, TrendingDown, MapPin, DollarSign, Clock, Fuel,
-  Store, ArrowRight, Sparkles, ShoppingCart, Check
+  ArrowLeft, TrendingDown, MapPin, Clock, Fuel,
+  Store, Sparkles, ShoppingCart, Check
 } from "lucide-react";
 import { Link, useSearch } from "wouter";
 import { toast } from "sonner";
@@ -20,30 +21,40 @@ export default function Optimize() {
   const [selectedResult, setSelectedResult] = useState<number | null>(null);
 
   const { data: list } = trpc.lists.getById.useQuery(
-    { id: parseInt(listId || "0") },
+    { id: parseInt(listId || "0", 10) },
     { enabled: !!listId }
   );
 
-  const productIds = list?.items
-    .filter((item) => item.productId && !item.isChecked)
-    .map((item) => item.productId as number) || [];
+  const productIds = useMemo(
+    () =>
+      list?.items
+        .filter((item) => item.productId && !item.isChecked)
+        .map((item) => item.productId as number) ?? [],
+    [list?.items]
+  );
 
   const optimize = trpc.optimization.optimize.useMutation({
     onError: (err) => toast.error(err.message),
   });
 
-  const handleOptimize = () => {
-    if (productIds.length === 0) {
+  const runOptimize = (ids: number[], radiusKm: number) => {
+    if (ids.length === 0) {
       toast.error("No products to optimize");
       return;
     }
-    optimize.mutate({ productIds, radiusKm: radius[0] });
+    optimize.mutate({ productIds: ids, radiusKm });
   };
 
+  const handleOptimize = () => runOptimize(productIds, radius[0]);
+
+  // Auto-run optimization once when the list is first loaded with items.
+  const autoRunFiredRef = useRef(false);
   useEffect(() => {
-    if (productIds.length > 0 && !optimize.data && !optimize.isPending) {
-      handleOptimize();
-    }
+    if (autoRunFiredRef.current) return;
+    if (productIds.length === 0) return;
+    autoRunFiredRef.current = true;
+    runOptimize(productIds, radius[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productIds.length]);
 
   if (!isAuthenticated) {
@@ -52,9 +63,9 @@ export default function Optimize() {
         <Card className="max-w-md">
           <CardContent className="p-8 text-center">
             <TrendingDown className="w-16 h-16 mx-auto mb-4 text-primary" />
-            <h2 className="text-xl font-bold mb-2">Sign In Required</h2>
+            <h2 className="text-xl font-bold mb-2">Sesión requerida</h2>
             <p className="text-muted-foreground mb-4">
-              Please sign in to use the Smart Cart optimizer
+              Inicia sesión para usar el optimizador de Carrito Inteligente
             </p>
           </CardContent>
         </Card>
@@ -72,19 +83,19 @@ export default function Optimize() {
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>
-            <h1 className="text-xl font-bold">Smart Cart Optimizer</h1>
+            <h1 className="text-xl font-bold">Carrito Inteligente</h1>
           </div>
         </header>
         <main className="container py-12">
           <Card className="max-w-md mx-auto">
             <CardContent className="p-8 text-center">
               <MapPin className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-              <h2 className="text-xl font-bold mb-2">Set Your Location</h2>
+              <h2 className="text-xl font-bold mb-2">Define tu ubicación</h2>
               <p className="text-muted-foreground mb-4">
-                Please set your home location in your profile to use the optimizer
+                Configura tu ubicación en tu perfil para empezar a optimizar tus compras
               </p>
               <Link href="/profile">
-                <Button>Go to Profile</Button>
+                <Button>Ir a perfil</Button>
               </Link>
             </CardContent>
           </Card>
@@ -104,7 +115,7 @@ export default function Optimize() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-xl font-bold">Smart Cart Optimizer</h1>
+            <h1 className="text-xl font-bold">Carrito Inteligente</h1>
             {list && <p className="text-sm text-muted-foreground">{list.name}</p>}
           </div>
         </div>
@@ -114,12 +125,12 @@ export default function Optimize() {
         {/* Settings */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-base">Optimization Settings</CardTitle>
+            <CardTitle className="text-base">Configuración de optimización</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Search Radius</span>
+                <span className="text-sm font-medium">Radio de búsqueda</span>
                 <span className="text-sm text-muted-foreground">{radius[0]} km</span>
               </div>
               <Slider
@@ -133,11 +144,11 @@ export default function Optimize() {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="flex items-center gap-2">
                 <Fuel className="w-4 h-4 text-muted-foreground" />
-                <span>Fuel: ${user.fuelCostPerKm?.toFixed(2) || "0.15"}/km</span>
+                <span>Combustible: {formatCurrency(user.fuelCostPerKm ?? 250)}/km</span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-muted-foreground" />
-                <span>Time: ${user.timeValuePerHour?.toFixed(0) || "15"}/hr</span>
+                <span>Tiempo: {formatCurrency(user.timeValuePerHour ?? 3000)}/h</span>
               </div>
             </div>
             <Button
@@ -148,11 +159,11 @@ export default function Optimize() {
               {optimize.isPending ? (
                 <>
                   <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-                  Optimizing...
+                  Optimizando...
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4" /> Find Best Strategy
+                  <Sparkles className="w-4 h-4" /> Encontrar mejor estrategia
                 </>
               )}
             </Button>
@@ -164,7 +175,7 @@ export default function Optimize() {
           <div className="space-y-4">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <TrendingDown className="w-5 h-5 text-primary" />
-              Shopping Strategies
+              Estrategias de compra
             </h2>
             {optimize.data.map((result, index) => (
               <Card
@@ -186,7 +197,7 @@ export default function Optimize() {
                             <Store className="w-5 h-5" />
                           </div>
                         )}
-                        {result.type === "SINGLE" ? "Single Store" : "Split Trip"}
+                        {result.type === "SINGLE" ? "Una sola tienda" : "Viaje dividido"}
                       </CardTitle>
                       <CardDescription>
                         {result.stores.map((s) => s.name).join(" → ")}
@@ -194,11 +205,11 @@ export default function Optimize() {
                     </div>
                     <div className="text-right">
                       <div className="text-2xl font-bold text-primary">
-                        ${result.grandTotal.toFixed(2)}
+                        {formatCurrency(result.grandTotal)}
                       </div>
                       {result.savings && result.savings > 0 && (
                         <Badge className="bg-green-500">
-                          Save ${result.savings.toFixed(2)}
+                          Ahorrá {formatCurrency(result.savings)}
                         </Badge>
                       )}
                     </div>
@@ -207,51 +218,50 @@ export default function Optimize() {
                 <CardContent>
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div>
-                      <div className="text-muted-foreground">Cart</div>
-                      <div className="font-semibold flex items-center gap-1">
-                        <DollarSign className="w-4 h-4" />
-                        {result.cartTotal.toFixed(2)}
+                      <div className="text-muted-foreground">Carrito</div>
+                      <div className="font-semibold">
+                        {formatCurrency(result.cartTotal)}
                       </div>
                     </div>
                     <div>
-                      <div className="text-muted-foreground">Travel</div>
+                      <div className="text-muted-foreground">Traslado</div>
                       <div className="font-semibold flex items-center gap-1">
                         <Fuel className="w-4 h-4" />
-                        {result.tripCost.toFixed(2)}
+                        {formatCurrency(result.tripCost)}
                       </div>
                     </div>
                     <div>
-                      <div className="text-muted-foreground">Items</div>
+                      <div className="text-muted-foreground">Productos</div>
                       <div className="font-semibold flex items-center gap-1">
                         <ShoppingCart className="w-4 h-4" />
-                        {result.itemBreakdown.length}
+                        {result.foundItemCount} <span className="text-muted-foreground font-normal">de {result.requestedItemCount}</span>
                       </div>
                     </div>
                   </div>
 
                   {selectedResult === index && (
                     <div className="mt-4 pt-4 border-t space-y-2">
-                      <h4 className="font-medium text-sm">Item Breakdown</h4>
+                      <h4 className="font-medium text-sm">Detalle por producto</h4>
                       {result.itemBreakdown.slice(0, 5).map((item, i) => (
                         <div key={i} className="flex items-center justify-between text-sm">
                           <span className="truncate flex-1">{item.productName}</span>
                           <span className="text-muted-foreground mx-2">@</span>
                           <span className="text-muted-foreground">{item.storeName}</span>
-                          <span className="font-medium ml-2">${item.price.toFixed(2)}</span>
+                          <span className="font-medium ml-2">{formatCurrency(item.price)}</span>
                         </div>
                       ))}
                       {result.itemBreakdown.length > 5 && (
                         <p className="text-sm text-muted-foreground">
-                          +{result.itemBreakdown.length - 5} more items
+                          +{result.itemBreakdown.length - 5} productos más
                         </p>
                       )}
                       {result.missingItems.length > 0 && (
                         <p className="text-sm text-destructive">
-                          {result.missingItems.length} items not available
+                          {result.missingItems.length} productos no disponibles
                         </p>
                       )}
                       <Button className="w-full mt-4 gap-2">
-                        <Check className="w-4 h-4" /> Use This Strategy
+                        <Check className="w-4 h-4" /> Usar esta estrategia
                       </Button>
                     </div>
                   )}
@@ -263,9 +273,9 @@ export default function Optimize() {
           <Card>
             <CardContent className="p-8 text-center">
               <Store className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <h3 className="text-lg font-medium mb-2">No Results Found</h3>
+              <h3 className="text-lg font-medium mb-2">Sin resultados</h3>
               <p className="text-muted-foreground">
-                Try increasing your search radius or adding more items to your list
+                Probá aumentar el radio de búsqueda o agregar más productos a tu lista
               </p>
             </CardContent>
           </Card>
@@ -273,12 +283,12 @@ export default function Optimize() {
           <Card>
             <CardContent className="p-8 text-center">
               <ShoppingCart className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <h3 className="text-lg font-medium mb-2">No Items to Optimize</h3>
+              <h3 className="text-lg font-medium mb-2">No hay productos para optimizar</h3>
               <p className="text-muted-foreground mb-4">
-                Add products to your shopping list to find the best prices
+                Agregá productos a tu lista para encontrar los mejores precios
               </p>
               <Link href="/lists">
-                <Button>Go to Lists</Button>
+                <Button>Ir a listas</Button>
               </Link>
             </CardContent>
           </Card>

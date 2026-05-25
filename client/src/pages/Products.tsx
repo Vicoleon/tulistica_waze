@@ -26,11 +26,11 @@ export default function Products() {
               <ArrowLeft className="w-5 h-5" />
             </Button>
           </Link>
-          <h1 className="text-xl font-bold">Search Products</h1>
+          <h1 className="text-xl font-bold">Productos</h1>
           <div className="ml-auto">
             <Link href="/scanner">
               <Button variant="outline" size="sm" className="gap-2">
-                <Barcode className="w-4 h-4" /> Scan Barcode
+                <Barcode className="w-4 h-4" /> Escanear código
               </Button>
             </Link>
           </div>
@@ -42,7 +42,7 @@ export default function Products() {
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <Input
-            placeholder="Search products by name, brand, or category..."
+            placeholder="Buscar por nombre, marca o categoría..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-12 h-12 text-lg"
@@ -53,9 +53,9 @@ export default function Products() {
         {searchQuery.length < 3 ? (
           <div className="text-center py-12">
             <Search className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-30" />
-            <h3 className="text-lg font-medium mb-2">Search for Products</h3>
+            <h3 className="text-lg font-medium mb-2">Buscá productos</h3>
             <p className="text-muted-foreground">
-              Enter at least 3 characters to search for products
+              Escribí al menos 3 letras para empezar
             </p>
           </div>
         ) : isLoading ? (
@@ -89,7 +89,7 @@ export default function Products() {
                         </div>
                         {product.isSponsored && (
                           <Badge variant="secondary" className="bg-accent/20 text-accent-foreground">
-                            <Star className="w-3 h-3 mr-1" /> Sponsored
+                            <Star className="w-3 h-3 mr-1" /> Patrocinado
                           </Badge>
                         )}
                       </div>
@@ -105,15 +105,15 @@ export default function Products() {
                       </div>
                       <div className="flex items-center gap-2 mt-3">
                         <Button size="sm" variant="default" className="gap-1">
-                          <TrendingDown className="w-4 h-4" /> Compare Prices
+                          <TrendingDown className="w-4 h-4" /> Comparar precios
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
                           className="gap-1"
-                          onClick={() => toast.success("Added to list!")}
+                          onClick={() => toast.success("Producto agregado a la lista")}
                         >
-                          <Plus className="w-4 h-4" /> Add to List
+                          <Plus className="w-4 h-4" /> Agregar a lista
                         </Button>
                       </div>
                     </div>
@@ -125,9 +125,9 @@ export default function Products() {
         ) : (
           <div className="text-center py-12">
             <Tag className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <h3 className="text-lg font-medium mb-2">No products found</h3>
+            <h3 className="text-lg font-medium mb-2">No encontramos productos</h3>
             <p className="text-muted-foreground">
-              Try a different search term or scan a barcode
+              Probá con otro término o escaneá el código de barras
             </p>
           </div>
         )}

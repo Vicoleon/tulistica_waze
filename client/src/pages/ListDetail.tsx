@@ -99,7 +99,7 @@ export default function ListDetail() {
     onSuccess: (data) => {
       utils.lists.getById.invalidate({ id: listId });
       if (data?.shareCode) {
-        toast.success("List is now shared!");
+        toast.success("Lista compartida activada");
       }
     },
   });
@@ -117,7 +117,7 @@ export default function ListDetail() {
     socketInstance.on("list_update", (update) => {
       if (update.userId !== user?.id) {
         utils.lists.getById.invalidate({ id: listId });
-        toast.info(`${update.userName || "Someone"} updated the list`);
+        toast.info(`${update.userName || "Alguien"} actualizó la lista`);
       }
     });
 
@@ -132,7 +132,7 @@ export default function ListDetail() {
   const copyShareCode = () => {
     if (list?.shareCode) {
       navigator.clipboard.writeText(list.shareCode);
-      toast.success("Share code copied!");
+      toast.success("Código copiado");
     }
   };
 
@@ -164,9 +164,9 @@ export default function ListDetail() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-bold mb-2">List not found</h2>
+          <h2 className="text-xl font-bold mb-2">Lista no encontrada</h2>
           <Link href="/lists">
-            <Button>Back to Lists</Button>
+            <Button>Volver a mis listas</Button>
           </Link>
         </div>
       </div>
@@ -192,7 +192,7 @@ export default function ListDetail() {
             {list.isShared && (
               <div className="flex items-center gap-1 text-sm text-muted-foreground">
                 <Users className="w-3 h-3" />
-                <span>{list.members.length + 1} members</span>
+                <span>{list.members.length + 1} miembros</span>
               </div>
             )}
           </div>
@@ -201,22 +201,22 @@ export default function ListDetail() {
               <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-1">
-                    <Share2 className="w-4 h-4" /> Share
+                    <Share2 className="w-4 h-4" /> Compartir
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Share This List</DialogTitle>
+                    <DialogTitle>Compartir esta lista</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4 pt-4">
                     <div className="flex items-center gap-2">
                       <Input value={list.shareCode || ""} readOnly />
-                      <Button onClick={copyShareCode}>
+                      <Button onClick={copyShareCode} aria-label="Copiar código">
                         <Copy className="w-4 h-4" />
                       </Button>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Share this code with others to let them join your list
+                      Pasale este código a alguien para que se una a tu lista.
                     </p>
                   </div>
                 </DialogContent>
@@ -228,12 +228,12 @@ export default function ListDetail() {
                 className="gap-1"
                 onClick={() => updateList.mutate({ id: listId, isShared: true })}
               >
-                <Share2 className="w-4 h-4" /> Enable Sharing
+                <Share2 className="w-4 h-4" /> Activar compartir
               </Button>
             )}
             <Link href={`/optimize?list=${listId}`}>
               <Button size="sm" className="gap-1">
-                <TrendingDown className="w-4 h-4" /> Optimize
+                <TrendingDown className="w-4 h-4" /> Optimizar
               </Button>
             </Link>
           </div>
@@ -255,7 +255,7 @@ export default function ListDetail() {
                 <div className="flex-1 relative">
                   <Input
                     ref={inputRef}
-                    placeholder="Search products or add custom item..."
+                    placeholder="Buscar producto o agregar item..."
                     value={newItemName}
                     onChange={(e) => {
                       setNewItemName(e.target.value);
@@ -267,7 +267,7 @@ export default function ListDetail() {
                   />
                   {selectedProduct && (
                     <Badge className="absolute right-2 top-1/2 -translate-y-1/2 bg-primary">
-                      <Package className="w-3 h-3 mr-1" /> Linked
+                      <Package className="w-3 h-3 mr-1" /> Vinculado
                     </Badge>
                   )}
                 </div>
@@ -281,7 +281,7 @@ export default function ListDetail() {
                 <div className="absolute top-full left-0 right-12 mt-1 bg-card border rounded-lg shadow-lg z-50 overflow-hidden">
                   <div className="p-2 border-b bg-muted/50">
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Search className="w-3 h-3" /> Select a product for price optimization
+                      <Search className="w-3 h-3" /> Elegí un producto para comparar precios
                     </p>
                   </div>
                   {searchResults.map((product) => (
@@ -310,14 +310,14 @@ export default function ListDetail() {
                       setShowProductSearch(false);
                     }}
                   >
-                    Add "{newItemName}" as custom item (won't be optimized)
+                    Agregar "{newItemName}" como item personalizado (no se podrá optimizar)
                   </button>
                 </div>
               )}
             </div>
             {!selectedProduct && newItemName.length >= 2 && (
               <p className="text-xs text-muted-foreground mt-2">
-                💡 Tip: Select a product from the list to enable price optimization
+                💡 Tip: Elegí un producto del listado para que entre en el optimizador.
               </p>
             )}
           </CardContent>
@@ -327,8 +327,8 @@ export default function ListDetail() {
         {list.items.length === 0 ? (
           <div className="text-center py-12">
             <ShoppingCart className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-30" />
-            <h3 className="text-lg font-medium mb-2">Your list is empty</h3>
-            <p className="text-muted-foreground">Add items to get started</p>
+            <h3 className="text-lg font-medium mb-2">Tu lista está vacía</h3>
+            <p className="text-muted-foreground">Agregá productos para empezar</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -336,7 +336,7 @@ export default function ListDetail() {
             {uncheckedItems.length > 0 && (
               <div className="space-y-2">
                 <h3 className="text-sm font-medium text-muted-foreground">
-                  To Buy ({uncheckedItems.length})
+                  Por comprar ({uncheckedItems.length})
                 </h3>
                 {uncheckedItems.map((item) => (
                   <Card key={item.id} className="group">
@@ -367,6 +367,7 @@ export default function ListDetail() {
                         size="icon"
                         className="opacity-0 group-hover:opacity-100"
                         onClick={() => removeItem.mutate({ id: item.id })}
+                        aria-label="Eliminar item"
                       >
                         <Trash2 className="w-4 h-4 text-destructive" />
                       </Button>
@@ -380,7 +381,7 @@ export default function ListDetail() {
             {checkedItems.length > 0 && (
               <div className="space-y-2">
                 <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Check className="w-4 h-4" /> Done ({checkedItems.length})
+                  <Check className="w-4 h-4" /> Listo ({checkedItems.length})
                 </h3>
                 {checkedItems.map((item) => (
                   <Card key={item.id} className="group opacity-60">
@@ -401,6 +402,7 @@ export default function ListDetail() {
                         size="icon"
                         className="opacity-0 group-hover:opacity-100"
                         onClick={() => removeItem.mutate({ id: item.id })}
+                        aria-label="Eliminar item"
                       >
                         <Trash2 className="w-4 h-4 text-destructive" />
                       </Button>

@@ -2,54 +2,73 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getLoginUrl } from "@/const";
+import { trpc } from "@/lib/trpc";
 import {
   MapPin, Barcode, ShoppingCart, Users, TrendingDown, Trophy,
   ChefHat, Package, Sparkles, ArrowRight, CheckCircle2
 } from "lucide-react";
 import { Link } from "wouter";
 
+const features = [
+  {
+    icon: MapPin,
+    title: "Buscador inteligente de tiendas",
+    description:
+      "Encontrá supermercados cercanos en Costa Rica con comparación de precios en tiempo real.",
+  },
+  {
+    icon: TrendingDown,
+    title: "Carrito Inteligente",
+    description:
+      "Nuestro algoritmo decide si conviene ir a una sola tienda o dividir la compra para ahorrar más.",
+  },
+  {
+    icon: Barcode,
+    title: "Escáner de códigos",
+    description:
+      "Escaneá productos en la tienda para reportar precios y ayudar a la comunidad.",
+  },
+  {
+    icon: Users,
+    title: "Listas compartidas",
+    description:
+      "Compartí listas con tu familia o roomies y vean actualizaciones en tiempo real.",
+  },
+  {
+    icon: ChefHat,
+    title: "De receta a lista",
+    description:
+      "Pegá el enlace de una receta y extraemos los ingredientes directo a tu lista de compras.",
+  },
+  {
+    icon: Package,
+    title: "Control de despensa",
+    description:
+      "Llevá registro de tu despensa y recibí recordatorios cuando algo se está acabando.",
+  },
+];
+
+const steps = [
+  { step: "1", title: "Hacé tu lista", desc: "Creá una lista o importá los ingredientes de una receta." },
+  { step: "2", title: "Compará precios", desc: "Comparamos precios en las tiendas cerca de tu ubicación." },
+  { step: "3", title: "Comprá y ahorrá", desc: "Seguí la ruta optimizada y reportá los nuevos precios." },
+];
+
+const communityBenefits = [
+  "Ganás puntos por cada precio reportado",
+  "Construís confianza con reportes verificados",
+  "Competí en rankings semanales y mensuales",
+  "Desbloqueás logros y medallas",
+];
+
 export default function Home() {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  const currentYear = new Date().getFullYear();
 
-  const features = [
-    {
-      icon: MapPin,
-      title: "Smart Store Finder",
-      description: "Find nearby stores with real-time price comparisons using geospatial search"
-    },
-    {
-      icon: TrendingDown,
-      title: "Price Optimization",
-      description: "Our Smart Cart algorithm finds the best shopping strategy - single store or split trips"
-    },
-    {
-      icon: Barcode,
-      title: "Barcode Scanner",
-      description: "Scan products in-store to report prices and help the community"
-    },
-    {
-      icon: Users,
-      title: "Social Lists",
-      description: "Share shopping lists with family and see real-time updates when items are checked off"
-    },
-    {
-      icon: ChefHat,
-      title: "Recipe Converter",
-      description: "Paste a recipe URL and we'll extract ingredients directly to your shopping list"
-    },
-    {
-      icon: Package,
-      title: "Pantry Tracker",
-      description: "Track your pantry and get smart restock reminders based on your habits"
-    }
-  ];
-
-  const stats = [
-    { value: "50K+", label: "Price Reports" },
-    { value: "2,500+", label: "Stores" },
-    { value: "100K+", label: "Products" },
-    { value: "$2.5M", label: "Saved by Users" }
-  ];
+  const { data: leaderboard } = trpc.gamification.getLeaderboard.useQuery({
+    period: "weekly",
+    limit: 3,
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -66,15 +85,15 @@ export default function Home() {
             {isAuthenticated ? (
               <>
                 <Link href="/dashboard">
-                  <Button variant="ghost">Dashboard</Button>
+                  <Button variant="ghost">Mi tablero</Button>
                 </Link>
                 <Link href="/profile">
-                  <Button variant="outline">{user?.name || "Profile"}</Button>
+                  <Button variant="outline">{user?.name || "Perfil"}</Button>
                 </Link>
               </>
             ) : (
               <a href={getLoginUrl()}>
-                <Button>Get Started</Button>
+                <Button>Iniciar sesión</Button>
               </a>
             )}
           </div>
@@ -88,50 +107,36 @@ export default function Home() {
           <div className="max-w-3xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6">
               <Sparkles className="w-4 h-4" />
-              <span className="text-sm font-medium">Crowdsourced Grocery Intelligence</span>
+              <span className="text-sm font-medium">Inteligencia colaborativa para tu compra en Costa Rica</span>
             </div>
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-foreground mb-6">
-              Save Money on Every
-              <span className="text-primary"> Grocery Trip</span>
+              Pagá menos en cada
+              <span className="text-primary"> compra del super</span>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Compare prices across stores, optimize your shopping route, and join a community 
-              of smart shoppers saving thousands on groceries.
+              Compará precios entre Walmart, Auto Mercado, Más x Menos, Palí y más.
+              Optimizá tu ruta y unite a una comunidad que ahorra colones todos los días.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               {isAuthenticated ? (
                 <Link href="/dashboard">
                   <Button size="lg" className="gap-2">
-                    Go to Dashboard <ArrowRight className="w-4 h-4" />
+                    Ir a mi tablero <ArrowRight className="w-4 h-4" />
                   </Button>
                 </Link>
               ) : (
                 <a href={getLoginUrl()}>
                   <Button size="lg" className="gap-2">
-                    Start Saving Today <ArrowRight className="w-4 h-4" />
+                    Empezar a ahorrar <ArrowRight className="w-4 h-4" />
                   </Button>
                 </a>
               )}
               <Link href="/map">
                 <Button size="lg" variant="outline" className="gap-2">
-                  <MapPin className="w-4 h-4" /> Explore Stores
+                  <MapPin className="w-4 h-4" /> Ver tiendas
                 </Button>
               </Link>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="border-y bg-card">
-        <div className="container py-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, i) => (
-              <div key={i} className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary">{stat.value}</div>
-                <div className="text-muted-foreground">{stat.label}</div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -141,10 +146,10 @@ export default function Home() {
         <div className="container">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Everything You Need to Shop Smarter
+              Todo lo que necesitás para comprar más inteligente
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Powerful tools to help you find the best prices, plan your trips, and save money
+              Herramientas pensadas para encontrar los mejores precios, planear tus viajes y ahorrar.
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -168,15 +173,11 @@ export default function Home() {
         <div className="container">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              How It Works
+              Así funciona
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            {[
-              { step: "1", title: "Add Your List", desc: "Create a shopping list or import from a recipe" },
-              { step: "2", title: "Find Best Prices", desc: "We compare prices across nearby stores" },
-              { step: "3", title: "Shop & Save", desc: "Follow the optimized route and save money" }
-            ].map((item, i) => (
+            {steps.map((item, i) => (
               <div key={i} className="text-center">
                 <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground text-2xl font-bold flex items-center justify-center mx-auto mb-4">
                   {item.step}
@@ -195,19 +196,14 @@ export default function Home() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-                Join the Community of Smart Shoppers
+                Unite a la comunidad de compradores inteligentes
               </h2>
               <p className="text-lg text-muted-foreground mb-8">
-                Our crowdsourced price data is powered by shoppers like you. Report prices, 
-                earn points, and climb the leaderboard while helping everyone save money.
+                Los precios que ves vienen de personas como vos. Reportá precios,
+                ganá puntos y subí en el ranking mientras ayudás a que todos ahorren.
               </p>
               <ul className="space-y-4">
-                {[
-                  "Earn points for every price report",
-                  "Build your trust score with verified submissions",
-                  "Compete on weekly and monthly leaderboards",
-                  "Unlock achievements and badges"
-                ].map((item, i) => (
+                {communityBenefits.map((item, i) => (
                   <li key={i} className="flex items-center gap-3">
                     <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
                     <span>{item}</span>
@@ -216,25 +212,39 @@ export default function Home() {
               </ul>
               <Link href="/leaderboard">
                 <Button className="mt-8 gap-2">
-                  <Trophy className="w-4 h-4" /> View Leaderboard
+                  <Trophy className="w-4 h-4" /> Ver tabla de líderes
                 </Button>
               </Link>
             </div>
             <Card className="p-8">
               <div className="space-y-4">
-                {[
-                  { rank: 1, name: "Sarah M.", points: 12450, badge: "🥇" },
-                  { rank: 2, name: "John D.", points: 11200, badge: "🥈" },
-                  { rank: 3, name: "Emily R.", points: 10890, badge: "🥉" }
-                ].map((user) => (
-                  <div key={user.rank} className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
-                    <span className="text-2xl">{user.badge}</span>
-                    <div className="flex-1">
-                      <div className="font-semibold">{user.name}</div>
-                      <div className="text-sm text-muted-foreground">{user.points.toLocaleString()} points</div>
-                    </div>
+                {leaderboard && leaderboard.length > 0 ? (
+                  leaderboard.slice(0, 3).map((entry, idx) => {
+                    const badges = ["🥇", "🥈", "🥉"];
+                    return (
+                      <div
+                        key={entry.userId}
+                        className="flex items-center gap-4 p-4 rounded-lg bg-muted/50"
+                      >
+                        <span className="text-2xl">{badges[idx]}</span>
+                        <div className="flex-1">
+                          <div className="font-semibold">Reportero #{entry.userId}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {entry.points?.toLocaleString("es-CR") ?? 0} puntos esta semana
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <Trophy className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p className="font-medium">Sé el primero en aparecer aquí</p>
+                    <p className="text-sm mt-1">
+                      Reportá precios esta semana y empezá a sumar puntos.
+                    </p>
                   </div>
-                ))}
+                )}
               </div>
             </Card>
           </div>
@@ -245,21 +255,21 @@ export default function Home() {
       <section className="py-24 bg-primary text-primary-foreground">
         <div className="container text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            Ready to Start Saving?
+            ¿Listo para ahorrar?
           </h2>
           <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
-            Join thousands of smart shoppers who are saving money on every grocery trip.
+            Sumate y empezá a recortar tu factura del supermercado.
           </p>
           {isAuthenticated ? (
             <Link href="/dashboard">
               <Button size="lg" variant="secondary" className="gap-2">
-                Go to Dashboard <ArrowRight className="w-4 h-4" />
+                Ir a mi tablero <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
           ) : (
             <a href={getLoginUrl()}>
               <Button size="lg" variant="secondary" className="gap-2">
-                Get Started Free <ArrowRight className="w-4 h-4" />
+                Crear cuenta gratis <ArrowRight className="w-4 h-4" />
               </Button>
             </a>
           )}
@@ -276,8 +286,22 @@ export default function Home() {
               </div>
               <span className="font-semibold">Grocery Waze</span>
             </div>
+            <nav className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
+              <Link href="/legal/terms" className="hover:text-foreground">
+                Términos
+              </Link>
+              <Link href="/legal/privacy" className="hover:text-foreground">
+                Privacidad
+              </Link>
+              <Link href="/map" className="hover:text-foreground">
+                Tiendas
+              </Link>
+              <Link href="/leaderboard" className="hover:text-foreground">
+                Comunidad
+              </Link>
+            </nav>
             <div className="text-sm text-muted-foreground">
-              © 2024 Grocery Waze. Helping you shop smarter.
+              © {currentYear} Grocery Waze · Hecho para Costa Rica
             </div>
           </div>
         </div>

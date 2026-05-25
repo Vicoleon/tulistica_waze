@@ -57,15 +57,27 @@ const validatePayload = (input: NotificationPayload): NotificationPayload => {
   return { title, content };
 };
 
+export function isNotificationAvailable(): boolean {
+  return Boolean(ENV.forgeApiUrl && ENV.forgeApiKey);
+}
+
 /**
- * Dispatches a project-owner notification through the Manus Notification Service.
- * Returns `true` if the request was accepted, `false` when the upstream service
- * cannot be reached (callers can fall back to email/slack). Validation errors
- * bubble up as TRPC errors so callers can fix the payload.
+ * Dispatches a project-owner notification through the configured notification
+ * service (currently Manus Forge). Returns `true` if the request was accepted,
+ * `false` when the upstream service cannot be reached or notifications are
+ * disabled. Validation errors bubble up as TRPC errors so callers can fix the
+ * payload.
+ *
+ * For self-hosted deployments without notifications configured, the system
+ * silently no-ops; alerts still update DB state for in-app display.
  */
 export async function notifyOwner(
   payload: NotificationPayload
 ): Promise<boolean> {
+  if (!isNotificationAvailable()) {
+    return false;
+  }
+
   const { title, content } = validatePayload(payload);
 
   if (!ENV.forgeApiUrl) {
