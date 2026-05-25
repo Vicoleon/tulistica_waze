@@ -9,7 +9,9 @@ export const users = mysqlTable("users", {
   // bcrypt hash for local email+password auth. Null for OAuth-only users.
   passwordHash: varchar("passwordHash", { length: 255 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  role: mysqlEnum("role", ["consumer", "vendor_staff", "vendor_admin", "super_admin"]).default("consumer").notNull(),
+  emailVerified: boolean("emailVerified").default(false).notNull(),
+  emailVerifiedAt: timestamp("emailVerifiedAt"),
   // Trust & Gamification
   trustScore: int("trustScore").default(10).notNull(), // 0-100
   totalPoints: int("totalPoints").default(0).notNull(),
@@ -32,6 +34,23 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
+// ============ USER TOKENS (email verify + password reset) ============
+export const userTokens = mysqlTable("user_tokens", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  token: varchar("token", { length: 128 }).notNull().unique(),
+  type: mysqlEnum("type", ["email_verify", "password_reset"]).notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  usedAt: timestamp("usedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => [
+  index("idx_user_tokens_user").on(table.userId),
+  index("idx_user_tokens_token").on(table.token),
+]);
+
+export type UserToken = typeof userTokens.$inferSelect;
+export type InsertUserToken = typeof userTokens.$inferInsert;
+
 // ============ STORES ============
 export const stores = mysqlTable("stores", {
   id: int("id").autoincrement().primaryKey(),
@@ -51,11 +70,13 @@ export const stores = mysqlTable("stores", {
   avgRating: float("avgRating").default(0),
   totalRatings: int("totalRatings").default(0),
   isActive: boolean("isActive").default(true),
+  brandId: int("brandId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => [
   index("idx_stores_location").on(table.latitude, table.longitude),
   index("idx_stores_chain").on(table.chainId),
+  index("idx_stores_brand").on(table.brandId),
 ]);
 
 export type Store = typeof stores.$inferSelect;
@@ -233,6 +254,7 @@ export const brands = mysqlTable("brands", {
   phone: varchar("phone", { length: 32 }),
   country: varchar("country", { length: 64 }),
   status: mysqlEnum("status", ["active", "suspended", "pending"]).default("pending").notNull(),
+  kind: mysqlEnum("kind", ["advertiser", "vendor"]).default("advertiser").notNull(),
   // Billing
   billingEmail: varchar("billingEmail", { length: 320 }),
   taxId: varchar("taxId", { length: 64 }),
@@ -265,6 +287,24 @@ export const brandTokens = mysqlTable("brand_tokens", {
 
 export type BrandToken = typeof brandTokens.$inferSelect;
 export type InsertBrandToken = typeof brandTokens.$inferInsert;
+
+// ============ BRAND MEMBERS (user ↔ brand join) ============
+export const brandMembers = mysqlTable("brand_members", {
+  id: int("id").autoincrement().primaryKey(),
+  brandId: int("brandId").notNull(),
+  userId: int("userId").notNull(),
+  membershipRole: mysqlEnum("membershipRole", ["owner", "admin", "staff"]).default("staff").notNull(),
+  invitedByUserId: int("invitedByUserId"),
+  invitedAt: timestamp("invitedAt"),
+  acceptedAt: timestamp("acceptedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => [
+  index("uniq_brand_user").on(table.brandId, table.userId),
+  index("idx_brand_members_user").on(table.userId),
+]);
+
+export type BrandMember = typeof brandMembers.$inferSelect;
+export type InsertBrandMember = typeof brandMembers.$inferInsert;
 
 // ============ AD CAMPAIGNS ============
 // Extended in 2026-05 with profile-aware targeting (tier, chain, basketMix,

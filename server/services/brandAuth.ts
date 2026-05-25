@@ -108,7 +108,7 @@ export async function sendBrandEmail(opts: {
   console.log(preview);
   try {
     await notifyOwner({
-      title: `[Grocery Waze] ${opts.subject}`,
+      title: `[Tulistica] ${opts.subject}`,
       content: `Brand: ${opts.to}\n\n${opts.body}`,
     });
     return { delivered: true };
