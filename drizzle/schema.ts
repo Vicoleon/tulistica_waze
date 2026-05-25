@@ -20,7 +20,13 @@ export const users = mysqlTable("users", {
   fuelCostPerKm: float("fuelCostPerKm").default(0.15),
   timeValuePerHour: float("timeValuePerHour").default(15),
   // Preferences
-  preferences: json("preferences").$type<{ dietaryRestrictions?: string[]; favoriteStores?: number[] }>(),
+  preferences: json("preferences").$type<{
+    dietaryRestrictions?: string[];
+    favoriteStores?: number[];
+    monthlyBudget?: number;
+    budgetAlertThreshold?: number;
+    budgetCycleStartDay?: number;
+  }>(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),

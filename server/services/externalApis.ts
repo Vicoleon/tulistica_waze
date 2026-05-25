@@ -1,5 +1,5 @@
 /**
- * External API integrations for Grocery Waze
+ * External API integrations for Tulistica
  * - Google Maps Places API for store discovery
  * - Open Food Facts API for product data
  * - Google Popular Times for crowdedness

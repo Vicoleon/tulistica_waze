@@ -10,6 +10,7 @@ import { Link } from "wouter";
 
 export default function Home() {
   const { user, loading, isAuthenticated } = useAuth();
+  const loginUrl = getLoginUrl();
 
   const features = [
     {
@@ -60,7 +61,7 @@ export default function Home() {
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
               <ShoppingCart className="w-6 h-6 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold text-foreground">Grocery Waze</span>
+            <span className="text-xl font-bold text-foreground">Tulistica</span>
           </Link>
           <div className="flex items-center gap-4">
             {isAuthenticated ? (
@@ -73,9 +74,13 @@ export default function Home() {
                 </Link>
               </>
             ) : (
-              <a href={getLoginUrl()}>
-                <Button>Get Started</Button>
-              </a>
+              loginUrl ? (
+                <a href={loginUrl}>
+                  <Button>Get Started</Button>
+                </a>
+              ) : (
+                <Button disabled title="Sign-in not configured">Get Started</Button>
+              )
             )}
           </div>
         </div>
@@ -106,11 +111,17 @@ export default function Home() {
                   </Button>
                 </Link>
               ) : (
-                <a href={getLoginUrl()}>
-                  <Button size="lg" className="gap-2">
+                loginUrl ? (
+                  <a href={loginUrl}>
+                    <Button size="lg" className="gap-2">
+                      Start Saving Today <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </a>
+                ) : (
+                  <Button size="lg" className="gap-2" disabled title="Sign-in not configured">
                     Start Saving Today <ArrowRight className="w-4 h-4" />
                   </Button>
-                </a>
+                )
               )}
               <Link href="/map">
                 <Button size="lg" variant="outline" className="gap-2">
@@ -257,11 +268,17 @@ export default function Home() {
               </Button>
             </Link>
           ) : (
-            <a href={getLoginUrl()}>
-              <Button size="lg" variant="secondary" className="gap-2">
+            loginUrl ? (
+              <a href={loginUrl}>
+                <Button size="lg" variant="secondary" className="gap-2">
+                  Get Started Free <ArrowRight className="w-4 h-4" />
+                </Button>
+              </a>
+            ) : (
+              <Button size="lg" variant="secondary" className="gap-2" disabled title="Sign-in not configured">
                 Get Started Free <ArrowRight className="w-4 h-4" />
               </Button>
-            </a>
+            )
           )}
         </div>
       </section>
@@ -274,10 +291,10 @@ export default function Home() {
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
                 <ShoppingCart className="w-4 h-4 text-primary-foreground" />
               </div>
-              <span className="font-semibold">Grocery Waze</span>
+              <span className="font-semibold">Tulistica</span>
             </div>
             <div className="text-sm text-muted-foreground">
-              © 2024 Grocery Waze. Helping you shop smarter.
+              © 2024 Tulistica. Helping you shop smarter.
             </div>
           </div>
         </div>

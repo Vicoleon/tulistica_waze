@@ -22,6 +22,8 @@ import {
   lookupProduct,
   searchProductsOpenFoodFacts,
 } from "./services/externalApis";
+import { computeBudgetInsights } from "./services/budget";
+import { predictSeasonalDealsForUser, predictForProduct, rankPredictions } from "./services/seasonalDeals";
 import { notifyOwner } from "./_core/notification";
 
 export const appRouter = router({
@@ -919,6 +921,45 @@ Only return valid JSON, no other text.`,
         }
 
         return { notified, lowestPrice };
+      }),
+  }),
+
+  // ============ BUDGET TRACKER ============
+  budget: router({
+    getInsights: protectedProcedure.query(async ({ ctx }) => {
+      return computeBudgetInsights(ctx.user.id);
+    }),
+
+    setBudget: protectedProcedure
+      .input(z.object({
+        monthlyBudget: z.number().positive().max(1000000),
+        budgetAlertThreshold: z.number().min(0.1).max(1).default(0.8),
+        budgetCycleStartDay: z.number().int().min(1).max(28).default(1),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.setUserBudget(ctx.user.id, input);
+        return { success: true };
+      }),
+
+    clearBudget: protectedProcedure.mutation(async ({ ctx }) => {
+      await db.clearUserBudget(ctx.user.id);
+      return { success: true };
+    }),
+  }),
+
+  // ============ SEASONAL DEAL PREDICTIONS ============
+  seasonal: router({
+    getPredictions: protectedProcedure.query(async ({ ctx }) => {
+      const predictions = await predictSeasonalDealsForUser(ctx.user.id);
+      return rankPredictions(predictions);
+    }),
+
+    getProductPrediction: publicProcedure
+      .input(z.object({ productId: z.number() }))
+      .query(async ({ input }) => {
+        const product = await db.getProductById(input.productId);
+        if (!product) throw new Error("Product not found");
+        return predictForProduct(product.id, product.name, product.category ?? null);
       }),
   }),
 });

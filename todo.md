@@ -1,4 +1,4 @@
-# Grocery Waze - Project TODO
+# Tulistica - Project TODO
 
 ## Core Infrastructure
 - [x] Database schema for users, stores, products, prices, lists
@@ -53,10 +53,10 @@
 
 ## Additional Cool Features (Bonus)
 - [x] Price history tracking in database
-- [ ] Price drop alerts (notification system ready)
-- [ ] Store crowdedness indicator
-- [ ] Seasonal deal predictions
-- [ ] Budget tracker with spending insights
+- [x] Price drop alerts (notification system ready)
+- [x] Store crowdedness indicator
+- [x] Seasonal deal predictions
+- [x] Budget tracker with spending insights
 
 ## UI/UX
 - [x] Landing page with feature showcase
@@ -98,4 +98,4 @@
 - [x] Add sample products (20 Costa Rican products)
 
 ## Bug Fixes
-- [ ] Fix Optimize button not working
+- [x] Fix Optimize button not working

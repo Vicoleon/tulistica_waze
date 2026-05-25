@@ -88,8 +88,18 @@ export default function Profile() {
   }
 
   if (!isAuthenticated) {
-    window.location.href = getLoginUrl();
-    return null;
+    const url = getLoginUrl();
+    if (url) {
+      window.location.href = url;
+      return null;
+    }
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 text-center">
+        <p className="text-muted-foreground">
+          Sign-in isn't configured in this environment.
+        </p>
+      </div>
+    );
   }
 
   return (

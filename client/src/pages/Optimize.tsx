@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,26 +7,34 @@ import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import {
   ArrowLeft, TrendingDown, MapPin, DollarSign, Clock, Fuel,
-  Store, ArrowRight, Sparkles, ShoppingCart, Check
+  Store, Sparkles, ShoppingCart, Check
 } from "lucide-react";
-import { Link, useSearch } from "wouter";
+import { Link, useSearch, useLocation } from "wouter";
 import { toast } from "sonner";
+
+const STRATEGY_STORAGE_KEY = "tulistica.activeStrategy";
 
 export default function Optimize() {
   const { user, isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
   const searchParams = new URLSearchParams(useSearch());
   const listId = searchParams.get("list");
   const [radius, setRadius] = useState([user?.defaultRadiusKm || 10]);
   const [selectedResult, setSelectedResult] = useState<number | null>(null);
+  const [hasAutoRun, setHasAutoRun] = useState(false);
 
   const { data: list } = trpc.lists.getById.useQuery(
     { id: parseInt(listId || "0") },
     { enabled: !!listId }
   );
 
-  const productIds = list?.items
-    .filter((item) => item.productId && !item.isChecked)
-    .map((item) => item.productId as number) || [];
+  const productIds = useMemo(
+    () => list?.items
+      .filter((item) => item.productId && !item.isChecked)
+      .map((item) => item.productId as number) || [],
+    [list?.items]
+  );
+  const productIdsKey = productIds.join(",");
 
   const optimize = trpc.optimization.optimize.useMutation({
     onError: (err) => toast.error(err.message),
@@ -37,14 +45,38 @@ export default function Optimize() {
       toast.error("No products to optimize");
       return;
     }
+    setSelectedResult(null);
     optimize.mutate({ productIds, radiusKm: radius[0] });
   };
 
   useEffect(() => {
-    if (productIds.length > 0 && !optimize.data && !optimize.isPending) {
-      handleOptimize();
+    if (!hasAutoRun && productIds.length > 0 && !optimize.isPending) {
+      setHasAutoRun(true);
+      optimize.mutate({ productIds, radiusKm: radius[0] });
     }
-  }, [productIds.length]);
+  }, [productIdsKey, hasAutoRun, optimize, productIds, radius]);
+
+  const handleApplyStrategy = (index: number) => {
+    const result = optimize.data?.[index];
+    if (!result) return;
+    try {
+      localStorage.setItem(
+        STRATEGY_STORAGE_KEY,
+        JSON.stringify({
+          listId: listId ? parseInt(listId) : null,
+          stores: result.stores,
+          itemBreakdown: result.itemBreakdown,
+          grandTotal: result.grandTotal,
+          appliedAt: new Date().toISOString(),
+        })
+      );
+    } catch (err) {
+      // localStorage may be unavailable (private mode); fall through to navigation
+    }
+    toast.success(`Strategy applied — ${result.stores.length} store${result.stores.length > 1 ? "s" : ""}`);
+    const storeIds = result.stores.map((s) => s.id).join(",");
+    setLocation(`/map?stores=${storeIds}`);
+  };
 
   if (!isAuthenticated) {
     return (
@@ -250,7 +282,13 @@ export default function Optimize() {
                           {result.missingItems.length} items not available
                         </p>
                       )}
-                      <Button className="w-full mt-4 gap-2">
+                      <Button
+                        className="w-full mt-4 gap-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleApplyStrategy(index);
+                        }}
+                      >
                         <Check className="w-4 h-4" /> Use This Strategy
                       </Button>
                     </div>

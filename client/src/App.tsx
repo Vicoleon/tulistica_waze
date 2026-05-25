@@ -18,6 +18,8 @@ import Leaderboard from "./pages/Leaderboard";
 import Profile from "./pages/Profile";
 import MapView from "./pages/MapView";
 import PriceAlerts from "./pages/PriceAlerts";
+import Budget from "./pages/Budget";
+import SeasonalDeals from "./pages/SeasonalDeals";
 
 function Router() {
   return (
@@ -36,6 +38,8 @@ function Router() {
       <Route path="/profile" component={Profile} />
       <Route path="/map" component={MapView} />
       <Route path="/alerts" component={PriceAlerts} />
+      <Route path="/budget" component={Budget} />
+      <Route path="/seasonal" component={SeasonalDeals} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

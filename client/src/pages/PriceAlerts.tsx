@@ -74,8 +74,8 @@ export default function PriceAlerts() {
           <p className="text-muted-foreground mb-8">
             Get notified when products you're watching drop below your target price.
           </p>
-          <Button asChild size="lg">
-            <a href={getLoginUrl()}>Sign In to Set Alerts</a>
+          <Button asChild size="lg" disabled={!getLoginUrl()}>
+            <a href={getLoginUrl() ?? "#"}>Sign In to Set Alerts</a>
           </Button>
         </div>
       </div>

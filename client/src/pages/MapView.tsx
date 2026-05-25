@@ -42,6 +42,10 @@ export default function MapPage() {
   const { user, isAuthenticated } = useAuth();
   const searchParams = new URLSearchParams(useSearch());
   const highlightStoreId = searchParams.get("store");
+  const highlightStoreIdsParam = searchParams.get("stores");
+  const highlightStoreIds = highlightStoreIdsParam
+    ? highlightStoreIdsParam.split(",").map((id) => parseInt(id)).filter((n) => !isNaN(n))
+    : [];
 
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [radius, setRadius] = useState([10]);
@@ -183,7 +187,10 @@ export default function MapPage() {
       newMarkers.push(marker);
 
       // Highlight specific store if requested
-      if (highlightStoreId && store.id === parseInt(highlightStoreId)) {
+      const isHighlighted =
+        (highlightStoreId && store.id === parseInt(highlightStoreId)) ||
+        highlightStoreIds.includes(store.id);
+      if (isHighlighted) {
         setSelectedStore({
           id: store.id,
           name: store.name,
@@ -194,7 +201,7 @@ export default function MapPage() {
           distanceKm: store.distanceKm,
         });
         mapInstance.panTo({ lat: store.latitude, lng: store.longitude });
-        mapInstance.setZoom(15);
+        mapInstance.setZoom(highlightStoreIds.length > 1 ? 13 : 15);
       }
     });
 

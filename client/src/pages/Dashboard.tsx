@@ -6,7 +6,7 @@ import { getLoginUrl } from "@/const";
 import {
   MapPin, Barcode, ShoppingCart, Users, TrendingDown, Trophy,
   ChefHat, Package, Plus, ArrowRight, Bell, Settings, LogOut,
-  Store, Search, List, Sparkles
+  Store, Search, List, Sparkles, Wallet, Calendar
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
@@ -35,8 +35,31 @@ export default function Dashboard() {
   }
 
   if (!isAuthenticated) {
-    window.location.href = getLoginUrl();
-    return null;
+    const loginUrl = getLoginUrl();
+    if (loginUrl) {
+      window.location.href = loginUrl;
+      return null;
+    }
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <Card className="max-w-md">
+          <CardContent className="p-8 text-center space-y-3">
+            <ShoppingCart className="w-12 h-12 mx-auto text-primary" />
+            <h2 className="text-xl font-bold">Sign-in unavailable</h2>
+            <p className="text-sm text-muted-foreground">
+              OAuth isn't configured in this environment. Set
+              <code className="mx-1 px-1 rounded bg-muted">VITE_OAUTH_PORTAL_URL</code>
+              and
+              <code className="mx-1 px-1 rounded bg-muted">VITE_APP_ID</code>
+              to enable login. Public pages still work.
+            </p>
+            <Link href="/">
+              <Button variant="outline">Back to home</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   const quickActions = [
@@ -53,6 +76,8 @@ export default function Dashboard() {
     { icon: Package, label: "Pantry", href: "/pantry" },
     { icon: ChefHat, label: "Recipes", href: "/recipes" },
     { icon: Bell, label: "Price Alerts", href: "/alerts" },
+    { icon: Wallet, label: "Budget", href: "/budget" },
+    { icon: Calendar, label: "Seasonal Deals", href: "/seasonal" },
     { icon: Trophy, label: "Leaderboard", href: "/leaderboard" },
   ];
 
@@ -65,7 +90,7 @@ export default function Dashboard() {
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
               <ShoppingCart className="w-6 h-6 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold">Grocery Waze</span>
+            <span className="text-xl font-bold">Tulistica</span>
           </Link>
           <div className="flex items-center gap-2">
             <Link href="/alerts">

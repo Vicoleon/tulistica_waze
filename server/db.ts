@@ -736,6 +736,207 @@ export async function deleteRecipe(id: number) {
   await db.delete(savedRecipes).where(eq(savedRecipes.id, id));
 }
 
+// ============ BUDGET HELPERS ============
+export interface BudgetSettings {
+  monthlyBudget: number;
+  budgetAlertThreshold: number;
+  budgetCycleStartDay: number;
+}
+
+export async function getUserBudget(userId: number): Promise<BudgetSettings | null> {
+  const user = await getUserById(userId);
+  if (!user || !user.preferences?.monthlyBudget) return null;
+  return {
+    monthlyBudget: user.preferences.monthlyBudget,
+    budgetAlertThreshold: user.preferences.budgetAlertThreshold ?? 0.8,
+    budgetCycleStartDay: user.preferences.budgetCycleStartDay ?? 1,
+  };
+}
+
+export async function setUserBudget(userId: number, budget: BudgetSettings) {
+  const db = await getDb();
+  if (!db) return;
+  const user = await getUserById(userId);
+  const existing = user?.preferences ?? {};
+  await db.update(users).set({
+    preferences: {
+      ...existing,
+      monthlyBudget: budget.monthlyBudget,
+      budgetAlertThreshold: budget.budgetAlertThreshold,
+      budgetCycleStartDay: budget.budgetCycleStartDay,
+    },
+  }).where(eq(users.id, userId));
+}
+
+export async function clearUserBudget(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  const user = await getUserById(userId);
+  if (!user?.preferences) return;
+  const {
+    monthlyBudget: _mb,
+    budgetAlertThreshold: _bat,
+    budgetCycleStartDay: _bcsd,
+    ...rest
+  } = user.preferences;
+  await db.update(users).set({ preferences: rest }).where(eq(users.id, userId));
+}
+
+function getCycleStart(cycleStartDay: number): Date {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), cycleStartDay, 0, 0, 0, 0);
+  if (start > now) {
+    start.setMonth(start.getMonth() - 1);
+  }
+  return start;
+}
+
+export async function getSpendingSinceCycleStart(userId: number, cycleStartDay: number) {
+  const db = await getDb();
+  if (!db) return { total: 0, transactionCount: 0 };
+  const since = getCycleStart(cycleStartDay);
+  const result = await db.select({
+    total: sql<number>`COALESCE(SUM(${purchaseHistory.price} * ${purchaseHistory.quantity}), 0)`,
+    transactionCount: sql<number>`COUNT(*)`,
+  })
+    .from(purchaseHistory)
+    .where(and(
+      eq(purchaseHistory.userId, userId),
+      gte(purchaseHistory.purchasedAt, since),
+      sql`${purchaseHistory.price} IS NOT NULL`
+    ));
+  return {
+    total: Number(result[0]?.total ?? 0),
+    transactionCount: Number(result[0]?.transactionCount ?? 0),
+  };
+}
+
+export async function getSpendingByCategory(userId: number, cycleStartDay: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const since = getCycleStart(cycleStartDay);
+  return db.select({
+    category: products.category,
+    spent: sql<number>`COALESCE(SUM(${purchaseHistory.price} * ${purchaseHistory.quantity}), 0)`,
+    itemCount: sql<number>`COUNT(*)`,
+  })
+    .from(purchaseHistory)
+    .innerJoin(products, eq(purchaseHistory.productId, products.id))
+    .where(and(
+      eq(purchaseHistory.userId, userId),
+      gte(purchaseHistory.purchasedAt, since),
+      sql`${purchaseHistory.price} IS NOT NULL`
+    ))
+    .groupBy(products.category)
+    .orderBy(desc(sql`SUM(${purchaseHistory.price} * ${purchaseHistory.quantity})`));
+}
+
+export async function getSpendingByStore(userId: number, cycleStartDay: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const since = getCycleStart(cycleStartDay);
+  return db.select({
+    storeId: purchaseHistory.storeId,
+    storeName: stores.name,
+    spent: sql<number>`COALESCE(SUM(${purchaseHistory.price} * ${purchaseHistory.quantity}), 0)`,
+    visitCount: sql<number>`COUNT(DISTINCT DATE(${purchaseHistory.purchasedAt}))`,
+  })
+    .from(purchaseHistory)
+    .leftJoin(stores, eq(purchaseHistory.storeId, stores.id))
+    .where(and(
+      eq(purchaseHistory.userId, userId),
+      gte(purchaseHistory.purchasedAt, since),
+      sql`${purchaseHistory.price} IS NOT NULL`,
+      sql`${purchaseHistory.storeId} IS NOT NULL`
+    ))
+    .groupBy(purchaseHistory.storeId, stores.name)
+    .orderBy(desc(sql`SUM(${purchaseHistory.price} * ${purchaseHistory.quantity})`));
+}
+
+export async function getDailySpendingTrend(userId: number, cycleStartDay: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const since = getCycleStart(cycleStartDay);
+  return db.select({
+    day: sql<string>`DATE(${purchaseHistory.purchasedAt})`,
+    spent: sql<number>`COALESCE(SUM(${purchaseHistory.price} * ${purchaseHistory.quantity}), 0)`,
+  })
+    .from(purchaseHistory)
+    .where(and(
+      eq(purchaseHistory.userId, userId),
+      gte(purchaseHistory.purchasedAt, since),
+      sql`${purchaseHistory.price} IS NOT NULL`
+    ))
+    .groupBy(sql`DATE(${purchaseHistory.purchasedAt})`)
+    .orderBy(asc(sql`DATE(${purchaseHistory.purchasedAt})`));
+}
+
+// ============ SEASONAL DEAL HELPERS ============
+export async function getMonthlyAveragePrices(productId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    month: sql<number>`MONTH(${priceHistory.recordedAt})`,
+    avgPrice: sql<number>`AVG(${priceHistory.price})`,
+    minPrice: sql<number>`MIN(${priceHistory.price})`,
+    sampleCount: sql<number>`COUNT(*)`,
+  })
+    .from(priceHistory)
+    .where(eq(priceHistory.productId, productId))
+    .groupBy(sql`MONTH(${priceHistory.recordedAt})`)
+    .orderBy(asc(sql`MONTH(${priceHistory.recordedAt})`));
+}
+
+export async function getCurrentLowestPrice(productId: number): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select({
+    minPrice: sql<number>`MIN(${priceEntries.price})`,
+  })
+    .from(priceEntries)
+    .where(and(
+      eq(priceEntries.productId, productId),
+      eq(priceEntries.isOutlier, false),
+      gte(priceEntries.createdAt, sql`DATE_SUB(NOW(), INTERVAL 30 DAY)`)
+    ));
+  const val = result[0]?.minPrice;
+  return val !== undefined && val !== null ? Number(val) : null;
+}
+
+export async function getTrackedProductsForUser(userId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    productId: purchaseHistory.productId,
+    productName: products.name,
+    category: products.category,
+    purchaseCount: sql<number>`COUNT(*)`,
+  })
+    .from(purchaseHistory)
+    .innerJoin(products, eq(purchaseHistory.productId, products.id))
+    .where(eq(purchaseHistory.userId, userId))
+    .groupBy(purchaseHistory.productId, products.name, products.category)
+    .orderBy(desc(sql`COUNT(*)`))
+    .limit(limit);
+}
+
+export async function getPopularProductsForSeasonal(limit = 30) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    productId: products.id,
+    productName: products.name,
+    category: products.category,
+    priceCount: sql<number>`COUNT(${priceHistory.id})`,
+  })
+    .from(products)
+    .innerJoin(priceHistory, eq(priceHistory.productId, products.id))
+    .groupBy(products.id, products.name, products.category)
+    .having(sql`COUNT(${priceHistory.id}) >= 3`)
+    .orderBy(desc(sql`COUNT(${priceHistory.id})`))
+    .limit(limit);
+}
+
 
 // ============ PRICE ALERTS HELPERS ============
 export async function createPriceAlert(alert: InsertPriceAlert) {
