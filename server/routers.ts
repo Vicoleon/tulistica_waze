@@ -6,6 +6,7 @@ import {
   protectedProcedure,
   verifiedProcedure,
   adminProcedure,
+  superAdminProcedure,
   router,
 } from "./_core/trpc";
 import type { User } from "../drizzle/schema";
@@ -57,6 +58,7 @@ import { CAMPAIGN_SURFACES } from "../shared/campaigns";
 import { brandProcedure } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { encryptCredential, decryptCredential } from "./_core/vault";
+import { sendUserEmail } from "./services/userAuth";
 
 export const appRouter = router({
   system: systemRouter,
@@ -1668,6 +1670,119 @@ Only return valid JSON, no other text.`,
         const product = await db.getProductById(input.productId);
         if (!product) throw new Error("Product not found");
         return predictForProduct(product.id, product.name, product.category ?? null);
+      }),
+  }),
+
+  // ============ VENDOR APPLICATIONS ============
+  vendorApplications: router({
+    submit: verifiedProcedure
+      .input(z.object({
+        companyName: z.string().trim().min(2).max(255),
+        contactName: z.string().trim().max(255).optional(),
+        contactPhone: z.string().trim().max(32).optional(),
+        description: z.string().trim().max(2000).optional(),
+        desiredStoresNote: z.string().trim().max(1000).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const existing = await db.getPendingApplicationForUser(ctx.user.id);
+        if (existing) {
+          throw new TRPCError({ code: "CONFLICT", message: "Ya tenés una solicitud pendiente" });
+        }
+        const id = await db.createVendorApplication({
+          applicantUserId: ctx.user.id,
+          companyName: input.companyName,
+          contactName: input.contactName ?? null,
+          contactPhone: input.contactPhone ?? null,
+          description: input.description ?? null,
+          desiredStoresNote: input.desiredStoresNote ?? null,
+        });
+        notifyOwner({
+          title: "[Tulistica] Nueva solicitud de vendedor",
+          content: `${ctx.user.email ?? "?"} → ${input.companyName}`,
+        }).catch(() => {});
+        return { applicationId: id };
+      }),
+
+    myStatus: protectedProcedure.query(async ({ ctx }) => {
+      const app = await db.getLatestApplicationForUser(ctx.user.id);
+      return { application: app ?? null };
+    }),
+
+    listPending: superAdminProcedure.query(() => db.listPendingApplications()),
+
+    approve: superAdminProcedure
+      .input(z.object({
+        id: z.number().int().positive(),
+        reviewerNote: z.string().trim().max(1000).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const app = await db.getVendorApplicationById(input.id);
+        if (!app || app.status !== "pending") {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Solicitud no encontrada o no pendiente" });
+        }
+        const applicant = await db.getUserById(app.applicantUserId);
+        const brandId = await db.createBrand({
+          companyName: app.companyName,
+          email: applicant?.email ?? `vendor+${app.applicantUserId}@tulistica.local`,
+          passwordHash: "",
+          passwordSalt: "",
+          emailVerified: true,
+          contactName: app.contactName,
+          status: "active",
+          kind: "vendor",
+        });
+        if (!brandId) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "No se pudo crear la marca" });
+        }
+        await db.createBrandMember({
+          brandId,
+          userId: app.applicantUserId,
+          membershipRole: "owner",
+          acceptedAt: new Date(),
+        });
+        await db.promoteUserToVendorAdmin(app.applicantUserId);
+        await db.markApplicationDecided({
+          id: input.id,
+          status: "approved",
+          reviewerNote: input.reviewerNote,
+          reviewedByUserId: ctx.user.id,
+          resultingBrandId: brandId,
+        });
+        if (applicant?.email) {
+          sendUserEmail({
+            to: applicant.email,
+            subject: "Tu solicitud de vendedor fue aprobada",
+            body: `¡Felicitaciones! Tu marca "${app.companyName}" ya está activa en Tulistica.\n\nIngresá al portal: /brand/dashboard${input.reviewerNote ? `\n\nNota del equipo: ${input.reviewerNote}` : ""}`,
+          }).catch(() => {});
+        }
+        return { brandId };
+      }),
+
+    reject: superAdminProcedure
+      .input(z.object({
+        id: z.number().int().positive(),
+        reviewerNote: z.string().trim().max(1000).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const app = await db.getVendorApplicationById(input.id);
+        if (!app || app.status !== "pending") {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Solicitud no encontrada o no pendiente" });
+        }
+        await db.markApplicationDecided({
+          id: input.id,
+          status: "rejected",
+          reviewerNote: input.reviewerNote,
+          reviewedByUserId: ctx.user.id,
+        });
+        const applicant = await db.getUserById(app.applicantUserId);
+        if (applicant?.email) {
+          sendUserEmail({
+            to: applicant.email,
+            subject: "Tu solicitud de vendedor no fue aprobada",
+            body: `Lamentablemente tu solicitud para "${app.companyName}" no avanzó.${input.reviewerNote ? `\n\nMotivo: ${input.reviewerNote}` : ""}\n\nPodés volver a aplicar cuando quieras desde /vendor/apply.`,
+          }).catch(() => {});
+        }
+        return { ok: true };
       }),
   }),
 });
