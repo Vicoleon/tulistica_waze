@@ -1,5 +1,4 @@
 import {
-  BRAND_NOT_VERIFIED_ERR_MSG,
   BRAND_UNAUTHED_ERR_MSG,
   EMAIL_NOT_VERIFIED_ERR_MSG,
   NOT_ADMIN_ERR_MSG,
@@ -98,12 +97,15 @@ export const brandProcedure = t.procedure.use(requireBrand);
 
 export const brandVerifiedProcedure = t.procedure.use(
   t.middleware(async ({ ctx, next }) => {
+    if (!ctx.user) {
+      throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
+    }
+    if (!ctx.user.emailVerified) {
+      throw new TRPCError({ code: "FORBIDDEN", message: EMAIL_NOT_VERIFIED_ERR_MSG });
+    }
     if (!ctx.brand) {
       throw new TRPCError({ code: "UNAUTHORIZED", message: BRAND_UNAUTHED_ERR_MSG });
     }
-    if (!ctx.brand.emailVerified) {
-      throw new TRPCError({ code: "FORBIDDEN", message: BRAND_NOT_VERIFIED_ERR_MSG });
-    }
-    return next({ ctx: { ...ctx, brand: ctx.brand } });
+    return next({ ctx: { ...ctx, user: ctx.user, brand: ctx.brand } });
   }),
 );
