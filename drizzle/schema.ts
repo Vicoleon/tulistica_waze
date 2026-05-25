@@ -640,3 +640,27 @@ export type AppSetting = typeof appSettings.$inferSelect;
 
 // Brand portal tables (brands, brandTokens) are defined above —
 // see the c02ee38 implementation.
+
+// ============ VENDOR APPLICATIONS ============
+export const vendorApplications = mysqlTable("vendor_applications", {
+  id: int("id").autoincrement().primaryKey(),
+  applicantUserId: int("applicantUserId").notNull(),
+  companyName: varchar("companyName", { length: 255 }).notNull(),
+  contactName: varchar("contactName", { length: 255 }),
+  contactPhone: varchar("contactPhone", { length: 32 }),
+  description: text("description"),
+  desiredStoresNote: text("desiredStoresNote"),
+  status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  reviewerNote: text("reviewerNote"),
+  reviewedByUserId: int("reviewedByUserId"),
+  reviewedAt: timestamp("reviewedAt"),
+  resultingBrandId: int("resultingBrandId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+  index("idx_vendor_apps_applicant").on(table.applicantUserId),
+  index("idx_vendor_apps_status").on(table.status),
+]);
+
+export type VendorApplication = typeof vendorApplications.$inferSelect;
+export type InsertVendorApplication = typeof vendorApplications.$inferInsert;
