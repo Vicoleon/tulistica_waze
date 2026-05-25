@@ -3,7 +3,7 @@ import type { Brand, User } from "../../drizzle/schema";
 import * as db from "../db";
 import { sdk } from "./sdk";
 import { ENV } from "./env";
-import { getBrandSessionFromRequest } from "../services/brandAuth";
+import { getActiveBrandIdFromRequest } from "./cookies";
 
 export type TrpcContext = {
   req: CreateExpressContextOptions["req"];
@@ -80,15 +80,21 @@ export async function createContext(
     user = await loadDevMockUser();
   }
 
-  // Brand session lives in a separate cookie. May coexist with a user session
-  // on the same browser — the two never conflict.
-  try {
-    const claims = await getBrandSessionFromRequest(opts.req);
-    if (claims) {
-      brand = (await db.getBrandById(claims.brandId)) ?? null;
+  // Brand access is derived from brand_members. The active brand is picked
+  // via the BRAND_CONTEXT_COOKIE; if missing or invalid, fall back to the
+  // first membership.
+  if (user) {
+    try {
+      const memberships = await db.getAllMembershipsForUser(user.id);
+      if (memberships.length > 0) {
+        const activeId = getActiveBrandIdFromRequest(opts.req);
+        const active =
+          memberships.find(m => m.brand.id === activeId) ?? memberships[0];
+        brand = active.brand;
+      }
+    } catch (error) {
+      console.warn("[BrandAuth] Failed to resolve brand membership:", error);
     }
-  } catch (error) {
-    console.warn("[BrandAuth] Failed to resolve brand session:", error);
   }
 
   return {

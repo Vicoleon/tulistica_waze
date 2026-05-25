@@ -18,6 +18,13 @@ export default function SignIn() {
   const [name, setName] = useState("");
   const [, navigate] = useLocation();
 
+  const returnTo = (() => {
+    const raw = new URLSearchParams(window.location.search).get("returnTo") ?? "";
+    // Only accept same-origin paths starting with a single "/".
+    if (raw.startsWith("/") && !raw.startsWith("//")) return raw;
+    return "/dashboard";
+  })();
+
   const oauthConfigured =
     Boolean(import.meta.env.VITE_OAUTH_PORTAL_URL) &&
     Boolean(import.meta.env.VITE_APP_ID);
@@ -41,7 +48,7 @@ export default function SignIn() {
         const data = await res.json().catch(() => ({ error: "Error desconocido" }));
         throw new Error(data.error ?? `Error ${res.status}`);
       }
-      window.location.href = "/dashboard";
+      window.location.href = returnTo;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error al iniciar sesión");
       setSubmitting(false);

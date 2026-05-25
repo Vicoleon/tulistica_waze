@@ -6,11 +6,17 @@ export function useBrandAuth() {
     staleTime: 60_000,
   });
 
+  // After the brand-cookie deprecation, brandAuth.me returns
+  // { brand, memberships } instead of just brand.
+  const brand = data?.brand ?? null;
+  const memberships = data?.memberships ?? [];
+
   return {
-    brand: data ?? null,
+    brand,
+    memberships,
     loading: isLoading,
-    isAuthenticated: !!data,
-    isVerified: !!data?.emailVerified,
+    isAuthenticated: !!brand,
+    isVerified: !!brand?.emailVerified,
     refetch,
   };
 }
