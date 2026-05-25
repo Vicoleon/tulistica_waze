@@ -5,6 +5,9 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import * as db from "./db";
+import { brandAuthRouter } from "./brandRouters";
+import { brandCampaignsRouter } from "./brandCampaignsRouter";
+import { brandBillingRouter } from "./brandBillingRouter";
 import {
   SmartCartEngine,
   validateGeofence,
@@ -26,6 +29,11 @@ import { notifyOwner } from "./_core/notification";
 
 export const appRouter = router({
   system: systemRouter,
+
+  // ============ BRAND PORTAL ============
+  brandAuth: brandAuthRouter,
+  brandCampaigns: brandCampaignsRouter,
+  brandBilling: brandBillingRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
