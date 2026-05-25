@@ -43,3 +43,24 @@ export const adminProcedure = t.procedure.use(
     });
   }),
 );
+
+// Fase 3 — brand portal. Requires a valid brand session cookie. The brand
+// auth lives in a separate cookie (BRAND_COOKIE), so a logged-in user can
+// also be logged in as a brand without collision.
+export const brandProcedure = t.procedure.use(
+  t.middleware(async opts => {
+    const { ctx, next } = opts;
+    if (!ctx.brand) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "Brand session required",
+      });
+    }
+    return next({
+      ctx: {
+        ...ctx,
+        brand: ctx.brand,
+      },
+    });
+  }),
+);

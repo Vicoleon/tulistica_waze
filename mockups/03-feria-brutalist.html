@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mockup 03 — Feria Brutalist · Grocery Waze</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Archivo+Black&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #fff8e7;
+    --bg-grid: #faecc1;
+    --ink: #0d0d0d;
+    --paper: #ffffff;
+
+    --cobalt: #1e3eb0;
+    --tomato: #ff4d2e;
+    --sun: #ffd400;
+    --jungle: #0e7d3f;
+    --rose: #ff5f9e;
+    --sky: #6acbff;
+
+    --border: 3px solid var(--ink);
+    --border-thick: 5px solid var(--ink);
+    --shadow-hard: 6px 6px 0 var(--ink);
+    --shadow-hard-lg: 10px 10px 0 var(--ink);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    background: var(--bg);
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(13,13,13,0.06) 1px, transparent 0);
+    background-size: 22px 22px;
+    color: var(--ink);
+    font-weight: 500;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .display {
+    font-family: 'Archivo Black', 'Space Grotesk', sans-serif;
+    letter-spacing: -0.02em;
+    line-height: 0.92;
+    text-transform: uppercase;
+  }
+
+  /* Nav */
+  .nav-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 0;
+    border-bottom: var(--border);
+    position: sticky; top: 0; background: var(--bg); z-index: 50;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'Archivo Black'; font-size: 22px;
+    text-transform: uppercase; letter-spacing: -0.01em;
+  }
+  .brand .mark {
+    width: 40px; height: 40px;
+    background: var(--sun);
+    border: var(--border);
+    box-shadow: 4px 4px 0 var(--ink);
+    display: grid; place-items: center;
+    transform: rotate(-3deg);
+    transition: transform 200ms;
+  }
+  .brand:hover .mark { transform: rotate(3deg); }
+  .nav-links {
+    display: flex; gap: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .nav-links a {
+    padding: 8px 12px;
+    border: 2px solid transparent;
+    transition: all 150ms;
+  }
+  .nav-links a:hover {
+    background: var(--ink); color: var(--sun);
+  }
+  .nav-links a.is-active { background: var(--ink); color: var(--sun); }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 14px 22px;
+    background: var(--ink); color: var(--sun);
+    border: var(--border);
+    box-shadow: var(--shadow-hard);
+    font-family: 'Archivo Black'; text-transform: uppercase;
+    font-size: 14px; letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: transform 100ms, box-shadow 100ms;
+  }
+  .btn:hover { transform: translate(-2px, -2px); box-shadow: 8px 8px 0 var(--ink); }
+  .btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+  .btn-tomato { background: var(--tomato); color: var(--paper); }
+  .btn-cobalt { background: var(--cobalt); color: var(--paper); }
+  .btn-sun    { background: var(--sun); color: var(--ink); }
+  .btn-jungle { background: var(--jungle); color: var(--paper); }
+  .btn-paper  { background: var(--paper); color: var(--ink); }
+  .btn-lg { padding: 20px 28px; font-size: 17px; }
+
+  /* Hero */
+  .hero {
+    padding: 56px 0 40px;
+    border-bottom: var(--border);
+    position: relative;
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 28px;
+    align-items: end;
+  }
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 6px 14px;
+    background: var(--sun);
+    border: var(--border);
+    box-shadow: 4px 4px 0 var(--ink);
+    font-family: 'JetBrains Mono'; font-size: 13px; font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 22px;
+  }
+  .hero-tag .dot { width: 8px; height: 8px; background: var(--tomato); border: 2px solid var(--ink); }
+  .hero h1 {
+    margin: 0 0 22px;
+    font-family: 'Archivo Black';
+    font-size: clamp(54px, 9vw, 140px);
+    line-height: 0.85;
+    text-transform: uppercase;
+    letter-spacing: -0.03em;
+  }
+  .hero h1 .hl { background: var(--tomato); color: var(--paper); padding: 0 8px; display: inline-block; transform: rotate(-1deg); }
+  .hero h1 .hl-blue { background: var(--cobalt); color: var(--paper); padding: 0 8px; }
+  .hero h1 .strike { position: relative; display: inline-block; }
+  .hero h1 .strike::after {
+    content: ''; position: absolute; left: -4px; right: -4px; top: 50%;
+    height: 12px; background: var(--sun); z-index: -1; transform: rotate(-1.5deg);
+  }
+  .hero .sub {
+    font-size: 22px; max-width: 50ch;
+    margin: 0 0 30px;
+    font-weight: 500;
+    line-height: 1.35;
+  }
+  .hero .actions { display: flex; gap: 14px; flex-wrap: wrap; }
+
+  /* Pricing card (sticker) */
+  .sticker {
+    background: var(--paper);
+    border: var(--border-thick);
+    box-shadow: var(--shadow-hard-lg);
+    padding: 24px;
+    transform: rotate(2deg);
+    position: relative;
+  }
+  .sticker::before {
+    content: 'PRECIO REAL';
+    position: absolute; top: -16px; right: 16px;
+    background: var(--tomato); color: var(--paper);
+    font-family: 'Archivo Black'; font-size: 14px;
+    padding: 4px 12px;
+    border: 3px solid var(--ink);
+    transform: rotate(4deg);
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  .sticker .product {
+    font-family: 'Archivo Black'; font-size: 28px;
+    text-transform: uppercase; margin: 0 0 4px;
+    line-height: 0.95;
+  }
+  .sticker .where { font-family: 'JetBrains Mono'; font-size: 12px; text-transform: uppercase; color: #555; margin-bottom: 18px; }
+  .price-list { display: grid; gap: 8px; }
+  .price {
+    display: grid; grid-template-columns: 16px 1fr auto;
+    align-items: center; gap: 12px;
+    padding: 10px 12px;
+    border: var(--border);
+    background: var(--bg);
+    font-family: 'JetBrains Mono'; font-size: 14px; font-weight: 700;
+  }
+  .price .sw { width: 14px; height: 14px; background: var(--ink); }
+  .price .amount { font-family: 'Archivo Black'; font-size: 18px; }
+  .price.best {
+    background: var(--jungle); color: var(--paper);
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+  .price.best .sw { background: var(--sun); }
+  .price.worst { opacity: 0.65; text-decoration: line-through; }
+  .save-stamp {
+    margin-top: 18px;
+    background: var(--sun);
+    border: var(--border);
+    padding: 12px 14px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: 'Archivo Black'; text-transform: uppercase;
+  }
+  .save-stamp big { font-size: 28px; }
+
+  /* Stats bar */
+  .stats {
+    border-bottom: var(--border);
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    border-top: var(--border);
+  }
+  .stats-grid > div {
+    padding: 24px;
+    border-right: var(--border);
+    text-align: left;
+  }
+  .stats-grid > div:last-child { border-right: 0; }
+  .stats-grid .n { font-family: 'Archivo Black'; font-size: clamp(34px, 4vw, 56px); line-height: 1; }
+  .stats-grid .l { font-family: 'JetBrains Mono'; font-size: 12px; text-transform: uppercase; margin-top: 6px; color: var(--sun); letter-spacing: 0.08em; }
+  .stats-grid div:nth-child(1) .n { color: var(--sun); }
+  .stats-grid div:nth-child(2) .n { color: var(--tomato); }
+  .stats-grid div:nth-child(3) .n { color: var(--sky); }
+  .stats-grid div:nth-child(4) .n { color: var(--rose); }
+
+  /* Section */
+  .section {
+    padding: 72px 0;
+    border-bottom: var(--border);
+  }
+  .section h2 {
+    font-family: 'Archivo Black'; text-transform: uppercase;
+    font-size: clamp(40px, 5vw, 72px);
+    line-height: 0.95; letter-spacing: -0.02em;
+    margin: 0 0 6px;
+  }
+  .section .lede {
+    font-family: 'JetBrains Mono'; font-size: 13px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    margin-bottom: 36px;
+  }
+  .section .lede b { background: var(--sun); padding: 2px 6px; border: 2px solid var(--ink); }
+
+  /* Feature cards */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .fcard {
+    background: var(--paper);
+    border: var(--border);
+    box-shadow: var(--shadow-hard);
+    padding: 24px;
+    transition: transform 150ms, box-shadow 150ms;
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    min-height: 280px;
+  }
+  .fcard:hover {
+    transform: translate(-3px, -3px);
+    box-shadow: 9px 9px 0 var(--ink);
+  }
+  .fcard .ico {
+    width: 60px; height: 60px;
+    border: var(--border);
+    display: grid; place-items: center;
+    margin-bottom: 18px;
+  }
+  .fcard.c1 .ico { background: var(--tomato); color: var(--paper); }
+  .fcard.c2 .ico { background: var(--cobalt); color: var(--paper); }
+  .fcard.c3 .ico { background: var(--sun); }
+  .fcard.c4 .ico { background: var(--jungle); color: var(--paper); }
+  .fcard.c5 .ico { background: var(--rose); color: var(--paper); }
+  .fcard.c6 .ico { background: var(--sky); }
+  .fcard .num {
+    font-family: 'JetBrains Mono'; font-size: 12px; text-transform: uppercase;
+    font-weight: 700;
+  }
+  .fcard h3 {
+    font-family: 'Archivo Black'; text-transform: uppercase;
+    font-size: 26px; line-height: 0.98; margin: 8px 0 12px;
+    letter-spacing: -0.01em;
+  }
+  .fcard p { font-size: 15px; margin: 0 0 18px; }
+  .fcard .open {
+    margin-top: auto;
+    font-family: 'JetBrains Mono'; font-size: 12px; font-weight: 700;
+    text-transform: uppercase;
+    border-top: var(--border); padding-top: 12px;
+    display: flex; justify-content: space-between;
+  }
+  .fcard .open span { transition: transform 200ms; display: inline-block; }
+  .fcard:hover .open span { transform: translateX(6px); }
+
+  /* Big search card */
+  .search-card {
+    background: var(--cobalt);
+    color: var(--paper);
+    border: var(--border-thick);
+    box-shadow: var(--shadow-hard-lg);
+    padding: 40px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 30px;
+    align-items: end;
+  }
+  .search-card h3 {
+    font-family: 'Archivo Black';
+    font-size: clamp(38px, 4vw, 56px);
+    text-transform: uppercase;
+    line-height: 0.92;
+    margin: 0 0 12px;
+    letter-spacing: -0.02em;
+  }
+  .search-card .input-row {
+    display: flex; gap: 0;
+    border: 4px solid var(--paper);
+    background: var(--paper);
+  }
+  .search-card input {
+    flex: 1;
+    border: 0; background: var(--paper); color: var(--ink);
+    padding: 18px 18px;
+    font-family: 'JetBrains Mono'; font-size: 17px;
+    outline: none;
+  }
+  .search-card .input-row .go {
+    background: var(--sun); color: var(--ink);
+    border: 0; border-left: 4px solid var(--paper);
+    padding: 18px 26px;
+    font-family: 'Archivo Black'; text-transform: uppercase;
+    cursor: pointer;
+  }
+  .search-card .input-row .go:hover { background: var(--tomato); color: var(--paper); }
+  .search-card .chips { margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .chip {
+    border: 2px solid var(--paper);
+    padding: 6px 12px;
+    font-family: 'JetBrains Mono'; font-size: 12px; font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .chip:hover { background: var(--paper); color: var(--cobalt); }
+  .search-card .price-now {
+    background: var(--paper); color: var(--ink);
+    border: 4px solid var(--ink);
+    padding: 20px;
+    min-width: 240px;
+  }
+  .search-card .price-now .lbl { font-family: 'JetBrains Mono'; font-size: 12px; text-transform: uppercase; }
+  .search-card .price-now h4 { font-family: 'Archivo Black'; text-transform: uppercase; font-size: 22px; margin: 6px 0 14px; line-height: 0.98; }
+  .price-mini { display: grid; gap: 6px; font-family: 'JetBrains Mono'; font-size: 13px; }
+  .price-mini > div { display: flex; justify-content: space-between; padding: 6px 8px; border: 2px solid var(--ink); }
+  .price-mini > div.best { background: var(--jungle); color: var(--paper); font-weight: 700; }
+
+  /* Map / Steps */
+  .steps {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    border: var(--border);
+    background: var(--paper);
+  }
+  .step {
+    padding: 32px;
+    border-right: var(--border);
+  }
+  .step:last-child { border-right: 0; }
+  .step:nth-child(1) { background: var(--rose); color: var(--paper); }
+  .step:nth-child(2) { background: var(--bg-grid); }
+  .step:nth-child(3) { background: var(--jungle); color: var(--paper); }
+  .step .n {
+    font-family: 'Archivo Black'; font-size: 86px;
+    line-height: 0.85;
+    margin-bottom: 16px;
+  }
+  .step h4 {
+    font-family: 'Archivo Black'; text-transform: uppercase;
+    font-size: 28px; line-height: 0.95; margin: 0 0 10px;
+    letter-spacing: -0.01em;
+  }
+  .step p { margin: 0; font-size: 15px; }
+
+  /* Community / leaderboard */
+  .community {
+    display: grid; grid-template-columns: 1.3fr 1fr;
+    gap: 24px;
+  }
+  .community .blob {
+    background: var(--tomato);
+    color: var(--paper);
+    border: var(--border-thick);
+    box-shadow: var(--shadow-hard-lg);
+    padding: 36px;
+  }
+  .community .blob h3 {
+    font-family: 'Archivo Black'; text-transform: uppercase;
+    font-size: clamp(36px, 4vw, 56px); line-height: 0.92; letter-spacing: -0.02em;
+    margin: 0 0 16px;
+  }
+  .community .blob p { font-size: 17px; margin: 0 0 18px; max-width: 50ch; }
+  .community .blob ul { list-style: none; padding: 0; margin: 0 0 24px; display: grid; gap: 6px; font-family: 'JetBrains Mono'; font-size: 14px; font-weight: 700; text-transform: uppercase; }
+  .community .blob ul li::before { content: '> '; color: var(--sun); }
+  .leaderboard {
+    background: var(--paper);
+    border: var(--border-thick);
+    box-shadow: var(--shadow-hard-lg);
+    padding: 28px;
+  }
+  .leaderboard h4 {
+    font-family: 'Archivo Black'; text-transform: uppercase;
+    font-size: 22px; margin: 0 0 4px;
+  }
+  .leaderboard .sub { font-family: 'JetBrains Mono'; font-size: 12px; text-transform: uppercase; margin-bottom: 18px; }
+  .lb-row {
+    display: grid; grid-template-columns: 38px 1fr auto;
+    align-items: center; gap: 12px;
+    padding: 12px;
+    border: var(--border);
+    margin-bottom: 8px;
+    background: var(--bg);
+  }
+  .lb-row .rank {
+    width: 32px; height: 32px;
+    display: grid; place-items: center;
+    background: var(--ink); color: var(--sun);
+    font-family: 'Archivo Black'; font-size: 16px;
+  }
+  .lb-row.gold .rank { background: var(--sun); color: var(--ink); }
+  .lb-row.silver .rank { background: var(--cobalt); color: var(--paper); }
+  .lb-row.bronze .rank { background: var(--tomato); color: var(--paper); }
+  .lb-row .name { font-family: 'JetBrains Mono'; font-weight: 700; text-transform: uppercase; font-size: 14px; }
+  .lb-row .name span { display: block; font-weight: 500; color: #555; font-size: 11px; }
+  .lb-row .pts { font-family: 'Archivo Black'; font-size: 18px; }
+
+  /* Closing */
+  .closing {
+    background: var(--sun);
+    border-bottom: var(--border);
+    padding: 80px 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .closing::before {
+    content: '₡ ₡ ₡ ₡ ₡ ₡ ₡ ₡ ₡ ₡ ₡ ₡ ₡ ₡ ₡ ₡ ₡ ₡ ₡ ₡';
+    position: absolute; bottom: -10px; left: -10px; right: -10px;
+    font-family: 'Archivo Black'; font-size: 160px;
+    color: rgba(13,13,13,0.07); white-space: nowrap;
+    line-height: 0.8;
+    pointer-events: none;
+  }
+  .closing h2 {
+    position: relative;
+    font-family: 'Archivo Black'; text-transform: uppercase;
+    font-size: clamp(56px, 9vw, 132px);
+    line-height: 0.86;
+    margin: 0 0 22px;
+    letter-spacing: -0.025em;
+    max-width: 14ch;
+  }
+  .closing h2 .out {
+    -webkit-text-stroke: 3px var(--ink);
+    color: transparent;
+  }
+  .closing p { position: relative; font-size: 19px; max-width: 56ch; margin: 0 0 28px; font-weight: 500; }
+  .closing .actions { position: relative; display: flex; gap: 12px; flex-wrap: wrap; }
+
+  footer {
+    padding: 28px 0;
+    font-family: 'JetBrains Mono'; font-size: 13px;
+    text-transform: uppercase;
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .hero-grid { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .stats-grid > div:nth-child(2) { border-right: 0; }
+    .stats-grid > div:nth-child(1), .stats-grid > div:nth-child(2) { border-bottom: var(--border); }
+    .features-grid { grid-template-columns: 1fr; }
+    .search-card { grid-template-columns: 1fr; }
+    .steps { grid-template-columns: 1fr; }
+    .step { border-right: 0; border-bottom: var(--border); }
+    .step:last-child { border-bottom: 0; }
+    .community { grid-template-columns: 1fr; }
+    .nav-links { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav-bar">
+      <a class="brand" href="#">
+        <span class="mark">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 6h18l-2 13H5L3 6z"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        </span>
+        Grocery / Waze
+      </a>
+      <div class="nav-links">
+        <a class="is-active" href="#">PORTADA</a>
+        <a href="#">TIENDAS</a>
+        <a href="#">PRECIOS</a>
+        <a href="#">LISTAS</a>
+        <a href="#">RECETAS</a>
+        <a href="#">RANKING</a>
+      </div>
+      <a class="btn btn-tomato" href="#">EMPEZÁ GRATIS →</a>
+    </nav>
+  </div>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="hero-tag"><span class="dot"></span>1.240 PRECIOS HOY · 187 TIENDAS · 14 CIUDADES</span>
+        <h1>
+          NO PAGUÉS<br/>
+          DE MÁS<br/>
+          <span class="hl">NUNCA MÁS.</span>
+        </h1>
+        <p class="sub">La comunidad reporta los precios reales. Nosotros los cruzamos. Vos comprás barato sin volverte loco recorriendo tiendas.</p>
+        <div class="actions">
+          <a class="btn btn-tomato btn-lg" href="#">CREAR MI LISTA →</a>
+          <a class="btn btn-paper btn-lg" href="#">VER EL MAPA</a>
+        </div>
+      </div>
+
+      <aside class="sticker">
+        <div class="product">Arroz 1KG</div>
+        <div class="where">Reportado 24 veces · hoy</div>
+        <div class="price-list">
+          <div class="price worst">
+            <span class="sw"></span>
+            <span>AM/PM Centro</span>
+            <span class="amount">₡1.890</span>
+          </div>
+          <div class="price">
+            <span class="sw"></span>
+            <span>Más x Menos Escazú</span>
+            <span class="amount">₡1.520</span>
+          </div>
+          <div class="price">
+            <span class="sw"></span>
+            <span>Walmart Heredia</span>
+            <span class="amount">₡1.450</span>
+          </div>
+          <div class="price best">
+            <span class="sw"></span>
+            <span>PriceSmart Tres Ríos · MEJOR</span>
+            <span class="amount">₡1.290</span>
+          </div>
+        </div>
+        <div class="save-stamp">
+          <span>AHORRO</span>
+          <big>₡ 600</big>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="stats">
+    <div class="wrap">
+      <div class="stats-grid">
+        <div><div class="n">12.480</div><div class="l">COMPRADORES ACTIVOS</div></div>
+        <div><div class="n">₡2,4M</div><div class="l">AHORRADO ESTA SEMANA</div></div>
+        <div><div class="n">187</div><div class="l">TIENDAS VIVAS</div></div>
+        <div><div class="n">1.240</div><div class="l">REPORTES HOY</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Big search card -->
+  <section class="section" style="padding-top: 56px;">
+    <div class="wrap">
+      <div class="search-card">
+        <div>
+          <h3>BUSCÁ. COMPARÁ. COMPRÁ DONDE CONVIENE.</h3>
+          <div class="input-row">
+            <input type="text" placeholder="ej. aceite capullo 1L, arroz tío pelón..." value="aceite capullo 1L" />
+            <button class="go">COMPARAR →</button>
+          </div>
+          <div class="chips">
+            <span class="chip">ARROZ</span>
+            <span class="chip">ACEITE</span>
+            <span class="chip">LECHE</span>
+            <span class="chip">CAFÉ</span>
+            <span class="chip">FRIJOL</span>
+            <span class="chip">PAN</span>
+            <span class="chip">HUEVOS</span>
+          </div>
+        </div>
+        <div class="price-now">
+          <div class="lbl">MEJOR PRECIO HOY</div>
+          <h4>ACEITE CAPULLO 1L</h4>
+          <div class="price-mini">
+            <div class="best"><span>PRICESMART</span><span>₡2.450</span></div>
+            <div><span>WALMART</span><span>₡2.690</span></div>
+            <div><span>MÁS X MENOS</span><span>₡2.890</span></div>
+            <div><span>AM/PM</span><span>₡3.290</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="section">
+    <div class="wrap">
+      <p class="lede">06 HERRAMIENTAS · 01 OBJETIVO: <b>AHORRAR</b></p>
+      <h2>Las armas del comprador<br/>inteligente.</h2>
+      <div style="height: 36px;"></div>
+      <div class="features-grid">
+        <article class="fcard c1">
+          <div class="ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4"/><path d="M3 17l9 4 9-4"/></svg></div>
+          <span class="num">01 / SMART CART</span>
+          <h3>Decide si vale partir el viaje.</h3>
+          <p>Le pone número al "vale la pena ir hasta allá": gasolina, tiempo, total final.</p>
+          <div class="open"><span>USAR AHORA</span><span>→</span></div>
+        </article>
+
+        <article class="fcard c2">
+          <div class="ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+          <span class="num">02 / MAPA</span>
+          <h3>Mapa con precios, no con logos.</h3>
+          <p>Filtros por radio, por categoría, por descuento. Sin propaganda.</p>
+          <div class="open"><span>ABRIR MAPA</span><span>→</span></div>
+        </article>
+
+        <article class="fcard c3">
+          <div class="ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="4" width="2" height="16"/><rect x="7" y="4" width="1" height="16"/><rect x="10" y="4" width="3" height="16"/><rect x="15" y="4" width="1" height="16"/><rect x="18" y="4" width="3" height="16"/></svg></div>
+          <span class="num">03 / ESCÁNER</span>
+          <h3>Escaneá y sumá puntos.</h3>
+          <p>Reportá un precio, validá el de otros, subí en el ranking.</p>
+          <div class="open"><span>ESCANEAR</span><span>→</span></div>
+        </article>
+
+        <article class="fcard c4">
+          <div class="ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="9" r="3"/><path d="M3 19v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg></div>
+          <span class="num">04 / LISTAS</span>
+          <h3>Listas en familia, en vivo.</h3>
+          <p>Tu mamá tacha el aceite desde el sofá, vos lo ves en el pasillo.</p>
+          <div class="open"><span>CREAR LISTA</span><span>→</span></div>
+        </article>
+
+        <article class="fcard c5">
+          <div class="ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 8a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v9H5z"/><path d="M9 17v3"/><path d="M15 17v3"/></svg></div>
+          <span class="num">05 / RECETAS</span>
+          <h3>Pegá un link, sale tu lista.</h3>
+          <p>Cualquier receta del internet → ingredientes con cantidades, listo.</p>
+          <div class="open"><span>PROBAR</span><span>→</span></div>
+        </article>
+
+        <article class="fcard c6">
+          <div class="ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 7h18v13H3z"/><path d="M8 7V4h8v3"/></svg></div>
+          <span class="num">06 / DESPENSA</span>
+          <h3>Sabe que se te va a acabar.</h3>
+          <p>Aprende tus hábitos y te avisa antes de quedarte sin café.</p>
+          <div class="open"><span>VER DESPENSA</span><span>→</span></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Steps -->
+  <section class="section">
+    <div class="wrap">
+      <p class="lede">TRES PASOS · <b>CERO COMPLICACIONES</b></p>
+      <h2>Así funciona.</h2>
+      <div style="height: 36px;"></div>
+      <div class="steps">
+        <div class="step">
+          <div class="n">01</div>
+          <h4>ESCRIBÍ TU LISTA.</h4>
+          <p>O pegá una receta del WhatsApp de tu mamá. La convertimos en algo comprable.</p>
+        </div>
+        <div class="step">
+          <div class="n">02</div>
+          <h4>COMPARAMOS POR VOS.</h4>
+          <p>187 tiendas. Algoritmo Smart Cart. Te decimos dónde y cómo conviene comprar.</p>
+        </div>
+        <div class="step">
+          <div class="n">03</div>
+          <h4>COMPRÁ. AHORRÁ. REPORTÁ.</h4>
+          <p>Escaneá un precio nuevo y ganás puntos para el ranking semanal.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Community -->
+  <section class="section">
+    <div class="wrap">
+      <p class="lede">LA COMUNIDAD HACE EL TRABAJO · <b>VOS GANÁS</b></p>
+      <h2>Reportar es ganar.</h2>
+      <div style="height: 36px;"></div>
+      <div class="community">
+        <div class="blob">
+          <h3>Cada precio reportado vale algo.</h3>
+          <p>No vendemos datos. No tomamos comisión por tienda. La canasta más barata es la que la comunidad encuentra — y a la comunidad la premiamos.</p>
+          <ul>
+            <li>10 puntos por precio confirmado</li>
+            <li>25 puntos por producto nuevo escaneado</li>
+            <li>Badges por antigüedad y precisión</li>
+            <li>Ranking semanal · Top 10 ganan créditos</li>
+          </ul>
+          <a class="btn btn-sun btn-lg" href="#">SUMARME AL RANKING →</a>
+        </div>
+        <aside class="leaderboard">
+          <h4>RANKING · SEMANA 142</h4>
+          <div class="sub">TOP REPORTEROS</div>
+          <div class="lb-row gold">
+            <div class="rank">1</div>
+            <div class="name">SARAH M.<span>TRES RÍOS · 87 REPORTES</span></div>
+            <div class="pts">12.450</div>
+          </div>
+          <div class="lb-row silver">
+            <div class="rank">2</div>
+            <div class="name">JUAN D.<span>HEREDIA · 71 REPORTES</span></div>
+            <div class="pts">11.200</div>
+          </div>
+          <div class="lb-row bronze">
+            <div class="rank">3</div>
+            <div class="name">EMILIA R.<span>ESCAZÚ · 68 REPORTES</span></div>
+            <div class="pts">10.890</div>
+          </div>
+          <div class="lb-row">
+            <div class="rank">4</div>
+            <div class="name">CARLOS V.<span>CARTAGO · 54 REPORTES</span></div>
+            <div class="pts">9.410</div>
+          </div>
+          <div class="lb-row">
+            <div class="rank">5</div>
+            <div class="name">LUCÍA G.<span>ALAJUELA · 49 REPORTES</span></div>
+            <div class="pts">8.860</div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- Closing -->
+  <section class="closing">
+    <div class="wrap">
+      <h2>AHORRÁ <span class="out">17%</span><br/>EN CADA<br/>COMPRA.</h2>
+      <p>Sin coupons, sin apps confusas, sin renunciar a lo que te gusta. Sólo una lista, un mapa, una decisión clara.</p>
+      <div class="actions">
+        <a class="btn btn-tomato btn-lg" href="#">EMPEZÁ AHORA — GRATIS →</a>
+        <a class="btn btn-cobalt btn-lg" href="#">VER UN DEMO DE 60S</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="wrap">
+    <span>© GROCERY WAZE · 2026 · SAN JOSÉ CR</span>
+    <span>PRIVACIDAD · CÓMO VERIFICAMOS · PARA TIENDAS</span>
+  </footer>
+</body>
+</html>

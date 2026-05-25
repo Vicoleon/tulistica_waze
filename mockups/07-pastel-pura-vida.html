@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mockup 07 — Pastel Pura Vida · Grocery Waze</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #fff7ed;
+    --bg-2: #fdedd6;
+    --surface: #ffffff;
+    --ink: #3a2a1b;
+    --ink-2: #6b5440;
+    --ink-3: #a3917e;
+    --line: #f2e3cd;
+
+    --peach: #f5a17b;
+    --peach-deep: #d97757;
+    --peach-soft: #fde2cc;
+    --sage: #a9c79b;
+    --sage-deep: #6a9c5c;
+    --sage-soft: #e4f0dc;
+    --sky: #b9d6e2;
+    --sky-soft: #e6f1f6;
+    --butter: #f6d49a;
+    --butter-soft: #fbe7c2;
+    --rose: #f4b4be;
+    --rose-soft: #fbe1e6;
+
+    --r-blob: 36px;
+    --r-lg: 24px;
+    --r-md: 16px;
+    --shadow: 0 1px 0 rgba(58,42,27,0.04), 0 18px 30px -22px rgba(58,42,27,0.18);
+    --shadow-lift: 0 1px 0 rgba(58,42,27,0.05), 0 28px 50px -28px rgba(58,42,27,0.28);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Nunito', system-ui, sans-serif;
+    background: var(--bg);
+    background-image:
+      radial-gradient(60% 40% at 12% 8%, var(--rose-soft), transparent 60%),
+      radial-gradient(50% 40% at 90% 10%, var(--sky-soft), transparent 60%),
+      radial-gradient(60% 50% at 80% 90%, var(--sage-soft), transparent 60%),
+      radial-gradient(50% 40% at 10% 92%, var(--butter-soft), transparent 60%);
+    color: var(--ink);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 28px; }
+  .serif { font-family: 'Fraunces', Georgia, serif; }
+
+  /* Nav */
+  nav.top {
+    position: sticky; top: 14px; z-index: 50;
+    margin: 14px auto 0;
+    max-width: 1180px;
+    padding: 10px 14px 10px 18px;
+    background: var(--surface);
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'Fraunces', serif;
+    font-weight: 700; font-size: 18px;
+    letter-spacing: -0.005em;
+  }
+  .brand .mark {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: var(--peach);
+    color: white;
+    display: grid; place-items: center;
+    box-shadow: 0 4px 10px -2px rgba(217,119,87,0.5);
+  }
+  .brand .mark svg { width: 16px; height: 16px; }
+  .nav-links { display: flex; gap: 4px; }
+  .nav-links a {
+    padding: 8px 14px;
+    font-size: 14px; font-weight: 600;
+    color: var(--ink-2);
+    border-radius: 999px;
+    transition: background 180ms, color 180ms;
+  }
+  .nav-links a:hover { background: var(--peach-soft); color: var(--peach-deep); }
+  .nav-links a.active { background: var(--ink); color: var(--bg); }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 22px;
+    border-radius: 999px;
+    font-weight: 700; font-size: 14px;
+    border: 0;
+    background: var(--ink);
+    color: var(--bg);
+    cursor: pointer;
+    transition: all 200ms ease;
+  }
+  .btn:hover { background: var(--peach-deep); transform: translateY(-1px); box-shadow: 0 10px 22px -10px rgba(217,119,87,0.6); }
+  .btn-peach { background: var(--peach-deep); color: white; }
+  .btn-peach:hover { background: var(--ink); }
+  .btn-soft { background: var(--surface); color: var(--ink); border: 1.5px solid var(--line); }
+  .btn-soft:hover { background: var(--peach-soft); border-color: var(--peach); transform: translateY(-1px); }
+  .btn-lg { padding: 16px 28px; font-size: 15px; }
+
+  /* Hero */
+  .hero {
+    padding: 56px 0 60px;
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 56px;
+    align-items: center;
+    position: relative;
+  }
+  .hero .eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 8px 16px;
+    background: var(--rose-soft);
+    border-radius: 999px;
+    color: var(--peach-deep);
+    font-size: 13.5px; font-weight: 700;
+    margin-bottom: 22px;
+  }
+  .hero .eyebrow .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--peach-deep);
+  }
+  .hero h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(48px, 6.4vw, 86px);
+    line-height: 1;
+    letter-spacing: -0.025em;
+    margin: 0 0 22px;
+  }
+  .hero h1 em { font-style: italic; color: var(--peach-deep); font-weight: 600; }
+  .hero h1 .squiggle { position: relative; display: inline-block; }
+  .hero h1 .squiggle::after {
+    content: '';
+    position: absolute; left: -6px; right: -6px; bottom: -6px;
+    height: 14px;
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 14'><path d='M2 8 Q 30 -2 56 8 T 110 8 T 164 8 T 218 8' fill='none' stroke='%23f5a17b' stroke-width='4' stroke-linecap='round'/></svg>") no-repeat;
+    background-size: 100% 100%;
+  }
+  .hero p {
+    font-size: 19px; color: var(--ink-2);
+    max-width: 56ch; margin: 0 0 32px;
+    line-height: 1.6;
+  }
+  .actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .actions .meta { color: var(--ink-3); font-size: 13.5px; font-weight: 600; }
+
+  .hero-art {
+    position: relative;
+    aspect-ratio: 4/4.4;
+  }
+  .blob {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--peach), var(--rose));
+    border-radius: 60% 40% 55% 45% / 50% 60% 40% 50%;
+    transform: rotate(-6deg);
+    opacity: 0.85;
+  }
+  .blob.b {
+    inset: 30px 60px 60px 30px;
+    background: linear-gradient(135deg, var(--sage), var(--sky));
+    border-radius: 55% 45% 60% 40% / 60% 50% 50% 40%;
+    transform: rotate(8deg);
+    opacity: 0.65;
+  }
+  .phone {
+    position: absolute;
+    width: 70%;
+    aspect-ratio: 9/19;
+    background: var(--surface);
+    border-radius: 36px;
+    border: 6px solid var(--ink);
+    box-shadow: var(--shadow-lift);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) rotate(-4deg);
+    overflow: hidden;
+    padding: 16px 14px;
+    display: flex; flex-direction: column;
+    gap: 10px;
+  }
+  .phone .notch {
+    position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+    width: 60px; height: 6px;
+    background: var(--ink); border-radius: 999px;
+  }
+  .phone .top-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 4px 8px;
+    font-size: 11px;
+    color: var(--ink-3); font-weight: 700;
+  }
+  .phone h4 {
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    margin: 0 0 4px;
+    letter-spacing: -0.015em;
+  }
+  .phone .sub { font-size: 12px; color: var(--ink-3); margin-bottom: 14px; }
+  .ph-row {
+    background: var(--bg);
+    border-radius: 16px;
+    padding: 12px 14px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .ph-row .ic { width: 28px; height: 28px; border-radius: 50%; background: var(--peach-soft); color: var(--peach-deep); display: grid; place-items: center; }
+  .ph-row.sage .ic { background: var(--sage-soft); color: var(--sage-deep); }
+  .ph-row.sky .ic { background: var(--sky-soft); color: var(--sky); }
+  .ph-row.rose .ic { background: var(--rose-soft); color: var(--peach-deep); }
+  .ph-row.butter .ic { background: var(--butter-soft); color: #a87a14; }
+  .ph-row .qty { margin-left: auto; color: var(--ink-3); font-weight: 500; font-size: 12px; }
+
+  .float-badge {
+    position: absolute;
+    background: var(--surface);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lift);
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 10px;
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .float-badge.savings { top: 12px; left: -10px; background: var(--sage); color: white; }
+  .float-badge.savings small { display: block; font-size: 10px; font-weight: 600; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.1em; }
+  .float-badge.savings b { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+  .float-badge.fresh { bottom: 50px; right: -20px; }
+  .float-badge.fresh .ic { width: 30px; height: 30px; border-radius: 50%; background: var(--butter-soft); color: #a87a14; display: grid; place-items: center; }
+
+  /* Section */
+  .section { padding: 80px 0; }
+  .section-hd { max-width: 720px; margin: 0 auto 48px; text-align: center; }
+  .section-hd .eye {
+    display: inline-block;
+    padding: 6px 14px; background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--peach-deep); font-weight: 700; font-size: 12.5px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .section-hd h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(34px, 4.5vw, 56px);
+    line-height: 1.04;
+    letter-spacing: -0.025em;
+    margin: 0 0 12px;
+  }
+  .section-hd h2 em { font-style: italic; color: var(--peach-deep); }
+  .section-hd p { color: var(--ink-2); font-size: 17px; margin: 0; max-width: 60ch; margin: 0 auto; }
+
+  /* Pastel feature cards */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+  }
+  .pcard {
+    border-radius: var(--r-blob);
+    padding: 28px;
+    transition: transform 200ms ease, box-shadow 200ms ease;
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    min-height: 280px;
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+    background: var(--surface);
+  }
+  .pcard:hover { transform: translateY(-4px); box-shadow: var(--shadow-lift); }
+  .pcard.peach { background: var(--peach-soft); border-color: var(--peach); }
+  .pcard.sage { background: var(--sage-soft); border-color: var(--sage); }
+  .pcard.butter { background: var(--butter-soft); border-color: var(--butter); }
+  .pcard.sky { background: var(--sky-soft); border-color: var(--sky); }
+  .pcard.rose { background: var(--rose-soft); border-color: var(--rose); }
+
+  .pcard .ico {
+    width: 54px; height: 54px; border-radius: 50%;
+    background: var(--surface);
+    color: var(--ink);
+    display: grid; place-items: center;
+    margin-bottom: 18px;
+    box-shadow: 0 6px 14px -8px rgba(58,42,27,0.25);
+  }
+  .pcard.peach .ico { color: var(--peach-deep); }
+  .pcard.sage .ico { color: var(--sage-deep); }
+  .pcard.butter .ico { color: #a87a14; }
+  .pcard.sky .ico { color: #6896ad; }
+  .pcard.rose .ico { color: var(--peach-deep); }
+  .pcard h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 22px;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
+    margin: 0 0 8px;
+  }
+  .pcard p { margin: 0; color: var(--ink-2); font-size: 14.5px; }
+  .pcard .more {
+    margin-top: auto;
+    padding-top: 14px;
+    font-weight: 700; font-size: 13px;
+    color: var(--ink);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .pcard .more svg { transition: transform 200ms; }
+  .pcard:hover .more svg { transform: translateX(4px); }
+
+  /* Steps */
+  .steps {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+  }
+  .step {
+    background: var(--surface);
+    border-radius: var(--r-blob);
+    padding: 36px;
+    text-align: center;
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+    position: relative;
+  }
+  .step .n {
+    width: 64px; height: 64px;
+    background: var(--peach-deep);
+    color: white;
+    border-radius: 50%;
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 26px;
+    display: grid; place-items: center;
+    margin: 0 auto 16px;
+    box-shadow: 0 10px 22px -10px rgba(217,119,87,0.6);
+  }
+  .step:nth-child(2) .n { background: var(--sage-deep); box-shadow: 0 10px 22px -10px rgba(106,156,92,0.6); }
+  .step:nth-child(3) .n { background: var(--butter); color: #a87a14; box-shadow: 0 10px 22px -10px rgba(246,212,154,0.8); }
+  .step h4 { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 600; margin: 0 0 10px; letter-spacing: -0.015em; }
+  .step p { color: var(--ink-2); margin: 0; font-size: 15px; }
+
+  /* Compare + Map row */
+  .duo {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 22px;
+    align-items: stretch;
+  }
+  .panel {
+    border-radius: var(--r-blob);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+    padding: 32px;
+    display: flex; flex-direction: column;
+  }
+  .panel h3 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 26px; letter-spacing: -0.02em; margin: 0 0 14px; }
+  .panel p { color: var(--ink-2); margin: 0 0 18px; font-size: 15px; }
+  .compare {
+    display: grid; gap: 8px; margin-top: auto;
+  }
+  .comp {
+    display: grid; grid-template-columns: 1fr auto;
+    align-items: center;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: var(--bg);
+    font-size: 14px; font-weight: 600;
+  }
+  .comp .where small { display: block; color: var(--ink-3); font-weight: 500; font-size: 12px; }
+  .comp .price { color: var(--ink); font-weight: 700; font-size: 16px; letter-spacing: -0.01em; }
+  .comp.best { background: var(--sage-soft); border: 1px solid var(--sage); }
+  .comp.best .price { color: var(--sage-deep); }
+  .comp.worst { background: var(--peach-soft); opacity: 0.85; }
+  .comp.worst .price { text-decoration: line-through; }
+
+  .map-mini {
+    flex: 1; min-height: 260px;
+    margin-top: 16px;
+    background:
+      radial-gradient(80px 80px at 30% 30%, var(--sage-soft), transparent 70%),
+      radial-gradient(110px 90px at 70% 60%, var(--peach-soft), transparent 70%),
+      radial-gradient(80px 80px at 50% 80%, var(--butter-soft), transparent 70%),
+      var(--bg);
+    border-radius: 24px;
+    border: 1px solid var(--line);
+    position: relative;
+  }
+  .mpin { position: absolute; transform: translate(-50%, -100%); }
+  .mpin .body {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--peach-deep);
+    color: white;
+    display: grid; place-items: center;
+    box-shadow: 0 8px 16px -4px rgba(217,119,87,0.5);
+    border: 3px solid white;
+    font-weight: 800;
+    font-size: 13px;
+    font-family: 'Fraunces', serif;
+  }
+  .mpin.sage .body { background: var(--sage-deep); box-shadow: 0 8px 16px -4px rgba(106,156,92,0.5); }
+  .mpin.butter .body { background: var(--butter); color: #a87a14; box-shadow: 0 8px 16px -4px rgba(246,212,154,0.7); }
+  .mpin .lbl {
+    margin-top: 6px;
+    background: white;
+    border: 1px solid var(--line);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  /* Testimonial */
+  .testimonial {
+    background: var(--peach-soft);
+    border-radius: var(--r-blob);
+    padding: 56px 48px;
+    max-width: 880px;
+    margin: 0 auto;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .testimonial::before, .testimonial::after {
+    content: ''; position: absolute;
+    width: 200px; height: 200px; border-radius: 50%;
+    pointer-events: none;
+  }
+  .testimonial::before { top: -80px; left: -60px; background: radial-gradient(circle, var(--butter-soft), transparent 70%); }
+  .testimonial::after { bottom: -80px; right: -60px; background: radial-gradient(circle, var(--rose-soft), transparent 70%); }
+  .testimonial p {
+    font-family: 'Fraunces', serif;
+    font-size: 26px; line-height: 1.35; font-weight: 500;
+    letter-spacing: -0.015em;
+    margin: 0 0 24px;
+    position: relative;
+  }
+  .testimonial p em { font-style: italic; color: var(--peach-deep); font-weight: 600; }
+  .testimonial .who { display: inline-flex; align-items: center; gap: 12px; font-size: 14px; }
+  .testimonial .who .av {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: var(--sage-deep);
+    color: white;
+    font-weight: 700;
+    display: grid; place-items: center;
+    border: 3px solid white;
+  }
+  .testimonial .who b { display: block; font-weight: 700; font-size: 15px; }
+
+  /* Closing */
+  .closing {
+    padding: 96px 0 80px;
+    text-align: center;
+    position: relative;
+  }
+  .closing h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(44px, 6vw, 76px);
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+    margin: 0 auto 18px;
+    max-width: 18ch;
+  }
+  .closing h2 em { font-style: italic; color: var(--peach-deep); }
+  .closing p { color: var(--ink-2); font-size: 18px; max-width: 50ch; margin: 0 auto 30px; }
+
+  footer { padding: 32px 0 44px; color: var(--ink-3); font-size: 13.5px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+  @media (max-width: 980px) {
+    .hero { grid-template-columns: 1fr; }
+    .features { grid-template-columns: 1fr; }
+    .steps { grid-template-columns: 1fr; }
+    .duo { grid-template-columns: 1fr; }
+    .nav-links { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="top">
+      <a class="brand" href="#">
+        <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 6h18l-2 13H5L3 6z"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
+        Grocery Waze
+      </a>
+      <div class="nav-links">
+        <a class="active" href="#">Inicio</a>
+        <a href="#">Mi lista</a>
+        <a href="#">Recetas</a>
+        <a href="#">Tiendas</a>
+        <a href="#">Despensa</a>
+      </div>
+      <a class="btn" href="#">Empezar gratis</a>
+    </nav>
+  </div>
+
+  <!-- Hero -->
+  <section class="wrap hero">
+    <div>
+      <span class="eyebrow"><span class="dot"></span>nueva forma de hacer mercado</span>
+      <h1>Las compras de la casa, <em>livianitas</em>.<br/>Y un poquito más <span class="squiggle">baratas</span>.</h1>
+      <p>Anote su lista, pegue una receta, o agregue lo que se le acabó en la despensa. Nosotros buscamos el mejor precio cerca, y la familia colabora desde el sofá.</p>
+      <div class="actions">
+        <a class="btn btn-lg" href="#">Crear mi lista</a>
+        <a class="btn btn-soft btn-lg" href="#">Ver cómo funciona</a>
+        <span class="meta">gratis · sin tarjeta</span>
+      </div>
+    </div>
+
+    <div class="hero-art" aria-hidden="true">
+      <div class="blob"></div>
+      <div class="blob b"></div>
+
+      <div class="float-badge savings">
+        <div>
+          <small>Ahorró esta semana</small>
+          <b>₡ 6.560</b>
+        </div>
+      </div>
+
+      <div class="float-badge fresh">
+        <span class="ic">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        </span>
+        Lista lista
+      </div>
+
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="top-bar"><span>9:41</span><span>● ● ●</span></div>
+        <h4>Mi lista · sábado</h4>
+        <div class="sub">12 productos · 4 tiendas comparadas</div>
+
+        <div class="ph-row sage">
+          <span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg></span>
+          Pollo entero
+          <span class="qty">1.4 kg</span>
+        </div>
+        <div class="ph-row sage">
+          <span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg></span>
+          Arroz Tío Pelón
+          <span class="qty">2 kg</span>
+        </div>
+        <div class="ph-row">
+          <span class="ic"></span>
+          Aceite Capullo
+          <span class="qty">1 L</span>
+        </div>
+        <div class="ph-row butter">
+          <span class="ic"></span>
+          Cilantro fresco
+          <span class="qty">1 manojo</span>
+        </div>
+        <div class="ph-row rose">
+          <span class="ic"></span>
+          Tomate maduro
+          <span class="qty">1 kg</span>
+        </div>
+        <div class="ph-row sky">
+          <span class="ic"></span>
+          Frijol negro
+          <span class="qty">900 g</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-hd">
+        <span class="eye">Todo lo que necesita</span>
+        <h2>Cosas que <em>quitan trabajo</em>, no que lo agregan.</h2>
+        <p>Sin pasos confusos, sin pop-ups, sin abrir cinco apps. Una sola libreta, simple y bonita.</p>
+      </div>
+      <div class="features">
+        <article class="pcard peach">
+          <div class="ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="9" r="3"/><path d="M3 19v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg></div>
+          <h3>Una lista para toda la familia</h3>
+          <p>Compártala con quien hace las compras. Lo que uno tacha, los demás lo ven en el momento.</p>
+          <div class="more">Cómo se comparte <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
+        </article>
+
+        <article class="pcard sage">
+          <div class="ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4"/><path d="M3 17l9 4 9-4"/></svg></div>
+          <h3>Comparador con cabeza</h3>
+          <p>Una sola tienda o ruta partida. Le damos el plan y cuánto se ahorra en cada opción.</p>
+          <div class="more">Cómo funciona <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
+        </article>
+
+        <article class="pcard butter">
+          <div class="ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 8a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v9H5z"/><path d="M9 17v3"/><path d="M15 17v3"/></svg></div>
+          <h3>De receta a lista</h3>
+          <p>Pegue un enlace de una receta. Sacamos los ingredientes con cantidades — listos para comprar.</p>
+          <div class="more">Probar con una receta <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
+        </article>
+
+        <article class="pcard sky">
+          <div class="ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+          <h3>Mapa del barrio</h3>
+          <p>Las tiendas cerca, con precios reales y filtros por radio. Sin caminar de gusto.</p>
+          <div class="more">Ver tiendas cerca <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
+        </article>
+
+        <article class="pcard rose">
+          <div class="ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7h18v13H3z"/><path d="M8 7V4h8v3"/></svg></div>
+          <h3>Despensa que avisa</h3>
+          <p>Le decimos "se le acaba el café en 3 días" antes de quedarse sin. Sin sustos.</p>
+          <div class="more">Configurar mi despensa <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
+        </article>
+
+        <article class="pcard peach">
+          <div class="ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="2" height="16"/><rect x="7" y="4" width="1" height="16"/><rect x="10" y="4" width="3" height="16"/><rect x="15" y="4" width="1" height="16"/><rect x="18" y="4" width="3" height="16"/></svg></div>
+          <h3>Escanear y reportar</h3>
+          <p>Si el precio en la tienda no coincide, escanee el código. La comunidad lo agradece.</p>
+          <div class="more">Cómo reportar <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Steps -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-hd">
+        <span class="eye">tres pasos · sin enredos</span>
+        <h2>Más fácil que llamar a su <em>mamá</em>.</h2>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="n">1</div>
+          <h4>Escriba su lista</h4>
+          <p>Anote lo que necesita o pegue una receta. La organizamos por usted.</p>
+        </div>
+        <div class="step">
+          <div class="n">2</div>
+          <h4>Le decimos dónde ir</h4>
+          <p>Comparamos en 187 tiendas cerca y le mostramos cuál conviene.</p>
+        </div>
+        <div class="step">
+          <div class="n">3</div>
+          <h4>Compre tranquila</h4>
+          <p>Vaya con la lista en el teléfono, marque lo que va comprando.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Compare + Map -->
+  <section class="section">
+    <div class="wrap">
+      <div class="duo">
+        <article class="panel">
+          <h3>Su lista, en cuatro tiendas cerca</h3>
+          <p>Cuánto le sale en cada tienda — y dónde conviene ir hoy.</p>
+          <div class="compare">
+            <div class="comp best">
+              <div class="where">PriceSmart Tres Ríos<small>3.2 km · todo disponible</small></div>
+              <span class="price">₡ 11.840</span>
+            </div>
+            <div class="comp">
+              <div class="where">Walmart Heredia<small>5.8 km · todo disponible</small></div>
+              <span class="price">₡ 12.290</span>
+            </div>
+            <div class="comp">
+              <div class="where">Más x Menos Escazú<small>4.1 km · 2 faltan</small></div>
+              <span class="price">₡ 12.560</span>
+            </div>
+            <div class="comp worst">
+              <div class="where">AM/PM Centro<small>0.8 km · más cara</small></div>
+              <span class="price">₡ 13.700</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <h3>Las tiendas de su barrio</h3>
+          <p>Filtre por cercanía o por mejor precio. Toque un pin para ver el detalle.</p>
+          <div class="map-mini">
+            <div class="mpin sage" style="left:30%;top:34%;">
+              <div class="body">A</div>
+              <div class="lbl">PriceSmart · ₡11.840</div>
+            </div>
+            <div class="mpin butter" style="left:64%;top:48%;">
+              <div class="body">B</div>
+              <div class="lbl">Walmart · ₡12.290</div>
+            </div>
+            <div class="mpin" style="left:48%;top:74%;">
+              <div class="body">C</div>
+              <div class="lbl">AM/PM · ₡13.700</div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonial -->
+  <section class="section">
+    <div class="wrap">
+      <div class="testimonial">
+        <p>"Lo uso en el carro antes de bajar. La lista lista, el precio lista, y <em>vuelvo con vuelto</em>. Me siento como si tuviera una amiga que sabe dónde están las ofertas."</p>
+        <div class="who">
+          <div class="av">MF</div>
+          <div>
+            <b>María Fernández</b>
+            <span style="color:var(--ink-3);">Mamá de dos · Curridabat</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Closing -->
+  <section class="closing">
+    <div class="wrap">
+      <h2>Una lista <em>linda</em>. Una compra más liviana.</h2>
+      <p>12.480 hogares costarricenses ya la usan cada semana.</p>
+      <div class="actions" style="justify-content:center;">
+        <a class="btn btn-peach btn-lg" href="#">Empezar gratis</a>
+        <a class="btn btn-soft btn-lg" href="#">Ver una demo</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="wrap">
+    <span>© Grocery Waze · hecho con cariño en cr · 2026</span>
+    <span>Privacidad · cómo verificamos los precios</span>
+  </footer>
+</body>
+</html>

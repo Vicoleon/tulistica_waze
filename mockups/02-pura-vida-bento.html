@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mockup 02 — Pura Vida Bento · Grocery Waze</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #f4f3ee;
+    --bg-alt: #ecebe4;
+    --surface: #ffffff;
+    --ink: #14181f;
+    --ink-2: #4b5563;
+    --ink-3: #8a8f99;
+    --line: #e7e5dd;
+
+    --leaf: #1f8a5a;
+    --leaf-deep: #0f5a3b;
+    --leaf-soft: #e6f4ec;
+    --citrus: #f5a524;
+    --citrus-soft: #fff2d6;
+    --berry: #d54a4a;
+    --berry-soft: #ffe5e3;
+    --sky: #4f7ac9;
+    --sky-soft: #e6efff;
+    --cocoa: #2a221b;
+    --gold: #c9a227;
+
+    --r-lg: 28px;
+    --r-md: 20px;
+    --r-sm: 14px;
+    --shadow: 0 1px 0 rgba(20,24,31,0.04), 0 8px 24px -12px rgba(20,24,31,0.10);
+    --shadow-lift: 0 1px 0 rgba(20,24,31,0.05), 0 24px 40px -18px rgba(20,24,31,0.18);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+  .mono { font-family: 'JetBrains Mono', monospace; letter-spacing: 0; }
+
+  /* Nav */
+  nav.top {
+    position: sticky; top: 12px; z-index: 50;
+    margin: 12px auto 0; max-width: 1280px;
+    padding: 10px 14px 10px 18px;
+    background: rgba(255,255,255,0.78);
+    backdrop-filter: blur(18px);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: var(--shadow);
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-weight: 700; font-size: 16px;
+    letter-spacing: -0.01em;
+  }
+  .brand .mark {
+    width: 28px; height: 28px; border-radius: 9px;
+    background: linear-gradient(135deg, var(--leaf), var(--leaf-deep));
+    display: grid; place-items: center;
+    color: white;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18), 0 4px 12px rgba(31,138,90,0.4);
+  }
+  nav.top .links { display: flex; gap: 4px; }
+  nav.top .links a {
+    padding: 8px 14px; border-radius: 999px;
+    font-size: 14px; color: var(--ink-2); font-weight: 500;
+    transition: background 180ms, color 180ms;
+  }
+  nav.top .links a:hover { background: var(--bg-alt); color: var(--ink); }
+  nav.top .links a.is-active { background: var(--ink); color: white; }
+  nav.top .actions { display: flex; gap: 8px; align-items: center; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 18px; border-radius: 999px;
+    font-weight: 600; font-size: 14px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 180ms ease;
+  }
+  .btn-primary {
+    background: var(--ink); color: white;
+  }
+  .btn-primary:hover { background: var(--leaf-deep); transform: translateY(-1px); }
+  .btn-ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn-ghost:hover { background: white; box-shadow: var(--shadow); }
+  .btn-lg { padding: 14px 22px; font-size: 15px; }
+  .btn-pill {
+    padding: 6px 12px; font-size: 12px; border-radius: 999px;
+    background: var(--bg-alt); color: var(--ink-2); font-weight: 600;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--leaf); }
+
+  /* Hero */
+  .hero {
+    padding: 56px 0 24px;
+  }
+  .hero .eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 6px 14px; border-radius: 999px;
+    background: white; border: 1px solid var(--line);
+    font-size: 13px; color: var(--ink-2); font-weight: 500;
+    box-shadow: var(--shadow);
+    margin-bottom: 22px;
+  }
+  .hero .eyebrow .pulse {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--leaf);
+    box-shadow: 0 0 0 0 rgba(31,138,90,0.6);
+    animation: pulse 2.2s ease-out infinite;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(31,138,90,0.55); }
+    70% { box-shadow: 0 0 0 10px rgba(31,138,90,0); }
+    100% { box-shadow: 0 0 0 0 rgba(31,138,90,0); }
+  }
+  .hero h1 {
+    font-size: clamp(40px, 5.6vw, 76px);
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+    font-weight: 700;
+    margin: 0 0 18px;
+    max-width: 18ch;
+  }
+  .hero h1 .grad {
+    background: linear-gradient(120deg, var(--leaf-deep) 0%, var(--leaf) 40%, var(--citrus) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hero p {
+    font-size: 19px; color: var(--ink-2);
+    max-width: 60ch; margin: 0 0 28px;
+  }
+  .hero .cta-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .hero .meta {
+    display: flex; gap: 22px; flex-wrap: wrap;
+    margin-top: 26px; color: var(--ink-2); font-size: 13px;
+  }
+  .hero .meta b { color: var(--ink); font-weight: 700; }
+
+  /* Bento grid */
+  .bento {
+    padding: 24px 0 80px;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-auto-rows: 168px;
+    gap: 16px;
+  }
+  .tile {
+    background: var(--surface);
+    border-radius: var(--r-lg);
+    padding: 22px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+    transition: transform 200ms ease, box-shadow 200ms ease;
+    display: flex; flex-direction: column;
+    cursor: pointer;
+  }
+  .tile:hover { transform: translateY(-3px); box-shadow: var(--shadow-lift); }
+  .tile .head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px;
+  }
+  .tile .h-title { font-size: 13px; color: var(--ink-3); font-weight: 600; letter-spacing: 0.01em; }
+  .tile h3 {
+    font-size: 22px; font-weight: 700; letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin: 12px 0 6px;
+  }
+  .tile p { color: var(--ink-2); font-size: 14px; margin: 0; }
+  .tile .ico {
+    width: 36px; height: 36px; border-radius: 11px;
+    display: grid; place-items: center;
+    background: var(--bg-alt); color: var(--ink);
+  }
+  .tile.feature { grid-column: span 4; grid-row: span 2; }
+  .tile.wide   { grid-column: span 6; grid-row: span 2; }
+  .tile.tall   { grid-column: span 4; grid-row: span 3; }
+  .tile.short  { grid-column: span 4; grid-row: span 1; }
+  .tile.half   { grid-column: span 6; grid-row: span 1; }
+
+  /* Smart cart tile (hero of bento) */
+  .tile.cart {
+    grid-column: span 7; grid-row: span 3;
+    background:
+      radial-gradient(120% 80% at 100% 0%, rgba(31,138,90,0.10), transparent 60%),
+      linear-gradient(180deg, #fcfbf6, #f6f4ea 80%);
+  }
+  .tile.cart .price-tag {
+    margin-top: auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .receipt {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.65;
+  }
+  .receipt .label { color: var(--ink-3); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+  .receipt .total { font-size: 20px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; font-family: 'Plus Jakarta Sans', sans-serif; }
+  .receipt.best { border-color: var(--leaf); background: var(--leaf-soft); }
+  .receipt.best .total { color: var(--leaf-deep); }
+  .receipt .diff { font-size: 11px; color: var(--ink-3); }
+  .receipt.best .diff { color: var(--leaf-deep); font-weight: 700; }
+
+  /* Map tile */
+  .tile.map { grid-column: span 5; grid-row: span 3; padding: 0; overflow: hidden; }
+  .map-canvas {
+    flex: 1; position: relative;
+    background:
+      radial-gradient(120px 80px at 30% 28%, rgba(245,165,36,0.18), transparent 70%),
+      radial-gradient(160px 100px at 70% 60%, rgba(31,138,90,0.18), transparent 70%),
+      linear-gradient(180deg, #f3f3eb, #e8e8df);
+  }
+  .map-canvas::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(20,24,31,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(20,24,31,0.06) 1px, transparent 1px);
+    background-size: 36px 36px;
+    mask-image: radial-gradient(ellipse at center, black 60%, transparent 100%);
+  }
+  .road {
+    position: absolute; height: 2px;
+    background: rgba(20,24,31,0.16);
+  }
+  .pin {
+    position: absolute; transform: translate(-50%, -100%);
+    display: grid; place-items: center; gap: 0;
+  }
+  .pin .pinbody {
+    width: 32px; height: 32px; border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    background: var(--leaf); color: white; font-weight: 700; font-size: 11px;
+    display: grid; place-items: center;
+    box-shadow: 0 8px 20px rgba(20,24,31,0.18);
+    border: 2px solid white;
+  }
+  .pin .pinbody span { transform: rotate(45deg); }
+  .pin.citrus .pinbody { background: var(--citrus); color: var(--cocoa); }
+  .pin.berry .pinbody { background: var(--berry); }
+  .pin.sky .pinbody { background: var(--sky); }
+  .map-overlay {
+    position: absolute; left: 16px; right: 16px; bottom: 16px;
+    background: white; border-radius: 16px; padding: 14px;
+    border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: var(--shadow);
+  }
+  .map-overlay .sub { font-size: 12px; color: var(--ink-3); }
+  .map-overlay strong { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+  .map-overlay .save { color: var(--leaf-deep); font-weight: 700; }
+  .map-head { position: absolute; top: 14px; left: 14px; right: 14px; display: flex; justify-content: space-between; align-items: center; }
+  .map-head .pill { background: white; border: 1px solid var(--line); padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; box-shadow: var(--shadow); display: flex; align-items: center; gap: 6px; }
+  .map-head .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--leaf); }
+
+  /* Scanner tile */
+  .tile.scan { grid-column: span 4; grid-row: span 2; background: var(--cocoa); color: white; }
+  .tile.scan h3, .tile.scan p { color: white; }
+  .tile.scan p { color: rgba(255,255,255,0.7); }
+  .tile.scan .h-title { color: rgba(255,255,255,0.5); }
+  .tile.scan .ico { background: rgba(255,255,255,0.12); color: white; }
+  .scanner {
+    margin-top: auto; padding: 14px;
+    border-radius: 16px; background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  .barcode {
+    height: 56px; display: flex; align-items: end; gap: 2px;
+    margin-bottom: 8px;
+  }
+  .barcode b {
+    background: white; width: 3px; border-radius: 1px;
+  }
+  .barcode b:nth-child(odd) { height: 100%; }
+  .barcode b:nth-child(2n) { height: 76%; width: 2px; }
+  .barcode b:nth-child(3n) { height: 60%; width: 5px; }
+  .barcode b:nth-child(5n) { width: 6px; height: 88%; }
+  .scan-line {
+    height: 2px; background: var(--citrus); border-radius: 2px;
+    box-shadow: 0 0 16px var(--citrus);
+    animation: scanmove 2.6s ease-in-out infinite;
+    margin: -34px 0 28px;
+  }
+  @keyframes scanmove {
+    0%, 100% { transform: translateY(0); opacity: 0.4; }
+    50% { transform: translateY(-44px); opacity: 1; }
+  }
+  .scan-status { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: rgba(255,255,255,0.7); }
+
+  /* Recipe tile */
+  .tile.recipe { grid-column: span 4; grid-row: span 2; background: var(--berry-soft); }
+  .tile.recipe h3 { color: var(--ink); }
+  .recipe-list {
+    margin-top: auto;
+    display: grid; gap: 6px;
+  }
+  .ing {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 10px;
+    background: rgba(255,255,255,0.7);
+    border-radius: 10px;
+    font-size: 13px;
+  }
+  .ing .check {
+    width: 16px; height: 16px; border-radius: 5px;
+    border: 1.5px solid var(--ink-3);
+    display: grid; place-items: center;
+  }
+  .ing.done { color: var(--ink-3); text-decoration: line-through; }
+  .ing.done .check { background: var(--berry); border-color: var(--berry); color: white; }
+  .ing .qty { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-3); }
+
+  /* Leaderboard */
+  .tile.leader { grid-column: span 4; grid-row: span 2; background: linear-gradient(180deg, #fff, #fff7e6); }
+  .leader-list { margin-top: auto; display: grid; gap: 8px; }
+  .lb {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    align-items: center;
+    padding: 8px 10px;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    font-size: 13px;
+  }
+  .lb .rank {
+    width: 22px; height: 22px; border-radius: 50%;
+    display: grid; place-items: center;
+    font-weight: 800; font-size: 11px;
+    background: var(--bg-alt); color: var(--ink-2);
+  }
+  .lb.gold .rank { background: var(--gold); color: white; }
+  .lb.silver .rank { background: #d6d6d4; color: var(--ink); }
+  .lb.bronze .rank { background: #cd8a4a; color: white; }
+  .lb .pts { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+
+  /* Pantry */
+  .tile.pantry { grid-column: span 4; grid-row: span 2; background: var(--leaf-soft); }
+  .pantry-grid { margin-top: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .jar {
+    background: white; border-radius: 14px; padding: 10px;
+    text-align: center;
+    border: 1px solid var(--line);
+  }
+  .jar .level {
+    height: 38px; border-radius: 6px;
+    background: var(--bg-alt);
+    position: relative; overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .jar .fill {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: var(--leaf);
+    border-radius: 6px 6px 0 0;
+  }
+  .jar.warn .fill { background: var(--citrus); }
+  .jar.empty .fill { background: var(--berry); }
+  .jar .name { font-size: 12px; font-weight: 600; }
+  .jar .sub { font-size: 10px; color: var(--ink-3); }
+
+  /* Lists tile */
+  .tile.lists { grid-column: span 4; grid-row: span 2; background: var(--sky-soft); }
+  .avatars { display: flex; margin-top: 12px; }
+  .avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--sky); color: white; font-weight: 700; font-size: 11px;
+    display: grid; place-items: center;
+    border: 2px solid white;
+    margin-left: -8px;
+  }
+  .avatar:first-child { margin-left: 0; }
+  .avatar.alt { background: var(--berry); }
+  .avatar.alt2 { background: var(--leaf); }
+  .avatar.more { background: white; color: var(--ink-2); border-color: var(--line); }
+  .list-rows { margin-top: 12px; display: grid; gap: 6px; }
+  .list-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; background: white; border: 1px solid var(--line); border-radius: 10px;
+    font-size: 13px;
+  }
+  .list-row.done { color: var(--ink-3); text-decoration: line-through; }
+  .list-row .by { margin-left: auto; font-size: 11px; color: var(--ink-3); font-family: 'JetBrains Mono', monospace; }
+
+  /* Trend tile */
+  .tile.trend { grid-column: span 4; grid-row: span 2; background: #1d2530; color: white; }
+  .tile.trend h3, .tile.trend p { color: white; }
+  .tile.trend p { color: rgba(255,255,255,0.6); }
+  .tile.trend .ico { background: rgba(255,255,255,0.1); color: white; }
+  .tile.trend .h-title { color: rgba(255,255,255,0.45); }
+  .chart {
+    margin-top: auto; height: 110px; position: relative;
+  }
+  .chart svg { width: 100%; height: 100%; }
+  .chart .lbl {
+    position: absolute; right: 0; top: 0;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--citrus);
+  }
+  .chart .lbl b { color: white; font-family: 'Plus Jakarta Sans'; font-weight: 800; font-size: 20px; display: block; }
+
+  /* CTA stripe */
+  .closing-bento {
+    grid-column: span 12; grid-row: span 2;
+    background: linear-gradient(120deg, var(--leaf-deep) 0%, var(--leaf) 60%, var(--citrus) 130%);
+    color: white;
+    border-radius: var(--r-lg);
+    padding: 36px 40px;
+    display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px;
+    align-items: center;
+    position: relative; overflow: hidden;
+    border: none;
+  }
+  .closing-bento::before {
+    content: ''; position: absolute; inset: -40% -10% auto auto;
+    width: 60%; height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.16), transparent 60%);
+    pointer-events: none;
+  }
+  .closing-bento h2 { font-size: clamp(28px, 3.6vw, 44px); margin: 0 0 8px; line-height: 1.05; letter-spacing: -0.02em; }
+  .closing-bento p { margin: 0; color: rgba(255,255,255,0.85); font-size: 16px; max-width: 50ch; }
+  .closing-bento .cta-side { display: flex; gap: 10px; justify-content: flex-end; align-items: center; flex-wrap: wrap; }
+  .closing-bento .btn-primary { background: white; color: var(--leaf-deep); }
+  .closing-bento .btn-primary:hover { background: var(--cocoa); color: white; }
+  .closing-bento .btn-ghost { color: white; border-color: rgba(255,255,255,0.4); }
+  .closing-bento .btn-ghost:hover { background: rgba(255,255,255,0.1); }
+
+  footer { padding: 28px 0 40px; font-size: 13px; color: var(--ink-3); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+
+  /* Responsive */
+  @media (max-width: 1100px) {
+    .bento { grid-auto-rows: 160px; }
+    .tile.cart { grid-column: span 12; grid-row: span 3; }
+    .tile.map { grid-column: span 12; grid-row: span 3; }
+    .tile.feature, .tile.scan, .tile.recipe, .tile.leader, .tile.pantry, .tile.lists, .tile.trend { grid-column: span 6; }
+  }
+  @media (max-width: 720px) {
+    nav.top { border-radius: 22px; }
+    nav.top .links { display: none; }
+    .bento { grid-auto-rows: 200px; }
+    .tile.cart, .tile.map, .tile.feature, .tile.scan, .tile.recipe, .tile.leader, .tile.pantry, .tile.lists, .tile.trend, .closing-bento { grid-column: span 12; }
+    .closing-bento { grid-template-columns: 1fr; padding: 28px; }
+    .closing-bento .cta-side { justify-content: flex-start; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+  <nav class="top">
+    <a class="brand" href="#">
+      <span class="mark">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18l-2 13H5L3 6z"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      </span>
+      Grocery Waze
+    </a>
+    <div class="links">
+      <a class="is-active" href="#">Inicio</a>
+      <a href="#">Tiendas</a>
+      <a href="#">Listas</a>
+      <a href="#">Recetas</a>
+      <a href="#">Despensa</a>
+      <a href="#">Comunidad</a>
+    </div>
+    <div class="actions">
+      <a class="btn btn-ghost" href="#">Iniciar sesión</a>
+      <a class="btn btn-primary" href="#">Empezar</a>
+    </div>
+  </nav>
+
+  <section class="wrap hero">
+    <span class="eyebrow"><span class="pulse"></span> 1.240 precios reportados hoy en Costa Rica</span>
+    <h1>Compra inteligente.<br/>Vuelve con <span class="grad">vuelto</span>.</h1>
+    <p>Grocery Waze compara precios reales en 187 tiendas, optimiza tu ruta y aprende cuándo se te acaba el café. La comunidad lo verifica. Tú ahorrás.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary btn-lg" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        Crear mi lista
+      </a>
+      <a class="btn btn-ghost btn-lg" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        Buscar un producto
+      </a>
+      <span class="btn-pill"><span class="dot"></span> 12.480 compradores activos</span>
+    </div>
+    <div class="meta">
+      <span><b>₡ 2,4 M</b> ahorrado esta semana</span>
+      <span><b>187</b> tiendas vivas</span>
+      <span><b>14</b> ciudades de cr</span>
+    </div>
+  </section>
+
+  <section class="wrap bento" aria-label="Capacidades de la app">
+
+    <!-- Smart Cart hero tile -->
+    <article class="tile cart">
+      <div class="head">
+        <span class="h-title">SMART CART · OPTIMIZACIÓN</span>
+        <span class="btn-pill"><span class="dot"></span> Vivo</span>
+      </div>
+      <h3>Tu lista de 14 productos, comparada en segundos.</h3>
+      <p>Smart Cart decide entre una sola tienda o ruta partida — con gasolina, tiempo y distancia adentro.</p>
+      <div class="price-tag">
+        <div class="receipt">
+          <div class="label">Una tienda</div>
+          <div class="total">₡ 38.450</div>
+          <div class="diff">Walmart Heredia · 22 min</div>
+        </div>
+        <div class="receipt best">
+          <div class="label">Ruta partida (recomendado)</div>
+          <div class="total">₡ 31.890</div>
+          <div class="diff">▼ ₡ 6.560 · 2 tiendas · +8 min</div>
+        </div>
+        <div class="receipt">
+          <div class="label">Más cercana</div>
+          <div class="total">₡ 41.200</div>
+          <div class="diff">AM/PM · 6 min</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- Map tile -->
+    <article class="tile map">
+      <div class="map-canvas">
+        <div class="map-head">
+          <span class="pill"><span class="dot"></span> Tiendas activas</span>
+          <span class="pill">San José · 3km</span>
+        </div>
+        <div class="road" style="top:36%;left:8%;width:46%;transform:rotate(8deg);"></div>
+        <div class="road" style="top:62%;left:28%;width:62%;transform:rotate(-12deg);"></div>
+        <div class="road" style="top:20%;left:50%;width:2px;height:60%;"></div>
+
+        <div class="pin" style="left:24%;top:32%;"><div class="pinbody"><span>₡</span></div></div>
+        <div class="pin citrus" style="left:56%;top:44%;"><div class="pinbody"><span>%</span></div></div>
+        <div class="pin berry" style="left:72%;top:64%;"><div class="pinbody"><span>$</span></div></div>
+        <div class="pin sky" style="left:40%;top:70%;"><div class="pinbody"><span>$</span></div></div>
+
+        <div class="map-overlay">
+          <div>
+            <div class="sub">Tienda recomendada</div>
+            <strong>PriceSmart Tres Ríos</strong>
+          </div>
+          <div class="save">Ahorrás ₡ 6.560</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- Scanner -->
+    <article class="tile scan">
+      <div class="head">
+        <span class="h-title">ESCÁNER · 1-TAP REPORTE</span>
+        <div class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="2" height="16"/><rect x="7" y="4" width="1" height="16"/><rect x="10" y="4" width="3" height="16"/><rect x="15" y="4" width="1" height="16"/><rect x="18" y="4" width="3" height="16"/></svg></div>
+      </div>
+      <h3>Escaneá. Reportá. Suma puntos.</h3>
+      <div class="scanner">
+        <div class="barcode">
+          <b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b><b></b>
+        </div>
+        <div class="scan-line"></div>
+        <div class="scan-status"><span>7501031311309</span><span>Aceite Capullo · ₡ 2.890</span></div>
+      </div>
+    </article>
+
+    <!-- Recipe -->
+    <article class="tile recipe">
+      <div class="head">
+        <span class="h-title">DE RECETA A LISTA</span>
+        <div class="ico" style="background:white;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 8a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v9H5z"/><path d="M9 17v3"/><path d="M15 17v3"/></svg></div>
+      </div>
+      <h3>Pegá un link, sale tu lista.</h3>
+      <div class="recipe-list">
+        <div class="ing done"><span class="check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span> Pollo entero <span class="qty">1.4 kg</span></div>
+        <div class="ing"><span class="check"></span> Tomate maduro <span class="qty">4 u</span></div>
+        <div class="ing"><span class="check"></span> Cilantro <span class="qty">1 manojo</span></div>
+        <div class="ing"><span class="check"></span> Arroz Tío Pelón <span class="qty">2 kg</span></div>
+      </div>
+    </article>
+
+    <!-- Lists -->
+    <article class="tile lists">
+      <div class="head">
+        <span class="h-title">LISTA · FAMILIA</span>
+        <div class="ico" style="background:white;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="9" r="3"/><path d="M3 19v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg></div>
+      </div>
+      <h3>Listas en familia, en vivo.</h3>
+      <div class="avatars">
+        <span class="avatar">MS</span>
+        <span class="avatar alt">JD</span>
+        <span class="avatar alt2">ER</span>
+        <span class="avatar more">+2</span>
+      </div>
+      <div class="list-rows">
+        <div class="list-row done">Leche entera 1L <span class="by">mamá · 9:02</span></div>
+        <div class="list-row">Pan integral <span class="by">papá · ahora</span></div>
+      </div>
+    </article>
+
+    <!-- Pantry -->
+    <article class="tile pantry">
+      <div class="head">
+        <span class="h-title">DESPENSA · NIVEL</span>
+        <div class="ico" style="background:white;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7h18v13H3z"/><path d="M8 7V4h8v3"/></svg></div>
+      </div>
+      <h3>Avisa antes que se acabe.</h3>
+      <div class="pantry-grid">
+        <div class="jar"><div class="level"><div class="fill" style="height:74%;"></div></div><div class="name">Arroz</div><div class="sub">~21 días</div></div>
+        <div class="jar warn"><div class="level"><div class="fill" style="height:36%;"></div></div><div class="name">Aceite</div><div class="sub">~5 días</div></div>
+        <div class="jar empty"><div class="level"><div class="fill" style="height:9%;"></div></div><div class="name">Café</div><div class="sub">repón ya</div></div>
+      </div>
+    </article>
+
+    <!-- Leaderboard -->
+    <article class="tile leader">
+      <div class="head">
+        <span class="h-title">TOP COMUNIDAD · SEMANA</span>
+        <div class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 3h10v6a5 5 0 0 1-10 0V3z"/></svg></div>
+      </div>
+      <h3>Reportá y subí en el ranking.</h3>
+      <div class="leader-list">
+        <div class="lb gold"><span class="rank">1</span><span>Sarah M. · Tres Ríos</span><span class="pts">12 450</span></div>
+        <div class="lb silver"><span class="rank">2</span><span>Juan D. · Heredia</span><span class="pts">11 200</span></div>
+        <div class="lb bronze"><span class="rank">3</span><span>Emilia R. · Escazú</span><span class="pts">10 890</span></div>
+      </div>
+    </article>
+
+    <!-- Trend -->
+    <article class="tile trend">
+      <div class="head">
+        <span class="h-title">TENDENCIA · ARROZ 1KG</span>
+        <div class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></div>
+      </div>
+      <h3>Histórico de precios, claro.</h3>
+      <p>Ve si pagaste de más antes de comprar.</p>
+      <div class="chart">
+        <div class="lbl"><b>₡1.290</b> hoy</div>
+        <svg viewBox="0 0 220 100" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#f5a524" stop-opacity="0.55"/>
+              <stop offset="1" stop-color="#f5a524" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path d="M0,70 L20,60 L40,68 L60,42 L80,52 L100,30 L120,40 L140,22 L160,34 L180,18 L200,28 L220,10 L220,100 L0,100 Z" fill="url(#g)"/>
+          <path d="M0,70 L20,60 L40,68 L60,42 L80,52 L100,30 L120,40 L140,22 L160,34 L180,18 L200,28 L220,10" fill="none" stroke="#f5a524" stroke-width="2"/>
+        </svg>
+      </div>
+    </article>
+
+    <!-- Closing CTA bento -->
+    <article class="closing-bento">
+      <div>
+        <h2>Tu próxima compra puede costar 17% menos.</h2>
+        <p>Sin coupons, sin apps confusas, sin renunciar a lo que te gusta. Una lista, un mapa, una decisión clara.</p>
+      </div>
+      <div class="cta-side">
+        <a class="btn btn-primary btn-lg" href="#">Empezar gratis</a>
+        <a class="btn btn-ghost btn-lg" href="#">Ver demo de 60s</a>
+      </div>
+    </article>
+  </section>
+
+  <footer class="wrap">
+    <span>© Grocery Waze · 2026 · San José, Costa Rica</span>
+    <span>Privacidad · Cómo verificamos los precios · Para tiendas</span>
+  </footer>
+</body>
+</html>

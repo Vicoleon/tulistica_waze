@@ -1,0 +1,821 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mockup 08 — Casita Botánica · Grocery Waze</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #f5f1e6;
+    --bg-2: #efe9d8;
+    --paper: #fbf7eb;
+    --surface: #ffffff;
+    --ink: #2c2a1f;
+    --ink-2: #5f594a;
+    --ink-3: #918a76;
+    --line: #e3dcc6;
+
+    --sage: #97a87a;
+    --sage-deep: #6a7c52;
+    --sage-soft: #e2e9cf;
+    --clay: #c08160;
+    --clay-deep: #9d6248;
+    --clay-soft: #f1d9c7;
+    --ochre: #d9a44a;
+    --ochre-soft: #f5e1b7;
+    --moss: #4d5e3a;
+
+    --r-card: 24px;
+    --r-soft: 16px;
+    --shadow: 0 1px 0 rgba(44,42,31,0.04), 0 20px 38px -28px rgba(44,42,31,0.28);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(60% 50% at 12% 18%, rgba(151,168,122,0.16), transparent 60%),
+      radial-gradient(50% 40% at 92% 32%, rgba(217,164,74,0.12), transparent 60%),
+      radial-gradient(60% 50% at 80% 88%, rgba(192,129,96,0.10), transparent 60%);
+    z-index: -1;
+    pointer-events: none;
+  }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 28px; }
+  .serif { font-family: 'DM Serif Display', Georgia, serif; }
+
+  /* Nav */
+  nav.top {
+    padding: 24px 0 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--line);
+    position: sticky; top: 0;
+    background: rgba(245,241,230,0.88);
+    backdrop-filter: blur(12px);
+    z-index: 50;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 14px;
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    letter-spacing: -0.005em;
+  }
+  .brand .mark {
+    width: 38px; height: 38px;
+    background: var(--moss);
+    color: var(--bg);
+    border-radius: 14px;
+    display: grid; place-items: center;
+    transform: rotate(-4deg);
+  }
+  .brand .mark svg { width: 20px; height: 20px; transform: rotate(4deg); }
+  .nav-links { display: flex; gap: 4px; }
+  .nav-links a {
+    padding: 8px 14px;
+    font-size: 14px; color: var(--ink-2); font-weight: 500;
+    border-radius: 999px;
+    transition: background 180ms, color 180ms;
+  }
+  .nav-links a:hover { background: var(--sage-soft); color: var(--moss); }
+  .nav-links a.active { background: var(--moss); color: var(--paper); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 22px;
+    border-radius: 999px;
+    font-weight: 600; font-size: 14px;
+    border: 1.5px solid var(--moss);
+    background: var(--moss); color: var(--paper);
+    cursor: pointer;
+    transition: all 180ms ease;
+    text-decoration: none;
+  }
+  .btn:hover { background: var(--ink); border-color: var(--ink); transform: translateY(-1px); }
+  .btn-soft { background: transparent; color: var(--moss); border-color: var(--moss); }
+  .btn-soft:hover { background: var(--sage-soft); }
+  .btn-clay { background: var(--clay-deep); border-color: var(--clay-deep); color: var(--paper); }
+  .btn-clay:hover { background: var(--ink); border-color: var(--ink); }
+  .btn-lg { padding: 16px 28px; font-size: 15px; }
+
+  /* Hero */
+  .hero {
+    padding: 72px 0 60px;
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 56px;
+    align-items: center;
+    position: relative;
+  }
+  .hero .eyebrow {
+    display: inline-flex; align-items: center; gap: 12px;
+    font-family: 'DM Serif Display', serif;
+    font-style: italic;
+    font-size: 16px;
+    color: var(--clay-deep);
+    margin-bottom: 24px;
+  }
+  .hero .eyebrow .leaf { color: var(--sage-deep); }
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-weight: 400;
+    font-size: clamp(50px, 6.4vw, 88px);
+    line-height: 1;
+    letter-spacing: -0.018em;
+    margin: 0 0 22px;
+  }
+  .hero h1 em { font-style: italic; color: var(--clay-deep); }
+  .hero h1 .underline {
+    position: relative; display: inline-block;
+  }
+  .hero h1 .underline::after {
+    content: '';
+    position: absolute; left: -4px; right: -4px; bottom: -10px;
+    height: 18px;
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 18'><path d='M2 10 Q 30 0 56 10 T 110 10 T 164 10 T 218 10' fill='none' stroke='%23c08160' stroke-width='3' stroke-linecap='round'/></svg>") no-repeat;
+    background-size: 100% 100%;
+  }
+  .hero p {
+    font-size: 19px; color: var(--ink-2);
+    max-width: 54ch; margin: 0 0 32px;
+  }
+  .actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .actions .meta { color: var(--ink-3); font-size: 13.5px; font-style: italic; font-family: 'DM Serif Display', serif; }
+
+  /* Hero scene: botanical card with floating leaves */
+  .scene {
+    position: relative;
+    aspect-ratio: 4/4.4;
+  }
+  .scene svg.leaf {
+    position: absolute;
+    color: var(--sage-deep);
+    opacity: 0.6;
+  }
+  .scene .l1 { top: -20px; left: 20px; transform: rotate(-25deg); }
+  .scene .l2 { top: 10px; right: 0; transform: rotate(20deg); color: var(--moss); opacity: 0.55; }
+  .scene .l3 { bottom: 20px; left: -10px; transform: rotate(40deg); opacity: 0.5; }
+  .scene .l4 { bottom: -30px; right: 30px; transform: rotate(-10deg); opacity: 0.55; color: var(--clay); }
+
+  .receipt-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-card);
+    padding: 32px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  .receipt-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(80% 40% at 0% 0%, var(--sage-soft), transparent 60%),
+      radial-gradient(80% 40% at 100% 100%, var(--clay-soft), transparent 60%);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  .receipt-card > * { position: relative; }
+  .receipt-card .day {
+    font-family: 'DM Serif Display', serif;
+    font-style: italic;
+    color: var(--clay-deep);
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+  .receipt-card h3 {
+    font-family: 'DM Serif Display', serif;
+    font-weight: 400;
+    font-size: 30px;
+    line-height: 1.05;
+    margin: 0 0 4px;
+    letter-spacing: -0.015em;
+  }
+  .receipt-card .where {
+    font-size: 13px; color: var(--ink-3); font-style: italic;
+    font-family: 'DM Serif Display', serif;
+    margin-bottom: 22px;
+  }
+  .receipt-card .row {
+    display: grid; grid-template-columns: 22px 1fr auto;
+    align-items: center; gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--line);
+    font-size: 14.5px;
+  }
+  .receipt-card .row:last-of-type { border-bottom: 0; }
+  .receipt-card .row .check {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ink-3);
+  }
+  .receipt-card .row.done .check {
+    background: var(--sage-deep);
+    border-color: var(--sage-deep);
+    color: white;
+    display: grid; place-items: center;
+  }
+  .receipt-card .row.done { color: var(--ink-3); text-decoration: line-through; }
+  .receipt-card .row .p { font-family: 'DM Serif Display', serif; font-style: italic; font-size: 14px; color: var(--clay-deep); }
+  .receipt-card .total {
+    margin-top: 20px;
+    padding: 14px 16px;
+    background: var(--sage-soft);
+    border: 1px solid var(--sage);
+    border-radius: 14px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .receipt-card .total .l { font-size: 13px; color: var(--moss); font-family: 'DM Serif Display', serif; font-style: italic; }
+  .receipt-card .total .v { font-family: 'DM Serif Display', serif; font-size: 26px; color: var(--moss); letter-spacing: -0.01em; }
+  .receipt-card .stamp {
+    position: absolute;
+    top: 24px; right: 24px;
+    width: 78px; height: 78px;
+    border: 2px solid var(--clay);
+    color: var(--clay-deep);
+    border-radius: 50%;
+    display: grid; place-items: center; text-align: center;
+    font-family: 'DM Serif Display', serif;
+    font-style: italic;
+    transform: rotate(8deg);
+    line-height: 1.1;
+    font-size: 12px;
+    background: rgba(251,247,235,0.6);
+  }
+  .receipt-card .stamp b { display: block; font-size: 18px; font-style: normal; }
+
+  /* Floating side tag */
+  .float-tag {
+    position: absolute;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 12px 14px;
+    box-shadow: var(--shadow);
+    font-size: 13px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .float-tag .ic { width: 28px; height: 28px; border-radius: 50%; background: var(--sage-soft); color: var(--sage-deep); display: grid; place-items: center; }
+  .float-tag.b { background: var(--ochre-soft); border-color: var(--ochre); }
+  .float-tag.tl { top: -10px; right: 10%; transform: rotate(4deg); }
+  .float-tag.bl { bottom: 40px; left: -20px; transform: rotate(-6deg); }
+
+  /* Section */
+  .section { padding: 88px 0; position: relative; }
+  .section.alt { background: var(--paper); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .section-hd {
+    max-width: 760px; margin: 0 auto 56px; text-align: center;
+  }
+  .section-hd .eye {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: 'DM Serif Display', serif;
+    font-style: italic;
+    color: var(--clay-deep);
+    font-size: 15px;
+    margin-bottom: 12px;
+  }
+  .section-hd h2 {
+    font-family: 'DM Serif Display', serif;
+    font-weight: 400;
+    font-size: clamp(36px, 4.6vw, 58px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin: 0 0 14px;
+  }
+  .section-hd h2 em { font-style: italic; color: var(--clay-deep); }
+  .section-hd p { color: var(--ink-2); font-size: 17.5px; margin: 0; }
+
+  /* Feature cards */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+  }
+  .bcard {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-card);
+    padding: 30px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+    transition: transform 220ms ease, box-shadow 220ms ease;
+    cursor: pointer;
+    min-height: 280px;
+    display: flex; flex-direction: column;
+  }
+  .bcard:hover { transform: translateY(-4px); }
+  .bcard .leaf-bg {
+    position: absolute;
+    bottom: -20px; right: -20px;
+    color: var(--sage);
+    opacity: 0.12;
+    pointer-events: none;
+  }
+  .bcard.clay .leaf-bg { color: var(--clay); }
+  .bcard.ochre .leaf-bg { color: var(--ochre); }
+  .bcard .num {
+    font-family: 'DM Serif Display', serif;
+    font-style: italic;
+    color: var(--clay-deep);
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
+  .bcard .ico {
+    width: 54px; height: 54px;
+    background: var(--sage-soft);
+    color: var(--moss);
+    border-radius: 50%;
+    display: grid; place-items: center;
+    margin-bottom: 18px;
+    border: 1.5px solid var(--sage);
+  }
+  .bcard.clay .ico { background: var(--clay-soft); border-color: var(--clay); color: var(--clay-deep); }
+  .bcard.ochre .ico { background: var(--ochre-soft); border-color: var(--ochre); color: #8b6512; }
+  .bcard h3 {
+    font-family: 'DM Serif Display', serif;
+    font-weight: 400;
+    font-size: 24px;
+    margin: 0 0 8px;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
+  }
+  .bcard p { color: var(--ink-2); margin: 0 0 18px; font-size: 14.5px; }
+  .bcard .meta {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px dashed var(--line);
+    font-family: 'DM Serif Display', serif;
+    font-style: italic;
+    color: var(--clay-deep);
+    font-size: 13.5px;
+    display: flex; justify-content: space-between;
+  }
+
+  /* Recipe row */
+  .recipe-row {
+    background: var(--paper);
+    border-radius: var(--r-card);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 1.1fr;
+    align-items: stretch;
+  }
+  .recipe-illust {
+    background:
+      radial-gradient(60% 50% at 30% 30%, var(--sage-soft), transparent 60%),
+      radial-gradient(50% 40% at 70% 70%, var(--clay-soft), transparent 60%),
+      var(--bg-2);
+    position: relative;
+    min-height: 380px;
+    overflow: hidden;
+  }
+  .recipe-illust .pot {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 220px; height: 220px;
+  }
+  .recipe-illust svg.scatter {
+    position: absolute;
+    color: var(--moss);
+    opacity: 0.4;
+  }
+  .recipe-illust .s1 { top: 12%; left: 10%; transform: rotate(-15deg); }
+  .recipe-illust .s2 { top: 22%; right: 12%; transform: rotate(30deg); color: var(--clay); }
+  .recipe-illust .s3 { bottom: 18%; left: 22%; transform: rotate(120deg); color: var(--ochre); opacity: 0.6; }
+  .recipe-illust .s4 { bottom: 12%; right: 18%; transform: rotate(-50deg); }
+  .recipe-text { padding: 48px; }
+  .recipe-text .day { font-family: 'DM Serif Display', serif; font-style: italic; color: var(--clay-deep); margin-bottom: 4px; }
+  .recipe-text h3 { font-family: 'DM Serif Display', serif; font-weight: 400; font-size: 38px; line-height: 1.05; letter-spacing: -0.02em; margin: 0 0 14px; }
+  .recipe-text p { color: var(--ink-2); margin: 0 0 22px; font-size: 15.5px; }
+  .ing-list { display: grid; gap: 8px; margin: 0 0 22px; }
+  .ing-list .ing {
+    display: grid; grid-template-columns: 16px 1fr auto;
+    align-items: center; gap: 10px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: var(--sage-soft);
+    font-size: 14px;
+  }
+  .ing-list .ing .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--moss); }
+  .ing-list .ing .q { font-family: 'DM Serif Display', serif; font-style: italic; color: var(--clay-deep); font-size: 13px; }
+  .ing-list .ing.alt { background: var(--clay-soft); }
+  .ing-list .ing.alt .dot { background: var(--clay-deep); }
+  .ing-list .ing.alt2 { background: var(--ochre-soft); }
+  .ing-list .ing.alt2 .dot { background: #8b6512; }
+
+  /* Map card */
+  .map-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--r-card);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+  }
+  .map-illust {
+    background:
+      radial-gradient(80px 60px at 30% 30%, var(--sage-soft), transparent 70%),
+      radial-gradient(100px 80px at 70% 60%, var(--clay-soft), transparent 70%),
+      radial-gradient(80px 70px at 50% 80%, var(--ochre-soft), transparent 70%),
+      var(--bg-2);
+    min-height: 360px;
+    position: relative;
+  }
+  .map-illust::before {
+    content: ''; position: absolute; inset: 0;
+    background-image:
+      radial-gradient(circle at 2px 2px, rgba(108,98,72,0.07) 1px, transparent 0);
+    background-size: 22px 22px;
+  }
+  .mpin { position: absolute; transform: translate(-50%, -100%); }
+  .mpin .body {
+    width: 38px; height: 38px;
+    background: var(--moss);
+    color: var(--paper);
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    display: grid; place-items: center;
+    border: 2px solid var(--paper);
+    box-shadow: 0 8px 16px -8px rgba(44,42,31,0.4);
+  }
+  .mpin.clay .body { background: var(--clay-deep); }
+  .mpin.ochre .body { background: var(--ochre); color: #4a3506; }
+  .mpin .body span { transform: rotate(45deg); font-family: 'DM Serif Display', serif; font-style: italic; font-size: 14px; }
+  .mpin .lbl {
+    margin-top: 8px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    font-family: 'DM Serif Display', serif;
+    font-style: italic;
+  }
+  .map-text { padding: 48px; display: flex; flex-direction: column; justify-content: center; }
+  .map-text h3 { font-family: 'DM Serif Display', serif; font-weight: 400; font-size: 36px; line-height: 1.05; letter-spacing: -0.02em; margin: 0 0 14px; }
+  .map-text p { color: var(--ink-2); margin: 0 0 22px; font-size: 15.5px; }
+  .badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+  .tag {
+    background: var(--sage-soft);
+    color: var(--moss);
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+    border: 1px solid var(--sage);
+  }
+  .tag.clay { background: var(--clay-soft); color: var(--clay-deep); border-color: var(--clay); }
+  .tag.ochre { background: var(--ochre-soft); color: #8b6512; border-color: var(--ochre); }
+
+  /* Quote */
+  .quote {
+    background: var(--paper);
+    border-radius: var(--r-card);
+    border: 1px solid var(--line);
+    padding: 56px 48px;
+    text-align: center;
+    max-width: 880px;
+    margin: 0 auto;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  .quote svg.bg-leaf {
+    position: absolute;
+    color: var(--sage);
+    opacity: 0.12;
+  }
+  .quote svg.bg-leaf.tl { top: -10px; left: -10px; transform: rotate(-30deg); }
+  .quote svg.bg-leaf.br { bottom: -10px; right: -10px; transform: rotate(150deg); color: var(--clay); }
+  .quote p {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px; line-height: 1.35;
+    letter-spacing: -0.01em;
+    margin: 0 0 24px;
+    font-weight: 400;
+    position: relative;
+  }
+  .quote p em { font-style: italic; color: var(--clay-deep); }
+  .quote .who { display: inline-flex; align-items: center; gap: 14px; font-size: 14px; position: relative; }
+  .quote .who .av { width: 52px; height: 52px; border-radius: 50%; background: var(--clay-soft); color: var(--clay-deep); display: grid; place-items: center; font-family: 'DM Serif Display', serif; font-size: 18px; border: 2px solid var(--clay); }
+  .quote .who b { display: block; font-weight: 600; font-size: 15px; }
+
+  /* Closing */
+  .closing {
+    padding: 100px 0 80px;
+    text-align: center;
+    background: linear-gradient(180deg, var(--bg) 0%, var(--sage-soft) 100%);
+    border-top: 1px solid var(--line);
+    position: relative;
+    overflow: hidden;
+  }
+  .closing svg.lf {
+    position: absolute;
+    color: var(--sage);
+    opacity: 0.3;
+  }
+  .closing .lf1 { bottom: 0; left: 5%; transform: rotate(-15deg); }
+  .closing .lf2 { bottom: -10px; right: 8%; transform: rotate(20deg); color: var(--clay); opacity: 0.25; }
+  .closing h2 {
+    font-family: 'DM Serif Display', serif;
+    font-weight: 400;
+    font-size: clamp(44px, 5.6vw, 72px);
+    line-height: 1.02;
+    letter-spacing: -0.022em;
+    margin: 0 auto 18px;
+    max-width: 18ch;
+    position: relative;
+  }
+  .closing h2 em { font-style: italic; color: var(--clay-deep); }
+  .closing p { position: relative; color: var(--ink-2); font-size: 18px; max-width: 52ch; margin: 0 auto 30px; }
+  .closing .actions { position: relative; justify-content: center; display: flex; gap: 12px; flex-wrap: wrap; }
+
+  footer { padding: 32px 0 44px; color: var(--ink-3); font-size: 13.5px; font-style: italic; font-family: 'DM Serif Display', serif; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+  @media (max-width: 980px) {
+    .hero { grid-template-columns: 1fr; }
+    .features { grid-template-columns: 1fr; }
+    .recipe-row, .map-card { grid-template-columns: 1fr; }
+    .nav-links { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="top">
+      <a class="brand" href="#">
+        <span class="mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2c-3 4-7 6-7 12a7 7 0 0 0 14 0c0-6-4-8-7-12z"/></svg>
+        </span>
+        Grocery Waze
+      </a>
+      <div class="nav-links">
+        <a class="active" href="#">Inicio</a>
+        <a href="#">Mi cocina</a>
+        <a href="#">Mercados</a>
+        <a href="#">Recetario</a>
+        <a href="#">Despensa</a>
+      </div>
+      <a class="btn" href="#">Empezar gratis</a>
+    </nav>
+  </div>
+
+  <!-- Hero -->
+  <section class="wrap hero">
+    <div>
+      <div class="eyebrow">
+        <svg class="leaf" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3c-9 0-16 7-16 16 0 0 0 1 1 1 9 0 16-7 16-16 0 0 0-1-1-1z"/></svg>
+        un huerto digital para la casa
+      </div>
+      <h1>La canasta de la semana, <em>al ritmo</em><br/>de su <span class="underline">cocina</span>.</h1>
+      <p>Una libreta calmada para anotar lo que falta, revisar precios cerca, y compartir la lista con la familia. Sin estridencias, sin sorpresas en la caja.</p>
+      <div class="actions">
+        <a class="btn btn-lg" href="#">Comenzar mi libreta</a>
+        <a class="btn btn-soft btn-lg" href="#">Conocer cómo funciona</a>
+        <span class="meta">— gratis, sin tarjeta</span>
+      </div>
+    </div>
+
+    <div class="scene">
+      <svg class="leaf l1" width="64" height="64" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3c-9 0-16 7-16 16 0 0 0 1 1 1 9 0 16-7 16-16 0 0 0-1-1-1z"/></svg>
+      <svg class="leaf l2" width="56" height="56" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3c-9 0-16 7-16 16 0 0 0 1 1 1 9 0 16-7 16-16 0 0 0-1-1-1z"/></svg>
+      <svg class="leaf l3" width="72" height="72" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3c-9 0-16 7-16 16 0 0 0 1 1 1 9 0 16-7 16-16 0 0 0-1-1-1z"/></svg>
+      <svg class="leaf l4" width="60" height="60" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3c-9 0-16 7-16 16 0 0 0 1 1 1 9 0 16-7 16-16 0 0 0-1-1-1z"/></svg>
+
+      <span class="float-tag tl"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg></span>14 productos · lista</span>
+      <span class="float-tag bl b"><span class="ic" style="background:#f5e1b7;color:#8b6512;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M5 9l7-7 7 7"/></svg></span><b>₡ 6.560</b> ahorrados</span>
+
+      <article class="receipt-card">
+        <div class="stamp"><span>verificado</span><b>★ 4.9</b></div>
+        <div class="day">— Sábado en la mañana —</div>
+        <h3>Mi lista de hoy</h3>
+        <div class="where">14 productos · 4 tiendas cerca · Curridabat</div>
+
+        <div class="row done">
+          <span class="check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+          <span>Pollo entero <span class="p">— 1.4 kg</span></span>
+          <span>₡ 3.890</span>
+        </div>
+        <div class="row done">
+          <span class="check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+          <span>Arroz Tío Pelón <span class="p">— 2 kg</span></span>
+          <span>₡ 2.580</span>
+        </div>
+        <div class="row">
+          <span class="check"></span>
+          <span>Aceite Capullo <span class="p">— 1 L</span></span>
+          <span>₡ 2.450</span>
+        </div>
+        <div class="row">
+          <span class="check"></span>
+          <span>Cilantro fresco <span class="p">— manojo</span></span>
+          <span>₡ 450</span>
+        </div>
+        <div class="row">
+          <span class="check"></span>
+          <span>Tomate maduro <span class="p">— 1 kg</span></span>
+          <span>₡ 1.290</span>
+        </div>
+
+        <div class="total">
+          <div class="l">Mejor precio · PriceSmart</div>
+          <div class="v">₡ 10.660</div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-hd">
+        <span class="eye">— para la casa, con tiempo —</span>
+        <h2>Lo que <em>cultivamos</em> aquí.</h2>
+        <p>Herramientas suaves, pensadas para hogares ocupados. Aprenden su ritmo y no le exigen el suyo.</p>
+      </div>
+
+      <div class="features">
+        <article class="bcard">
+          <svg class="leaf-bg" width="160" height="160" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3c-9 0-16 7-16 16 0 0 0 1 1 1 9 0 16-7 16-16 0 0 0-1-1-1z"/></svg>
+          <span class="num">— i —</span>
+          <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="9" r="3"/><path d="M3 19v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg></div>
+          <h3>Listas en familia</h3>
+          <p>Lo que uno marca, los demás lo ven en el momento. Cero pisones, cero llamadas.</p>
+          <div class="meta"><span>uso típico</span><span>4 personas · 1 lista</span></div>
+        </article>
+
+        <article class="bcard clay">
+          <svg class="leaf-bg" width="160" height="160" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3c-9 0-16 7-16 16 0 0 0 1 1 1 9 0 16-7 16-16 0 0 0-1-1-1z"/></svg>
+          <span class="num">— ii —</span>
+          <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4"/><path d="M3 17l9 4 9-4"/></svg></div>
+          <h3>Comparador inteligente</h3>
+          <p>Una tienda o ruta partida. Le mostramos cuánto se ahorra en cada opción — con gasolina y tiempo dentro.</p>
+          <div class="meta"><span>ahorro promedio</span><span>17% por canasta</span></div>
+        </article>
+
+        <article class="bcard ochre">
+          <svg class="leaf-bg" width="160" height="160" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3c-9 0-16 7-16 16 0 0 0 1 1 1 9 0 16-7 16-16 0 0 0-1-1-1z"/></svg>
+          <span class="num">— iii —</span>
+          <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7h18v13H3z"/><path d="M8 7V4h8v3"/></svg></div>
+          <h3>Despensa que respira</h3>
+          <p>Aprende su ritmo de consumo y avisa con tiempo, no con susto. "Se le acaba el café en 3 días."</p>
+          <div class="meta"><span>recordatorios</span><span>suaves, no spam</span></div>
+        </article>
+
+        <article class="bcard clay">
+          <svg class="leaf-bg" width="160" height="160" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3c-9 0-16 7-16 16 0 0 0 1 1 1 9 0 16-7 16-16 0 0 0-1-1-1z"/></svg>
+          <span class="num">— iv —</span>
+          <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 8a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v9H5z"/><path d="M9 17v3"/><path d="M15 17v3"/></svg></div>
+          <h3>Del recetario a la lista</h3>
+          <p>Pegue el enlace de una receta. Sacamos los ingredientes con cantidades — listos para mercar.</p>
+          <div class="meta"><span>funciona con</span><span>cualquier sitio web</span></div>
+        </article>
+
+        <article class="bcard">
+          <svg class="leaf-bg" width="160" height="160" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3c-9 0-16 7-16 16 0 0 0 1 1 1 9 0 16-7 16-16 0 0 0-1-1-1z"/></svg>
+          <span class="num">— v —</span>
+          <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+          <h3>Mercados del barrio</h3>
+          <p>187 tiendas en CR, con precios reales. Filtre por radio o por categoría — sin caminar de gusto.</p>
+          <div class="meta"><span>cobertura</span><span>14 ciudades</span></div>
+        </article>
+
+        <article class="bcard ochre">
+          <svg class="leaf-bg" width="160" height="160" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3c-9 0-16 7-16 16 0 0 0 1 1 1 9 0 16-7 16-16 0 0 0-1-1-1z"/></svg>
+          <span class="num">— vi —</span>
+          <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="2" height="16"/><rect x="7" y="4" width="1" height="16"/><rect x="10" y="4" width="3" height="16"/><rect x="15" y="4" width="1" height="16"/><rect x="18" y="4" width="3" height="16"/></svg></div>
+          <h3>Reportar es sembrar</h3>
+          <p>Si el precio en la tienda no coincide, escanee el código. La comunidad lo cuida y crece.</p>
+          <div class="meta"><span>esta semana</span><span>1.240 reportes</span></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Recipe row -->
+  <section class="section alt">
+    <div class="wrap">
+      <div class="section-hd">
+        <span class="eye">— del recetario a la canasta —</span>
+        <h2>Una receta. <em>Una lista</em>. Sin escribirla dos veces.</h2>
+      </div>
+
+      <div class="recipe-row">
+        <div class="recipe-illust">
+          <svg class="scatter s1" width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3c-9 0-16 7-16 16 0 0 0 1 1 1 9 0 16-7 16-16 0 0 0-1-1-1z"/></svg>
+          <svg class="scatter s2" width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3c-9 0-16 7-16 16 0 0 0 1 1 1 9 0 16-7 16-16 0 0 0-1-1-1z"/></svg>
+          <svg class="scatter s3" width="52" height="52" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3c-9 0-16 7-16 16 0 0 0 1 1 1 9 0 16-7 16-16 0 0 0-1-1-1z"/></svg>
+          <svg class="scatter s4" width="46" height="46" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3c-9 0-16 7-16 16 0 0 0 1 1 1 9 0 16-7 16-16 0 0 0-1-1-1z"/></svg>
+          <svg class="pot" viewBox="0 0 220 220" fill="none">
+            <ellipse cx="110" cy="170" rx="80" ry="14" fill="#2c2a1f" opacity="0.1"/>
+            <path d="M40 80h140l-12 90c-1 8-8 14-16 14H68c-8 0-15-6-16-14L40 80z" fill="#9d6248"/>
+            <ellipse cx="110" cy="80" rx="70" ry="12" fill="#c08160"/>
+            <path d="M70 60c0-12 18-22 40-22s40 10 40 22" stroke="#c08160" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <path d="M80 45c-2-6 4-12 12-12M105 38c-2-6 4-12 12-12M130 45c-2-6 4-12 12-12" stroke="#97a87a" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.6"/>
+            <ellipse cx="110" cy="160" rx="55" ry="6" fill="#2c2a1f" opacity="0.2"/>
+          </svg>
+        </div>
+        <div class="recipe-text">
+          <div class="day">— domingo de arroz con pollo —</div>
+          <h3>Arroz con pollo<br/>de la abuela</h3>
+          <p>Pegamos el enlace de la receta y sacamos los ingredientes con cantidades, ajustados para cuatro personas. Solo falta decidir dónde comprar.</p>
+          <div class="ing-list">
+            <div class="ing"><span class="dot"></span> Pollo entero <span class="q">1.4 kg</span></div>
+            <div class="ing alt"><span class="dot"></span> Arroz Tío Pelón <span class="q">2 tazas</span></div>
+            <div class="ing"><span class="dot"></span> Tomate maduro <span class="q">4 unidades</span></div>
+            <div class="ing alt2"><span class="dot"></span> Cilantro fresco <span class="q">1 manojo</span></div>
+            <div class="ing alt"><span class="dot"></span> Aceite Capullo <span class="q">¼ taza</span></div>
+          </div>
+          <div class="actions">
+            <a class="btn" href="#">Pasar todo a mi lista</a>
+            <a class="btn btn-soft" href="#">Cambiar cantidades</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Map -->
+  <section class="section">
+    <div class="wrap">
+      <div class="map-card">
+        <div class="map-illust">
+          <div class="mpin" style="left:30%;top:36%;"><div class="body"><span>A</span></div><div class="lbl">PriceSmart · ₡10.660</div></div>
+          <div class="mpin clay" style="left:62%;top:50%;"><div class="body"><span>B</span></div><div class="lbl">Walmart · ₡12.290</div></div>
+          <div class="mpin ochre" style="left:48%;top:76%;"><div class="body"><span>C</span></div><div class="lbl">Más x Menos · ₡12.560</div></div>
+        </div>
+        <div class="map-text">
+          <div class="badge-row">
+            <span class="tag">cerca</span>
+            <span class="tag clay">mejor precio</span>
+            <span class="tag ochre">descuentos hoy</span>
+          </div>
+          <h3>Tiendas <em>de su barrio</em>, con calma.</h3>
+          <p>Las cercanas, las más baratas, y las que tienen oferta hoy — todas con el dato real reportado por la comunidad esta misma mañana.</p>
+          <div class="actions">
+            <a class="btn" href="#">Ver mi mapa</a>
+            <a class="btn btn-soft" href="#">Filtrar por categoría</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quote -->
+  <section class="section alt">
+    <div class="wrap">
+      <div class="quote">
+        <svg class="bg-leaf tl" width="200" height="200" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3c-9 0-16 7-16 16 0 0 0 1 1 1 9 0 16-7 16-16 0 0 0-1-1-1z"/></svg>
+        <svg class="bg-leaf br" width="200" height="200" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3c-9 0-16 7-16 16 0 0 0 1 1 1 9 0 16-7 16-16 0 0 0-1-1-1z"/></svg>
+        <p>"Lo que me gusta de esta libreta es que <em>respeta mi tiempo</em>. Abro, anoto, y sé que cuando vaya al super va a estar todo en orden. No siento que la app me apure."</p>
+        <div class="who">
+          <span class="av">MF</span>
+          <div>
+            <b>María Fernández</b>
+            <span style="color:var(--ink-3);font-style:italic;font-family:'DM Serif Display',serif;">Mamá de dos · Curridabat</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Closing -->
+  <section class="closing">
+    <svg class="lf lf1" width="200" height="200" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3c-9 0-16 7-16 16 0 0 0 1 1 1 9 0 16-7 16-16 0 0 0-1-1-1z"/></svg>
+    <svg class="lf lf2" width="180" height="180" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3c-9 0-16 7-16 16 0 0 0 1 1 1 9 0 16-7 16-16 0 0 0-1-1-1z"/></svg>
+    <div class="wrap">
+      <h2>Una compra <em>tranquila</em>, semana tras semana.</h2>
+      <p>Únase a 12.480 hogares costarricenses que ya tienen una manera más amable de hacer las compras.</p>
+      <div class="actions">
+        <a class="btn btn-clay btn-lg" href="#">Empezar gratis</a>
+        <a class="btn btn-soft btn-lg" href="#">Ver demo · 60s</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="wrap">
+    <span>© Grocery Waze · una libreta para la cocina · 2026</span>
+    <span>hecho en cr — con paciencia y café</span>
+  </footer>
+</body>
+</html>

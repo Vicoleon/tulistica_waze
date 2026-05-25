@@ -1,0 +1,959 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mockup 04 — Mercado Nocturno · Grocery Waze</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #07100c;
+    --bg-2: #0c1a14;
+    --bg-3: #0f261c;
+    --ink: #ecf6ef;
+    --ink-2: rgba(236,246,239,0.72);
+    --ink-3: rgba(236,246,239,0.46);
+    --line: rgba(236,246,239,0.08);
+    --line-2: rgba(236,246,239,0.16);
+
+    --leaf: #34d399;
+    --leaf-deep: #10b981;
+    --lime: #c0f23d;
+    --gold: #f6c453;
+    --citrus: #ffb547;
+    --rose: #ff5d8f;
+    --berry: #ff5252;
+    --sky: #7cc4ff;
+    --violet: #c08aff;
+
+    --glass: rgba(255,255,255,0.04);
+    --glass-strong: rgba(255,255,255,0.07);
+    --blur: 22px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  /* Atmosphere */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(70% 50% at 12% 8%, rgba(52,211,153,0.18), transparent 60%),
+      radial-gradient(60% 50% at 92% 14%, rgba(192,138,255,0.14), transparent 60%),
+      radial-gradient(55% 40% at 70% 88%, rgba(246,196,83,0.10), transparent 60%),
+      var(--bg);
+    z-index: -2;
+  }
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse at center, black 40%, transparent 95%);
+    z-index: -1;
+    pointer-events: none;
+  }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+  .mono { font-family: 'JetBrains Mono', monospace; letter-spacing: 0.02em; }
+  .display { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.02em; }
+
+  /* Top bar / ticker */
+  .ticker-bar {
+    border-bottom: 1px solid var(--line);
+    background: rgba(7,16,12,0.6);
+    backdrop-filter: blur(10px);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-3);
+    overflow: hidden;
+  }
+  .ticker-inner {
+    display: flex; gap: 28px;
+    padding: 10px 0;
+    white-space: nowrap;
+    animation: ticker 40s linear infinite;
+  }
+  .ticker-inner span b { color: var(--leaf); margin-left: 4px; font-weight: 600; }
+  .ticker-inner span .up { color: var(--berry); }
+  .ticker-inner span .down { color: var(--leaf); }
+  .ticker-inner span .neutral { color: var(--gold); }
+  @keyframes ticker {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* Nav */
+  nav.top {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(7,16,12,0.6);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 0;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 12px;
+    font-weight: 700; font-size: 15px;
+    letter-spacing: -0.01em;
+  }
+  .brand .mark {
+    width: 30px; height: 30px; border-radius: 9px;
+    background: linear-gradient(135deg, var(--leaf), var(--lime));
+    display: grid; place-items: center;
+    color: #052a1c;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 6px 20px rgba(52,211,153,0.35);
+  }
+  .nav-links { display: flex; gap: 4px; }
+  .nav-links a {
+    padding: 8px 14px; border-radius: 999px;
+    font-size: 14px; color: var(--ink-2); font-weight: 500;
+    transition: background 180ms, color 180ms;
+  }
+  .nav-links a:hover { background: var(--glass); color: var(--ink); }
+  .nav-links a.is-active { background: var(--glass-strong); color: var(--ink); }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 18px; border-radius: 999px;
+    font-weight: 600; font-size: 14px;
+    border: 1px solid var(--line-2); background: transparent; color: var(--ink);
+    cursor: pointer;
+    transition: all 180ms ease;
+  }
+  .btn:hover { background: var(--glass-strong); border-color: rgba(236,246,239,0.28); transform: translateY(-1px); }
+  .btn-primary {
+    background: linear-gradient(180deg, var(--leaf) 0%, var(--leaf-deep) 100%);
+    color: #052a1c; border-color: rgba(255,255,255,0.18);
+    box-shadow: 0 8px 24px rgba(52,211,153,0.28), inset 0 1px 0 rgba(255,255,255,0.3);
+  }
+  .btn-primary:hover { box-shadow: 0 12px 32px rgba(52,211,153,0.4), inset 0 1px 0 rgba(255,255,255,0.4); }
+  .btn-lg { padding: 14px 24px; font-size: 15px; }
+
+  /* Hero */
+  .hero {
+    position: relative;
+    padding: 72px 0 60px;
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 56px;
+    align-items: center;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 6px 14px; border-radius: 999px;
+    background: var(--glass); border: 1px solid var(--line-2);
+    backdrop-filter: blur(var(--blur));
+    font-size: 13px; color: var(--ink-2); font-weight: 500;
+    margin-bottom: 26px;
+  }
+  .badge .pulse {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--leaf);
+    box-shadow: 0 0 0 0 rgba(52,211,153,0.7), 0 0 12px var(--leaf);
+    animation: pulse 2.2s ease-out infinite;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(52,211,153,0.55), 0 0 16px var(--leaf); }
+    70% { box-shadow: 0 0 0 12px rgba(52,211,153,0), 0 0 16px var(--leaf); }
+    100% { box-shadow: 0 0 0 0 rgba(52,211,153,0), 0 0 16px var(--leaf); }
+  }
+  .hero h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: clamp(46px, 6vw, 88px);
+    line-height: 0.96;
+    letter-spacing: -0.035em;
+    margin: 0 0 22px;
+  }
+  .hero h1 .accent {
+    background: linear-gradient(110deg, var(--lime) 0%, var(--leaf) 40%, var(--sky) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hero h1 .strike {
+    position: relative; display: inline-block;
+  }
+  .hero h1 .strike::after {
+    content: ''; position: absolute; left: -2px; right: -2px; top: 50%;
+    height: 4px;
+    background: var(--berry);
+    transform: rotate(-3deg);
+  }
+  .hero p {
+    font-size: 19px;
+    color: var(--ink-2);
+    max-width: 56ch;
+    margin: 0 0 30px;
+  }
+  .actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+
+  .live-stats { margin-top: 36px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 540px; }
+  .stat {
+    border: 1px solid var(--line); background: var(--glass);
+    backdrop-filter: blur(var(--blur));
+    border-radius: 18px;
+    padding: 16px;
+  }
+  .stat .l { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em; }
+  .stat .v { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 26px; margin-top: 6px; letter-spacing: -0.02em; }
+  .stat.up .v { color: var(--leaf); }
+  .stat.up .v::before { content: '▲ '; font-size: 16px; }
+
+  /* Hero panel: live price tracker */
+  .terminal {
+    position: relative;
+    border-radius: 28px;
+    border: 1px solid var(--line-2);
+    background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    backdrop-filter: blur(var(--blur));
+    padding: 0;
+    overflow: hidden;
+    box-shadow: 0 30px 80px -30px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+  .terminal::before {
+    content: ''; position: absolute; inset: -1px; border-radius: 28px;
+    padding: 1px;
+    background: linear-gradient(140deg, rgba(52,211,153,0.4), transparent 30%, transparent 70%, rgba(124,196,255,0.4));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    pointer-events: none;
+  }
+  .terminal-head {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .terminal-head .dots { display: flex; gap: 6px; }
+  .terminal-head .dots i { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.16); }
+  .terminal-head .dots i:first-child { background: var(--berry); }
+  .terminal-head .dots i:nth-child(2) { background: var(--citrus); }
+  .terminal-head .dots i:nth-child(3) { background: var(--leaf); }
+  .terminal-head .live { display: flex; align-items: center; gap: 8px; color: var(--leaf); }
+  .terminal-head .live .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--leaf); box-shadow: 0 0 12px var(--leaf); }
+
+  .product-row {
+    padding: 22px 22px 8px;
+    display: grid; grid-template-columns: 1fr auto; gap: 16px;
+    align-items: end;
+  }
+  .product-row .title {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.1em;
+  }
+  .product-row h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; font-size: 28px;
+    letter-spacing: -0.02em;
+    margin: 4px 0 2px;
+  }
+  .product-row .sub { font-size: 13px; color: var(--ink-3); }
+  .product-row .now {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; font-size: 40px;
+    letter-spacing: -0.03em;
+    color: var(--lime);
+    line-height: 1;
+  }
+  .product-row .delta {
+    text-align: right; color: var(--leaf);
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    margin-top: 4px;
+  }
+
+  /* Chart */
+  .chart-wrap { padding: 0 0 18px; }
+  .chart {
+    height: 150px;
+    position: relative;
+  }
+  .chart svg { width: 100%; height: 100%; display: block; }
+
+  /* Comparison list */
+  .compare {
+    border-top: 1px solid var(--line);
+    padding: 14px 18px 18px;
+  }
+  .compare .ch {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .comp-row {
+    display: grid; grid-template-columns: 16px 1fr auto auto;
+    align-items: center; gap: 12px;
+    padding: 12px 10px;
+    border-radius: 12px;
+    transition: background 150ms;
+  }
+  .comp-row:hover { background: rgba(255,255,255,0.04); }
+  .comp-row .sw { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); }
+  .comp-row.best .sw { background: var(--leaf); box-shadow: 0 0 12px var(--leaf); }
+  .comp-row.worst .sw { background: var(--berry); }
+  .comp-row .store { font-size: 14px; font-weight: 500; }
+  .comp-row .store small { display: block; color: var(--ink-3); font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+  .comp-row .price { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 15px; }
+  .comp-row .diff { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-3); min-width: 62px; text-align: right; }
+  .comp-row.best .diff { color: var(--leaf); }
+  .comp-row.worst .diff { color: var(--berry); }
+  .terminal .footer {
+    border-top: 1px solid var(--line);
+    padding: 14px 18px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-3);
+  }
+  .terminal .footer b { color: var(--leaf); font-weight: 600; }
+
+  /* Section */
+  .section { padding: 96px 0; position: relative; }
+  .section-hd { margin-bottom: 48px; max-width: 760px; }
+  .section-hd .eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; color: var(--leaf); text-transform: uppercase; letter-spacing: 0.16em;
+    margin-bottom: 18px;
+  }
+  .section-hd .eyebrow::before {
+    content: ''; width: 24px; height: 1px; background: var(--leaf);
+  }
+  .section-hd h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; font-size: clamp(34px, 4.5vw, 60px);
+    line-height: 1.02; letter-spacing: -0.025em;
+    margin: 0 0 14px;
+  }
+  .section-hd p { color: var(--ink-2); font-size: 18px; margin: 0; max-width: 60ch; }
+
+  /* Feature grid */
+  .grid-features {
+    display: grid; grid-template-columns: repeat(12, 1fr);
+    gap: 18px;
+  }
+  .gcard {
+    grid-column: span 4;
+    border: 1px solid var(--line);
+    background: var(--glass);
+    backdrop-filter: blur(var(--blur));
+    border-radius: 22px;
+    padding: 26px;
+    transition: transform 200ms, border-color 200ms, background 200ms;
+    cursor: pointer;
+    min-height: 240px;
+    display: flex; flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+  .gcard::after {
+    content: ''; position: absolute; inset: -1px; border-radius: 22px;
+    padding: 1px;
+    background: linear-gradient(140deg, transparent, transparent);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    transition: background 220ms;
+    pointer-events: none;
+  }
+  .gcard:hover { transform: translateY(-4px); background: var(--glass-strong); border-color: rgba(236,246,239,0.18); }
+  .gcard:hover::after {
+    background: linear-gradient(140deg, var(--leaf), transparent 40%, transparent 60%, var(--violet));
+  }
+  .gcard .ico {
+    width: 44px; height: 44px; border-radius: 13px;
+    background: linear-gradient(140deg, rgba(52,211,153,0.18), rgba(124,196,255,0.1));
+    border: 1px solid rgba(52,211,153,0.32);
+    display: grid; place-items: center;
+    color: var(--leaf);
+    margin-bottom: 18px;
+  }
+  .gcard.violet .ico { color: var(--violet); border-color: rgba(192,138,255,0.32); background: linear-gradient(140deg, rgba(192,138,255,0.16), rgba(255,93,143,0.08)); }
+  .gcard.gold .ico { color: var(--gold); border-color: rgba(246,196,83,0.32); background: linear-gradient(140deg, rgba(246,196,83,0.16), rgba(255,181,71,0.08)); }
+  .gcard.sky .ico { color: var(--sky); border-color: rgba(124,196,255,0.32); background: linear-gradient(140deg, rgba(124,196,255,0.16), rgba(192,138,255,0.06)); }
+  .gcard.rose .ico { color: var(--rose); border-color: rgba(255,93,143,0.32); background: linear-gradient(140deg, rgba(255,93,143,0.16), rgba(246,196,83,0.06)); }
+  .gcard h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; font-size: 22px;
+    letter-spacing: -0.02em;
+    margin: 0 0 8px;
+  }
+  .gcard p { color: var(--ink-2); margin: 0 0 14px; font-size: 14.5px; }
+  .gcard .read {
+    margin-top: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.12em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .gcard:hover .read { color: var(--leaf); }
+  .gcard.wide { grid-column: span 6; }
+
+  /* Map preview */
+  .map-tile {
+    grid-column: span 8;
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(15,38,28,0.5), rgba(7,16,12,0.5));
+    backdrop-filter: blur(var(--blur));
+    position: relative;
+    overflow: hidden;
+    min-height: 380px;
+  }
+  .map-canvas {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(160px 100px at 30% 30%, rgba(52,211,153,0.25), transparent 70%),
+      radial-gradient(220px 140px at 70% 60%, rgba(124,196,255,0.18), transparent 70%),
+      radial-gradient(120px 80px at 50% 80%, rgba(246,196,83,0.18), transparent 70%);
+  }
+  .map-canvas::before {
+    content: ''; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(ellipse at center, black 50%, transparent 100%);
+  }
+  .map-canvas .road {
+    position: absolute; height: 1px; background: rgba(255,255,255,0.18);
+    box-shadow: 0 0 8px rgba(255,255,255,0.15);
+  }
+  .pin {
+    position: absolute; transform: translate(-50%, -100%);
+    display: grid; place-items: center;
+  }
+  .pin .body {
+    width: 32px; height: 32px; border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    display: grid; place-items: center;
+    background: var(--leaf); color: #052a1c;
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 11px;
+    box-shadow: 0 0 20px var(--leaf), 0 8px 16px rgba(0,0,0,0.4);
+    border: 1.5px solid rgba(255,255,255,0.4);
+  }
+  .pin .body span { transform: rotate(45deg); }
+  .pin.gold .body { background: var(--gold); box-shadow: 0 0 20px var(--gold), 0 8px 16px rgba(0,0,0,0.4); }
+  .pin.berry .body { background: var(--berry); box-shadow: 0 0 18px var(--berry), 0 8px 16px rgba(0,0,0,0.4); color: white; }
+  .pin.sky .body { background: var(--sky); box-shadow: 0 0 20px var(--sky), 0 8px 16px rgba(0,0,0,0.4); }
+
+  .map-overlay {
+    position: absolute; left: 18px; bottom: 18px; right: 18px;
+    border-radius: 18px;
+    border: 1px solid var(--line-2);
+    background: rgba(7,16,12,0.7);
+    backdrop-filter: blur(var(--blur));
+    padding: 18px 22px;
+    display: flex; align-items: center; justify-content: space-between; gap: 18px;
+  }
+  .map-overlay .l { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em; }
+  .map-overlay h4 { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; margin: 4px 0 0; letter-spacing: -0.01em; }
+  .map-overlay .save {
+    text-align: right;
+  }
+  .map-overlay .save b {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 28px; font-weight: 700;
+    color: var(--leaf);
+    letter-spacing: -0.02em;
+  }
+  .map-overlay .save .small { color: var(--ink-3); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+  .map-head {
+    position: absolute; top: 16px; left: 16px; right: 16px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .map-head .pill {
+    border: 1px solid var(--line-2); background: rgba(7,16,12,0.6);
+    backdrop-filter: blur(var(--blur));
+    padding: 6px 12px; border-radius: 999px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.08em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .map-head .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--leaf); box-shadow: 0 0 10px var(--leaf); }
+
+  /* Smart Cart panel */
+  .cart-panel {
+    grid-column: span 4;
+    border: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    backdrop-filter: blur(var(--blur));
+    border-radius: 22px;
+    padding: 26px;
+    display: flex; flex-direction: column;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cart-panel h3 { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 4px; }
+  .cart-panel .desc { color: var(--ink-2); font-size: 14px; margin: 0 0 4px; }
+  .strategy {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px;
+    background: rgba(255,255,255,0.02);
+  }
+  .strategy .label {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-3);
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .strategy .total {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+    font-size: 26px; letter-spacing: -0.025em; margin: 4px 0;
+  }
+  .strategy .meta { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-3); }
+  .strategy.best {
+    border-color: rgba(52,211,153,0.55);
+    background: linear-gradient(160deg, rgba(52,211,153,0.18), rgba(52,211,153,0.04));
+    box-shadow: 0 0 28px rgba(52,211,153,0.18) inset, 0 0 0 1px rgba(52,211,153,0.25);
+  }
+  .strategy.best .total { color: var(--lime); }
+  .strategy.best .meta b { color: var(--leaf); font-weight: 600; }
+
+  /* Community section */
+  .community {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 22px;
+  }
+  .quote-card {
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    padding: 36px;
+    background:
+      radial-gradient(60% 40% at 0% 0%, rgba(52,211,153,0.18), transparent 60%),
+      linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+    backdrop-filter: blur(var(--blur));
+  }
+  .quote-card .q {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 26px; line-height: 1.3; letter-spacing: -0.015em;
+    margin: 0 0 22px;
+  }
+  .quote-card .q b { background: linear-gradient(110deg, var(--lime), var(--leaf)); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 700; }
+  .quote-card .who { display: flex; align-items: center; gap: 14px; }
+  .avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--leaf), var(--sky));
+    color: #052a1c; font-weight: 700;
+    display: grid; place-items: center;
+    border: 1px solid rgba(255,255,255,0.18);
+  }
+  .quote-card .who small { color: var(--ink-3); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+  .leaderboard {
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    padding: 26px;
+    background: var(--glass);
+    backdrop-filter: blur(var(--blur));
+  }
+  .leaderboard h4 { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .leaderboard .sub { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px; }
+  .lb {
+    display: grid; grid-template-columns: 32px 1fr auto;
+    align-items: center; gap: 12px;
+    padding: 12px;
+    border-radius: 14px;
+    transition: background 150ms;
+  }
+  .lb:hover { background: rgba(255,255,255,0.04); }
+  .lb + .lb { border-top: 1px solid var(--line); }
+  .lb .rank {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line-2);
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px;
+    color: var(--ink-2);
+  }
+  .lb.gold .rank { background: linear-gradient(135deg, var(--gold), #b88914); color: #2a1d00; border-color: rgba(246,196,83,0.5); box-shadow: 0 0 12px rgba(246,196,83,0.4); }
+  .lb.silver .rank { background: linear-gradient(135deg, #d1d5db, #6b7280); color: #1a1a1a; }
+  .lb.bronze .rank { background: linear-gradient(135deg, #cd7f32, #8b4513); color: white; }
+  .lb .who b { font-weight: 600; }
+  .lb .who small { display: block; color: var(--ink-3); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.04em; }
+  .lb .pts { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--lime); }
+
+  /* CTA */
+  .cta {
+    margin: 0 24px 96px;
+    border: 1px solid var(--line-2);
+    border-radius: 32px;
+    padding: 64px;
+    background:
+      radial-gradient(80% 60% at 0% 0%, rgba(52,211,153,0.25), transparent 60%),
+      radial-gradient(80% 60% at 100% 100%, rgba(192,138,255,0.18), transparent 60%),
+      linear-gradient(180deg, rgba(15,38,28,0.6), rgba(7,16,12,0.6));
+    backdrop-filter: blur(var(--blur));
+    max-width: calc(1280px - 48px); margin-left: auto; margin-right: auto;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; font-size: clamp(40px, 5.5vw, 76px);
+    line-height: 1; letter-spacing: -0.03em;
+    margin: 0 auto 18px; max-width: 22ch;
+  }
+  .cta h2 em { font-style: normal; background: linear-gradient(110deg, var(--lime), var(--leaf), var(--sky)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .cta p { color: var(--ink-2); font-size: 18px; max-width: 60ch; margin: 0 auto 32px; }
+  .cta .actions { justify-content: center; }
+
+  footer { padding: 32px 0 44px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+  /* Responsive */
+  @media (max-width: 1080px) {
+    .hero-grid { grid-template-columns: 1fr; }
+    .grid-features .gcard, .grid-features .gcard.wide { grid-column: span 6; }
+    .grid-features .map-tile { grid-column: span 12; }
+    .grid-features .cart-panel { grid-column: span 12; }
+    .community { grid-template-columns: 1fr; }
+    .nav-links { display: none; }
+  }
+  @media (max-width: 720px) {
+    .grid-features .gcard, .grid-features .gcard.wide { grid-column: span 12; }
+    .cta { padding: 40px 24px; }
+    .live-stats { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+</style>
+</head>
+<body>
+  <!-- Ticker -->
+  <div class="ticker-bar">
+    <div class="ticker-inner">
+      <span>ARROZ 1KG <b class="down">↓ ₡120</b></span>
+      <span>ACEITE 1L <b class="down">↓ ₡85</b></span>
+      <span>LECHE 1L <b class="up">↑ ₡40</b></span>
+      <span>FRIJOL 900G <b class="down">↓ ₡220</b></span>
+      <span>CAFÉ 500G <b class="down">↓ ₡310</b></span>
+      <span>HUEVOS 15U <b class="neutral">= ₡0</b></span>
+      <span>PAN INTEGRAL <b class="up">↑ ₡60</b></span>
+      <span>TOMATE 1KG <b class="down">↓ ₡180</b></span>
+      <!-- repeat for loop seamless -->
+      <span>ARROZ 1KG <b class="down">↓ ₡120</b></span>
+      <span>ACEITE 1L <b class="down">↓ ₡85</b></span>
+      <span>LECHE 1L <b class="up">↑ ₡40</b></span>
+      <span>FRIJOL 900G <b class="down">↓ ₡220</b></span>
+      <span>CAFÉ 500G <b class="down">↓ ₡310</b></span>
+      <span>HUEVOS 15U <b class="neutral">= ₡0</b></span>
+      <span>PAN INTEGRAL <b class="up">↑ ₡60</b></span>
+      <span>TOMATE 1KG <b class="down">↓ ₡180</b></span>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <nav class="top">
+    <div class="wrap nav-inner">
+      <a class="brand" href="#">
+        <span class="mark">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 6h18l-2 13H5L3 6z"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        </span>
+        Grocery Waze
+      </a>
+      <div class="nav-links">
+        <a class="is-active" href="#">Market</a>
+        <a href="#">Tiendas</a>
+        <a href="#">Listas</a>
+        <a href="#">Recetas</a>
+        <a href="#">Despensa</a>
+        <a href="#">Ranking</a>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <a class="btn" href="#">Iniciar sesión</a>
+        <a class="btn btn-primary" href="#">Abrir terminal →</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="wrap hero">
+    <div class="hero-grid">
+      <div>
+        <span class="badge"><span class="pulse"></span>LIVE · 1.240 precios reportados · CR · hoy</span>
+        <h1>El terminal de <span class="accent">precios reales</span><br/>de la canasta básica.</h1>
+        <p>Grocery Waze monitorea 187 tiendas en tiempo real. Comparamos, ranqueamos y te decimos exactamente cuándo y dónde comprar — como un Bloomberg para tu lista del super.</p>
+        <div class="actions">
+          <a class="btn btn-primary btn-lg" href="#">Abrir mi terminal →</a>
+          <a class="btn btn-lg" href="#">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4z" fill="currentColor"/></svg>
+            Ver demo · 60s
+          </a>
+        </div>
+
+        <div class="live-stats">
+          <div class="stat"><div class="l">Ahorro promedio</div><div class="v">17%</div></div>
+          <div class="stat up"><div class="l">Reportes hoy</div><div class="v">1.240</div></div>
+          <div class="stat"><div class="l">Tiendas vivas</div><div class="v">187</div></div>
+        </div>
+      </div>
+
+      <!-- Terminal -->
+      <aside class="terminal" aria-label="Live price terminal">
+        <header class="terminal-head">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div class="dots"><i></i><i></i><i></i></div>
+            <span>price-terminal.cr</span>
+          </div>
+          <div class="live"><span class="pulse"></span>LIVE · 12s</div>
+        </header>
+
+        <div class="product-row">
+          <div>
+            <div class="title">Producto monitoreado</div>
+            <h2>Arroz Tío Pelón · 1 kg</h2>
+            <div class="sub">24 tiendas verificadas · CR · 24 may 2026</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="now">₡ 1.290</div>
+            <div class="delta">▼ ₡ 60 vs ayer · −4,4%</div>
+          </div>
+        </div>
+
+        <div class="chart-wrap">
+          <div class="chart">
+            <svg viewBox="0 0 600 150" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#34d399" stop-opacity="0.45"/>
+                  <stop offset="1" stop-color="#34d399" stop-opacity="0"/>
+                </linearGradient>
+                <linearGradient id="line" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0" stop-color="#c0f23d"/>
+                  <stop offset="1" stop-color="#34d399"/>
+                </linearGradient>
+              </defs>
+              <path d="M0,110 L40,98 L80,108 L120,82 L160,90 L200,72 L240,80 L280,58 L320,68 L360,46 L400,60 L440,40 L480,52 L520,32 L560,42 L600,24 L600,150 L0,150 Z" fill="url(#area)"/>
+              <path d="M0,110 L40,98 L80,108 L120,82 L160,90 L200,72 L240,80 L280,58 L320,68 L360,46 L400,60 L440,40 L480,52 L520,32 L560,42 L600,24" fill="none" stroke="url(#line)" stroke-width="2.4" stroke-linecap="round"/>
+              <circle cx="600" cy="24" r="5" fill="#c0f23d"/>
+              <circle cx="600" cy="24" r="11" fill="#c0f23d" opacity="0.18"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="compare">
+          <div class="ch">Comparador · 4 tiendas más cercanas</div>
+          <div class="comp-row best">
+            <span class="sw"></span>
+            <div class="store">PriceSmart Tres Ríos<small>3,2 km · stock alto</small></div>
+            <div class="price">₡ 1.290</div>
+            <div class="diff">−₡ 600</div>
+          </div>
+          <div class="comp-row">
+            <span class="sw"></span>
+            <div class="store">Walmart Heredia<small>5,8 km · stock alto</small></div>
+            <div class="price">₡ 1.450</div>
+            <div class="diff">−₡ 440</div>
+          </div>
+          <div class="comp-row">
+            <span class="sw"></span>
+            <div class="store">Más x Menos Escazú<small>4,1 km · stock medio</small></div>
+            <div class="price">₡ 1.520</div>
+            <div class="diff">−₡ 370</div>
+          </div>
+          <div class="comp-row worst">
+            <span class="sw"></span>
+            <div class="store">AM/PM Centro<small>0,8 km · stock alto</small></div>
+            <div class="price">₡ 1.890</div>
+            <div class="diff">+₡ 0</div>
+          </div>
+        </div>
+        <div class="footer">
+          <span>Σ ahorro si compras en la mejor</span>
+          <b>₡ 600 · 31% off</b>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- Features grid -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-hd">
+        <span class="eyebrow">CAPACIDADES</span>
+        <h2>Seis herramientas que trabajan como una sola.</h2>
+        <p>Cada función conecta con la siguiente: tu lista alimenta al Smart Cart, el Smart Cart al mapa, el escáner a la comunidad, y la comunidad a tus próximos precios.</p>
+      </div>
+
+      <div class="grid-features">
+        <!-- Map -->
+        <article class="map-tile">
+          <div class="map-canvas" aria-hidden="true">
+            <div class="road" style="top:30%;left:6%;width:48%;transform:rotate(8deg);"></div>
+            <div class="road" style="top:64%;left:24%;width:60%;transform:rotate(-12deg);"></div>
+            <div class="road" style="top:18%;left:46%;width:1px;height:60%;"></div>
+          </div>
+          <div class="map-head">
+            <span class="pill"><span class="dot"></span>Vista en vivo · 23 tiendas</span>
+            <span class="pill">San José · 5km</span>
+          </div>
+          <div class="pin" style="left:24%;top:36%;"><div class="body"><span>₡</span></div></div>
+          <div class="pin gold" style="left:52%;top:48%;"><div class="body"><span>%</span></div></div>
+          <div class="pin sky" style="left:38%;top:70%;"><div class="body"><span>$</span></div></div>
+          <div class="pin berry" style="left:72%;top:62%;"><div class="body"><span>$</span></div></div>
+          <div class="map-overlay">
+            <div>
+              <div class="l">Recomendación del Smart Cart</div>
+              <h4>Ruta partida · PriceSmart + Más x Menos</h4>
+            </div>
+            <div class="save">
+              <b>−₡ 6.560</b>
+              <div class="small">vs. una sola tienda</div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Smart cart strategy panel -->
+        <article class="cart-panel">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-3);">SMART CART · ESTRATEGIA</span>
+          <h3>3 escenarios. 1 ganador.</h3>
+          <p class="desc">Comparamos comprar todo en una tienda, hacer una ruta partida o aprovechar la más cercana — con tiempo y gasolina dentro.</p>
+          <div class="strategy">
+            <span class="label">Más cercana</span>
+            <div class="total">₡ 41.200</div>
+            <span class="meta">AM/PM · 6 min</span>
+          </div>
+          <div class="strategy best">
+            <span class="label">Ruta partida (recomendada)</span>
+            <div class="total">₡ 31.890</div>
+            <span class="meta"><b>−₡ 6.560</b> · 2 tiendas · +8 min</span>
+          </div>
+          <div class="strategy">
+            <span class="label">Una sola tienda</span>
+            <div class="total">₡ 38.450</div>
+            <span class="meta">Walmart Heredia · 22 min</span>
+          </div>
+        </article>
+
+        <!-- Scanner -->
+        <article class="gcard violet">
+          <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="2" height="16"/><rect x="7" y="4" width="1" height="16"/><rect x="10" y="4" width="3" height="16"/><rect x="15" y="4" width="1" height="16"/><rect x="18" y="4" width="3" height="16"/></svg></div>
+          <h3>Escáner crowd-sourced</h3>
+          <p>Lee el código, reporta el precio, gana puntos. Z-score y geofence eliminan datos sospechosos.</p>
+          <div class="read"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg> Probar escáner</div>
+        </article>
+
+        <!-- Lists -->
+        <article class="gcard sky">
+          <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="9" r="3"/><path d="M3 19v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg></div>
+          <h3>Listas colaborativas</h3>
+          <p>WebSocket sincroniza la lista entre la casa y la tienda. Tu pareja tacha; tú lo ves al instante.</p>
+          <div class="read"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg> Crear lista compartida</div>
+        </article>
+
+        <!-- Recipes -->
+        <article class="gcard rose">
+          <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 8a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v9H5z"/><path d="M9 17v3"/><path d="M15 17v3"/></svg></div>
+          <h3>Recetas → lista</h3>
+          <p>Pega un link, un LLM extrae ingredientes con cantidades y los empuja a tu carrito.</p>
+          <div class="read"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg> Convertir receta</div>
+        </article>
+
+        <!-- Pantry -->
+        <article class="gcard gold">
+          <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7h18v13H3z"/><path d="M8 7V4h8v3"/></svg></div>
+          <h3>Despensa predictiva</h3>
+          <p>Aprende tu ritmo de consumo y te avisa antes de quedarte sin café o aceite.</p>
+          <div class="read"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg> Configurar despensa</div>
+        </article>
+
+        <!-- Alerts wide -->
+        <article class="gcard wide">
+          <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg></div>
+          <h3>Alertas de bajada de precio</h3>
+          <p>Marca un producto como "vigilado" y recibirás push cuando una tienda cercana baje su precio respecto a tu promedio histórico.</p>
+          <div class="read"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg> Configurar alertas</div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Community -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-hd">
+        <span class="eyebrow">COMUNIDAD</span>
+        <h2>El precio justo lo escribimos entre todos.</h2>
+        <p>12.480 compradores activos reportan, validan y ranquean. Puntos, badges y un ranking semanal — Top 10 ganan créditos canjeables.</p>
+      </div>
+
+      <div class="community">
+        <div class="quote-card">
+          <p class="q">"Antes hacía la compra en piloto automático. Ahora reviso Grocery Waze en el parqueo. Llevo <b>₡ 48.000 ahorrados</b> este mes solo eligiendo bien la tienda."</p>
+          <div class="who">
+            <div class="avatar">MF</div>
+            <div>
+              <b>María Fernández</b>
+              <small>Curridabat · Activa desde feb 2026</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="leaderboard">
+          <h4>Top reporteros · semana 142</h4>
+          <div class="sub">Crowd-sourced · verificado</div>
+          <div class="lb gold">
+            <div class="rank">1</div>
+            <div class="who"><b>Sarah M.</b><small>Tres Ríos · 87 reportes</small></div>
+            <div class="pts">12.450</div>
+          </div>
+          <div class="lb silver">
+            <div class="rank">2</div>
+            <div class="who"><b>Juan D.</b><small>Heredia · 71 reportes</small></div>
+            <div class="pts">11.200</div>
+          </div>
+          <div class="lb bronze">
+            <div class="rank">3</div>
+            <div class="who"><b>Emilia R.</b><small>Escazú · 68 reportes</small></div>
+            <div class="pts">10.890</div>
+          </div>
+          <div class="lb">
+            <div class="rank">4</div>
+            <div class="who"><b>Carlos V.</b><small>Cartago · 54 reportes</small></div>
+            <div class="pts">9.410</div>
+          </div>
+          <div class="lb">
+            <div class="rank">5</div>
+            <div class="who"><b>Lucía G.</b><small>Alajuela · 49 reportes</small></div>
+            <div class="pts">8.860</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta">
+    <h2>Tu próxima compra puede costar <em>17% menos</em>.</h2>
+    <p>Sin cupones. Sin apps confusas. Sin renunciar a lo que te gusta. Una lista, un mapa, una decisión clara — verificada por miles.</p>
+    <div class="actions" style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+      <a class="btn btn-primary btn-lg" href="#">Abrir mi terminal →</a>
+      <a class="btn btn-lg" href="#">Hablar con la comunidad</a>
+    </div>
+  </section>
+
+  <footer class="wrap">
+    <span>© Grocery Waze · 2026 · San José CR</span>
+    <span>v 2.4.1 · Datos abiertos · Sin compraventa de datos personales</span>
+  </footer>
+</body>
+</html>

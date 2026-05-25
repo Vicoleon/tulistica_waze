@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mockup 06 — Calma · Grocery Waze</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #fbfaf7;
+    --surface: #ffffff;
+    --ink: #1f2024;
+    --ink-2: #555861;
+    --ink-3: #9a9da6;
+    --line: #ecebe6;
+    --line-strong: #e1dfd8;
+
+    --sage: #6f8f6c;
+    --sage-soft: #ecf2e9;
+    --sage-deeper: #4e6c4c;
+    --peach: #d99672;
+    --peach-soft: #fbeadf;
+    --sky: #88a8c5;
+    --sky-soft: #ebf2f7;
+
+    --r-lg: 20px;
+    --r-md: 14px;
+    --r-sm: 10px;
+    --shadow: 0 1px 0 rgba(31,32,36,0.03), 0 10px 32px -22px rgba(31,32,36,0.16);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    font-size: 16px;
+  }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 28px; }
+
+  /* Nav */
+  nav.top {
+    padding: 22px 0;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0;
+    background: rgba(251,250,247,0.85);
+    backdrop-filter: blur(14px);
+    z-index: 50;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-weight: 600; font-size: 15px;
+    letter-spacing: -0.005em;
+  }
+  .brand .mark {
+    width: 26px; height: 26px;
+    border-radius: 8px;
+    background: var(--sage);
+    color: white;
+    display: grid; place-items: center;
+  }
+  .brand .mark svg { width: 14px; height: 14px; }
+  .nav-links { display: flex; gap: 0; }
+  .nav-links a {
+    padding: 8px 14px; font-size: 14px;
+    color: var(--ink-2); font-weight: 500;
+    border-radius: 8px;
+    transition: background 180ms, color 180ms;
+  }
+  .nav-links a:hover { background: var(--line); color: var(--ink); }
+  .nav-actions { display: flex; gap: 8px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 16px; border-radius: 10px;
+    font-weight: 500; font-size: 14px;
+    border: 1px solid transparent;
+    cursor: pointer; transition: all 180ms ease;
+    background: var(--ink); color: white;
+  }
+  .btn:hover { background: var(--sage-deeper); }
+  .btn-ghost { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+  .btn-ghost:hover { background: var(--surface); border-color: var(--ink-2); }
+  .btn-lg { padding: 14px 22px; font-size: 15px; border-radius: 12px; }
+
+  /* Hero */
+  .hero {
+    padding: 96px 0 56px;
+    max-width: 760px;
+  }
+  .hero .label {
+    display: inline-flex; align-items: center; gap: 8px;
+    color: var(--ink-3); font-size: 13px;
+    margin-bottom: 24px;
+    letter-spacing: 0.01em;
+  }
+  .hero .label .pill {
+    background: var(--sage-soft); color: var(--sage-deeper);
+    padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  }
+  .hero h1 {
+    font-size: clamp(40px, 5.4vw, 64px);
+    font-weight: 600;
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+    margin: 0 0 24px;
+  }
+  .hero h1 .soft { color: var(--ink-3); font-weight: 500; }
+  .hero p {
+    font-size: 19px;
+    color: var(--ink-2);
+    max-width: 56ch;
+    margin: 0 0 32px;
+    line-height: 1.6;
+  }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .meta {
+    margin-top: 36px;
+    display: flex; gap: 28px; flex-wrap: wrap;
+    color: var(--ink-3); font-size: 13.5px;
+  }
+  .meta div b { color: var(--ink); font-weight: 600; }
+
+  /* Hero preview: side-by-side mock */
+  .preview-wrap {
+    padding: 24px 0 96px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    align-items: start;
+  }
+  .preview-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .preview-card .head {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between;
+    background: linear-gradient(180deg, rgba(0,0,0,0.01), transparent);
+  }
+  .preview-card .head .t {
+    font-size: 13px; color: var(--ink-3); font-weight: 500;
+  }
+  .preview-card .head .pill {
+    background: var(--sage-soft); color: var(--sage-deeper);
+    padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600;
+  }
+  .preview-card .body { padding: 22px; }
+
+  /* List preview */
+  .list-row {
+    display: grid;
+    grid-template-columns: 22px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 15px;
+  }
+  .list-row:last-child { border-bottom: 0; }
+  .list-row .check {
+    width: 18px; height: 18px; border-radius: 6px;
+    border: 1.5px solid var(--ink-3);
+  }
+  .list-row.done { color: var(--ink-3); text-decoration: line-through; }
+  .list-row.done .check { background: var(--sage); border-color: var(--sage); display: grid; place-items: center; color: white; }
+  .list-row .price { color: var(--ink-2); font-size: 13px; }
+  .list-row .price b { color: var(--ink); font-weight: 600; }
+
+  /* Comparison preview */
+  .compare-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    padding: 12px 14px;
+    margin: 6px 0;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    font-size: 14px;
+  }
+  .compare-row .where { display: flex; align-items: center; gap: 10px; }
+  .compare-row .where .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); }
+  .compare-row .where small { display: block; color: var(--ink-3); font-size: 12px; }
+  .compare-row .price { font-weight: 600; font-size: 16px; letter-spacing: -0.01em; }
+  .compare-row.best {
+    background: var(--sage-soft);
+    border-color: var(--sage);
+  }
+  .compare-row.best .dot { background: var(--sage); }
+  .compare-row.best .price { color: var(--sage-deeper); }
+  .compare-row.worst { color: var(--ink-3); }
+  .compare-row.worst .price { text-decoration: line-through; }
+  .total-line {
+    display: flex; justify-content: space-between;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--line-strong);
+    font-size: 14px;
+  }
+  .total-line .save { color: var(--sage-deeper); font-weight: 700; }
+
+  /* Section */
+  .section {
+    padding: 80px 0;
+  }
+  .section.divider {
+    border-top: 1px solid var(--line);
+  }
+  .section h2 {
+    font-size: clamp(30px, 3.8vw, 44px);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    line-height: 1.08;
+    margin: 0 0 14px;
+    max-width: 22ch;
+  }
+  .section .lede {
+    color: var(--ink-2); font-size: 18px;
+    max-width: 60ch; margin: 0 0 48px;
+    line-height: 1.6;
+  }
+
+  /* Feature rows */
+  .feature-list {
+    display: grid; gap: 0;
+  }
+  .feature {
+    display: grid;
+    grid-template-columns: 80px 1fr 280px;
+    gap: 32px;
+    padding: 36px 0;
+    border-top: 1px solid var(--line);
+    align-items: start;
+  }
+  .feature:last-child { border-bottom: 1px solid var(--line); }
+  .feature .num {
+    color: var(--ink-3);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+  .feature h3 {
+    font-size: 22px; font-weight: 600;
+    letter-spacing: -0.015em;
+    margin: 0 0 8px;
+    line-height: 1.2;
+  }
+  .feature p { color: var(--ink-2); margin: 0 0 12px; font-size: 15px; }
+  .feature .kv {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    color: var(--ink-3); font-size: 13px;
+  }
+  .feature .kv b { color: var(--ink); font-weight: 600; }
+  .feature .vis {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: 16px;
+    min-height: 120px;
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .feature .vis .vis-hd { font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+  .feature .vis .vis-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--line); }
+  .feature .vis .vis-row:last-child { border: 0; }
+  .feature .vis .vis-row b { font-weight: 600; color: var(--ink); }
+  .feature .vis .vis-row.best { color: var(--sage-deeper); }
+  .feature .vis.lists .av-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+  .feature .vis.lists .av { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 600; color: white; background: var(--peach); }
+  .feature .vis.lists .av.a { background: var(--sage); }
+  .feature .vis.lists .av.b { background: var(--sky); }
+  .feature .vis.lists .av.c { background: var(--peach); }
+
+  /* Pantry mini */
+  .feature .vis.pantry { padding: 14px; }
+  .feature .vis.pantry .bar { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+  .feature .vis.pantry .track { height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; margin-bottom: 12px; }
+  .feature .vis.pantry .track .fill { height: 100%; background: var(--sage); border-radius: 999px; }
+  .feature .vis.pantry .track .fill.warn { background: var(--peach); }
+  .feature .vis.pantry .track .fill.low { background: #b85c5c; }
+
+  /* Bar */
+  .calmstat {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 28px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    box-shadow: var(--shadow);
+  }
+  .calmstat > div { border-right: 1px solid var(--line); padding-right: 18px; }
+  .calmstat > div:last-child { border-right: 0; }
+  .calmstat .l { font-size: 12.5px; color: var(--ink-3); margin-bottom: 6px; }
+  .calmstat .v { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; }
+  .calmstat .v small { color: var(--ink-3); font-weight: 500; font-size: 13px; }
+
+  /* Quote */
+  .quote {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 48px;
+    max-width: 760px;
+    margin: 0 auto;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .quote p {
+    font-size: 22px; line-height: 1.45;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+    margin: 0 0 22px;
+    font-weight: 500;
+  }
+  .quote p em { font-style: normal; color: var(--sage-deeper); }
+  .quote .who { display: inline-flex; align-items: center; gap: 12px; font-size: 14px; color: var(--ink-2); }
+  .quote .who .av { width: 40px; height: 40px; border-radius: 50%; background: var(--peach); color: white; display: grid; place-items: center; font-weight: 600; }
+  .quote .who b { display: block; color: var(--ink); font-weight: 600; }
+
+  /* Closing */
+  .closing {
+    padding: 96px 0 80px;
+    text-align: center;
+  }
+  .closing h2 {
+    font-size: clamp(40px, 5.4vw, 64px);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin: 0 auto 18px;
+    max-width: 18ch;
+  }
+  .closing h2 .soft { color: var(--ink-3); }
+  .closing p { color: var(--ink-2); font-size: 18px; max-width: 56ch; margin: 0 auto 28px; }
+
+  footer { padding: 32px 0; color: var(--ink-3); font-size: 13.5px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; border-top: 1px solid var(--line); }
+
+  @media (max-width: 980px) {
+    .preview-wrap { grid-template-columns: 1fr; }
+    .feature { grid-template-columns: 1fr; gap: 12px; }
+    .feature .vis { width: 100%; }
+    .calmstat { grid-template-columns: repeat(2, 1fr); }
+    .calmstat > div:nth-child(2) { border-right: 0; }
+    .nav-links { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="top">
+      <a class="brand" href="#">
+        <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 6h18l-2 13H5L3 6z"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
+        Grocery Waze
+      </a>
+      <div class="nav-links">
+        <a href="#">Inicio</a>
+        <a href="#">Listas</a>
+        <a href="#">Tiendas</a>
+        <a href="#">Recetas</a>
+        <a href="#">Despensa</a>
+      </div>
+      <div class="nav-actions">
+        <a class="btn btn-ghost" href="#">Entrar</a>
+        <a class="btn" href="#">Empezar</a>
+      </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="label">
+        <span class="pill">Hoy</span>
+        1.240 precios actualizados por la comunidad
+      </div>
+      <h1>Una lista de compras<br/>que <span class="soft">sabe pensar.</span></h1>
+      <p>Anote lo que necesita. Comparamos precios en 187 tiendas cerca, le decimos cuál conviene, y le ayudamos a no olvidar nada. Sin ruido, sin apuros.</p>
+      <div class="actions">
+        <a class="btn btn-lg" href="#">Crear mi lista — gratis</a>
+        <a class="btn btn-ghost btn-lg" href="#">Ver cómo funciona</a>
+      </div>
+      <div class="meta">
+        <div><b>17%</b> ahorro promedio</div>
+        <div><b>187</b> tiendas en cr</div>
+        <div><b>12.480</b> hogares activos</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Preview side-by-side -->
+  <div class="wrap">
+    <section class="preview-wrap">
+      <article class="preview-card">
+        <header class="head">
+          <span class="t">Lista de la semana</span>
+          <span class="pill">14 productos</span>
+        </header>
+        <div class="body">
+          <div class="list-row done">
+            <span class="check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+            <span>Pollo entero · 1.4 kg</span>
+            <span class="price"><b>₡ 3.890</b></span>
+          </div>
+          <div class="list-row done">
+            <span class="check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+            <span>Arroz Tío Pelón · 2 kg</span>
+            <span class="price"><b>₡ 2.580</b></span>
+          </div>
+          <div class="list-row">
+            <span class="check"></span>
+            <span>Aceite Capullo · 1 L</span>
+            <span class="price"><b>₡ 2.450</b></span>
+          </div>
+          <div class="list-row">
+            <span class="check"></span>
+            <span>Cilantro fresco</span>
+            <span class="price"><b>₡ 450</b></span>
+          </div>
+          <div class="list-row">
+            <span class="check"></span>
+            <span>Tomate maduro · 1 kg</span>
+            <span class="price"><b>₡ 1.290</b></span>
+          </div>
+          <div class="list-row">
+            <span class="check"></span>
+            <span>Frijol negro · 900 g</span>
+            <span class="price"><b>₡ 1.180</b></span>
+          </div>
+        </div>
+      </article>
+
+      <article class="preview-card">
+        <header class="head">
+          <span class="t">Comparación · su lista de hoy</span>
+          <span class="pill">4 tiendas cerca</span>
+        </header>
+        <div class="body">
+          <div class="compare-row best">
+            <div class="where">
+              <span class="dot"></span>
+              <div>PriceSmart Tres Ríos<small>3.2 km · todo disponible</small></div>
+            </div>
+            <span class="price">₡ 11.840</span>
+          </div>
+          <div class="compare-row">
+            <div class="where">
+              <span class="dot"></span>
+              <div>Walmart Heredia<small>5.8 km · todo disponible</small></div>
+            </div>
+            <span class="price">₡ 12.290</span>
+          </div>
+          <div class="compare-row">
+            <div class="where">
+              <span class="dot"></span>
+              <div>Más x Menos Escazú<small>4.1 km · 2 faltan</small></div>
+            </div>
+            <span class="price">₡ 12.560</span>
+          </div>
+          <div class="compare-row worst">
+            <div class="where">
+              <span class="dot"></span>
+              <div>AM/PM Centro<small>0.8 km · todo disponible</small></div>
+            </div>
+            <span class="price">₡ 13.700</span>
+          </div>
+          <div class="total-line">
+            <span>Ahorro si va a la mejor</span>
+            <span class="save">− ₡ 1.860</span>
+          </div>
+        </div>
+      </article>
+    </section>
+  </div>
+
+  <!-- Features as quiet rows -->
+  <section class="section divider">
+    <div class="wrap">
+      <h2>Hecho para hacer las compras más livianas.</h2>
+      <p class="lede">Seis herramientas que trabajan en silencio. Sin sonidos, sin notificaciones agresivas, sin pop-ups. Solo abren cuando usted las llama.</p>
+
+      <div class="feature-list">
+        <article class="feature">
+          <span class="num">01 / Listas</span>
+          <div>
+            <h3>Una lista, en familia, sin pisarse.</h3>
+            <p>Comparta la lista de la semana con quien hace las compras. Cuando alguien marca el aceite, todos lo ven en el momento.</p>
+            <div class="kv">
+              <span><b>Sin app</b> para invitados</span>
+              <span><b>En tiempo real</b></span>
+              <span><b>Hasta 8 personas</b></span>
+            </div>
+          </div>
+          <div class="vis lists">
+            <div class="vis-hd">Lista · Familia</div>
+            <div class="av-row"><span class="av a">MF</span><span>marcó leche</span></div>
+            <div class="av-row"><span class="av b">JD</span><span>agregó pan integral</span></div>
+            <div class="av-row"><span class="av c">EJ</span><span>tachó cilantro</span></div>
+          </div>
+        </article>
+
+        <article class="feature">
+          <span class="num">02 / Comparador</span>
+          <div>
+            <h3>El precio justo, en un vistazo.</h3>
+            <p>Su lista comparada en las tiendas cerca. Le decimos cuál conviene si va por todo o si conviene dividir el mandado.</p>
+            <div class="kv">
+              <span><b>Una tienda</b> o ruta partida</span>
+              <span>Con <b>tiempo y gasolina</b></span>
+            </div>
+          </div>
+          <div class="vis">
+            <div class="vis-hd">Total de su lista</div>
+            <div class="vis-row best"><span>PriceSmart</span><b>₡ 11.840</b></div>
+            <div class="vis-row"><span>Walmart</span><b>₡ 12.290</b></div>
+            <div class="vis-row"><span>Más x Menos</span><b>₡ 12.560</b></div>
+            <div class="vis-row"><span>AM/PM</span><b>₡ 13.700</b></div>
+          </div>
+        </article>
+
+        <article class="feature">
+          <span class="num">03 / Despensa</span>
+          <div>
+            <h3>Avisa antes de que se acabe.</h3>
+            <p>Marque lo que tiene y con qué frecuencia lo usa. Le decimos "se le acaba el café en 3 días" antes de quedarse sin.</p>
+            <div class="kv">
+              <span><b>Aprende</b> su ritmo</span>
+              <span><b>Sin spam</b></span>
+            </div>
+          </div>
+          <div class="vis pantry">
+            <div class="vis-hd">Su despensa</div>
+            <div class="bar"><span>Arroz</span><span>~ 21 días</span></div>
+            <div class="track"><div class="fill" style="width:74%;"></div></div>
+            <div class="bar"><span>Aceite</span><span>~ 5 días</span></div>
+            <div class="track"><div class="fill warn" style="width:32%;"></div></div>
+            <div class="bar"><span>Café</span><span>repón ya</span></div>
+            <div class="track"><div class="fill low" style="width:8%;"></div></div>
+          </div>
+        </article>
+
+        <article class="feature">
+          <span class="num">04 / Recetas</span>
+          <div>
+            <h3>De una receta, a una lista.</h3>
+            <p>Pegue el enlace de una receta del internet. Sacamos los ingredientes con cantidades — listos para comprar.</p>
+            <div class="kv">
+              <span>Funciona con <b>cualquier sitio</b></span>
+              <span><b>Cantidades ajustadas</b></span>
+            </div>
+          </div>
+          <div class="vis">
+            <div class="vis-hd">Receta · Arroz con pollo</div>
+            <div class="vis-row"><span>Pollo entero</span><b>1.4 kg</b></div>
+            <div class="vis-row"><span>Arroz</span><b>2 tazas</b></div>
+            <div class="vis-row"><span>Tomate</span><b>4 unid.</b></div>
+            <div class="vis-row"><span>Cilantro</span><b>1 manojo</b></div>
+          </div>
+        </article>
+
+        <article class="feature">
+          <span class="num">05 / Mapa</span>
+          <div>
+            <h3>Las tiendas de su barrio, con precios.</h3>
+            <p>Vea cuál tienda cerca tiene su producto, a qué precio, antes de salir. Filtre por radio o por categoría.</p>
+            <div class="kv">
+              <span><b>187</b> tiendas</span>
+              <span><b>14</b> ciudades</span>
+            </div>
+          </div>
+          <div class="vis">
+            <div class="vis-hd">Tiendas cerca · 5 km</div>
+            <div class="vis-row best"><span>PriceSmart Tres Ríos</span><b>₡ 1.290</b></div>
+            <div class="vis-row"><span>Walmart Heredia</span><b>₡ 1.450</b></div>
+            <div class="vis-row"><span>Megasuper Curri</span><b>₡ 1.380</b></div>
+          </div>
+        </article>
+
+        <article class="feature">
+          <span class="num">06 / Escáner</span>
+          <div>
+            <h3>Reporte un precio en segundos.</h3>
+            <p>Si el precio en la tienda no coincide, escanee el código con su teléfono. Suma puntos y la comunidad lo agradece.</p>
+            <div class="kv">
+              <span><b>1.240</b> reportes hoy</span>
+              <span><b>Puntos</b> canjeables</span>
+            </div>
+          </div>
+          <div class="vis">
+            <div class="vis-hd">Última verificación</div>
+            <div class="vis-row"><span>Aceite Capullo 1L</span><b>₡ 2.450</b></div>
+            <div class="vis-row"><span>Reportado por</span><b>Sarah M.</b></div>
+            <div class="vis-row"><span>Hace</span><b>12 min</b></div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="section">
+    <div class="wrap">
+      <div class="calmstat">
+        <div><div class="l">Ahorro promedio</div><div class="v">17% <small>/ canasta</small></div></div>
+        <div><div class="l">Tiendas vivas</div><div class="v">187 <small>/ cr</small></div></div>
+        <div><div class="l">Reportes hoy</div><div class="v">1.240</div></div>
+        <div><div class="l">Hogares activos</div><div class="v">12.480</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quote -->
+  <section class="section">
+    <div class="wrap">
+      <div class="quote">
+        <p>"Lo que más me gusta es que <em>no me presiona</em>. Abro la app cuando quiero, hago mi lista tranquila, y los precios ya están ahí cuando los necesito."</p>
+        <div class="who">
+          <span class="av">MF</span>
+          <div>
+            <b>María Fernández</b>
+            Mamá de dos · Curridabat
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Closing -->
+  <section class="closing">
+    <div class="wrap">
+      <h2>Comprar mejor <span class="soft">no debería ser un trabajo.</span></h2>
+      <p>Únase a 12.480 hogares que ya tienen una manera más liviana de hacer las compras.</p>
+      <div class="actions" style="justify-content:center;">
+        <a class="btn btn-lg" href="#">Empezar gratis</a>
+        <a class="btn btn-ghost btn-lg" href="#">Ver demo · 60s</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="wrap">
+    <span>© Grocery Waze · 2026</span>
+    <span>Privacidad · Cómo verificamos los precios · Para tiendas</span>
+  </footer>
+</body>
+</html>

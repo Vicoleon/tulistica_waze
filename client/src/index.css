@@ -40,86 +40,155 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-paper-deep: var(--paper-deep);
+  --color-butter: var(--butter);
+  --color-butter-foreground: var(--butter-foreground);
+  --color-rose: var(--rose);
+  --color-rose-foreground: var(--rose-foreground);
+  --color-sky: var(--sky);
+  --color-sky-foreground: var(--sky-foreground);
+  --color-peach-soft: var(--peach-soft);
+  --color-sage-soft: var(--sage-soft);
+  --color-butter-soft: var(--butter-soft);
+  --color-rose-soft: var(--rose-soft);
+  --color-sky-soft: var(--sky-soft);
+  --font-sans: 'Nunito', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Fraunces', Georgia, serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 
 :root {
-  /* Fresh grocery-inspired green/teal palette */
-  --primary: oklch(0.55 0.18 155);
-  --primary-foreground: oklch(0.98 0.01 155);
-  --sidebar-primary: oklch(0.5 0.16 155);
-  --sidebar-primary-foreground: oklch(0.98 0.01 155);
-  --chart-1: oklch(0.65 0.15 155);
-  --chart-2: oklch(0.55 0.18 155);
-  --chart-3: oklch(0.6 0.15 85);
-  --chart-4: oklch(0.65 0.12 200);
-  --chart-5: oklch(0.5 0.15 30);
-  --radius: 0.75rem;
-  --background: oklch(0.985 0.005 155);
-  --foreground: oklch(0.2 0.02 155);
+  /* Tulistica — Cocina + Pastel warm palette */
+  --radius: 1rem;
+
+  /* Base surfaces — warm cream paper */
+  --background: oklch(0.97 0.018 78);
+  --foreground: oklch(0.24 0.025 50);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2 0.02 155);
+  --card-foreground: oklch(0.24 0.025 50);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2 0.02 155);
-  --secondary: oklch(0.94 0.03 155);
-  --secondary-foreground: oklch(0.3 0.06 155);
-  --muted: oklch(0.96 0.015 155);
-  --muted-foreground: oklch(0.5 0.03 155);
-  --accent: oklch(0.7 0.18 85);
-  --accent-foreground: oklch(0.25 0.05 85);
-  --destructive: oklch(0.55 0.22 25);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.92 0.02 155);
-  --input: oklch(0.92 0.02 155);
-  --ring: oklch(0.55 0.18 155);
-  --sidebar: oklch(0.99 0.005 155);
-  --sidebar-foreground: oklch(0.2 0.02 155);
-  --sidebar-accent: oklch(0.96 0.03 155);
-  --sidebar-accent-foreground: oklch(0.2 0.02 155);
-  --sidebar-border: oklch(0.92 0.02 155);
-  --sidebar-ring: oklch(0.55 0.18 155);
+  --popover-foreground: oklch(0.24 0.025 50);
+  --paper-deep: oklch(0.93 0.025 78);
+
+  /* Primary — terracotta */
+  --primary: oklch(0.62 0.14 38);
+  --primary-foreground: oklch(0.99 0.005 78);
+
+  /* Secondary — sage */
+  --secondary: oklch(0.92 0.04 130);
+  --secondary-foreground: oklch(0.36 0.08 130);
+
+  /* Accent — peach */
+  --accent: oklch(0.88 0.07 52);
+  --accent-foreground: oklch(0.38 0.1 38);
+
+  /* Friendly helpers */
+  --butter: oklch(0.84 0.13 84);
+  --butter-foreground: oklch(0.32 0.08 60);
+  --butter-soft: oklch(0.95 0.05 84);
+  --rose: oklch(0.82 0.07 22);
+  --rose-foreground: oklch(0.4 0.12 22);
+  --rose-soft: oklch(0.96 0.025 22);
+  --sky: oklch(0.84 0.05 230);
+  --sky-foreground: oklch(0.4 0.08 230);
+  --sky-soft: oklch(0.96 0.02 230);
+  --peach-soft: oklch(0.96 0.035 52);
+  --sage-soft: oklch(0.96 0.03 130);
+
+  /* Muted */
+  --muted: oklch(0.94 0.025 78);
+  --muted-foreground: oklch(0.46 0.03 60);
+
+  /* Destructive */
+  --destructive: oklch(0.6 0.22 25);
+  --destructive-foreground: oklch(0.99 0 0);
+
+  /* Lines */
+  --border: oklch(0.9 0.025 78);
+  --input: oklch(0.92 0.022 78);
+  --ring: oklch(0.62 0.14 38);
+
+  /* Charts */
+  --chart-1: oklch(0.62 0.14 38);
+  --chart-2: oklch(0.66 0.09 130);
+  --chart-3: oklch(0.78 0.13 52);
+  --chart-4: oklch(0.84 0.13 84);
+  --chart-5: oklch(0.62 0.1 250);
+
+  /* Sidebar — slightly creamier than page */
+  --sidebar: oklch(0.96 0.024 78);
+  --sidebar-foreground: oklch(0.24 0.025 50);
+  --sidebar-primary: oklch(0.62 0.14 38);
+  --sidebar-primary-foreground: oklch(0.99 0.005 78);
+  --sidebar-accent: oklch(0.93 0.035 78);
+  --sidebar-accent-foreground: oklch(0.32 0.06 50);
+  --sidebar-border: oklch(0.9 0.03 78);
+  --sidebar-ring: oklch(0.62 0.14 38);
 }
 
 .dark {
-  --primary: oklch(0.6 0.18 155);
-  --primary-foreground: oklch(0.1 0.02 155);
-  --sidebar-primary: oklch(0.55 0.16 155);
-  --sidebar-primary-foreground: oklch(0.1 0.02 155);
-  --background: oklch(0.15 0.02 155);
-  --foreground: oklch(0.95 0.01 155);
-  --card: oklch(0.18 0.02 155);
-  --card-foreground: oklch(0.95 0.01 155);
-  --popover: oklch(0.18 0.02 155);
-  --popover-foreground: oklch(0.95 0.01 155);
-  --secondary: oklch(0.25 0.03 155);
-  --secondary-foreground: oklch(0.9 0.02 155);
-  --muted: oklch(0.22 0.02 155);
-  --muted-foreground: oklch(0.6 0.02 155);
-  --accent: oklch(0.6 0.18 85);
-  --accent-foreground: oklch(0.15 0.05 85);
-  --destructive: oklch(0.55 0.22 25);
+  /* Minimal dark adaptation — not the focus of this pass, kept legible */
+  --background: oklch(0.18 0.02 50);
+  --foreground: oklch(0.95 0.018 78);
+  --card: oklch(0.22 0.025 50);
+  --card-foreground: oklch(0.95 0.018 78);
+  --popover: oklch(0.22 0.025 50);
+  --popover-foreground: oklch(0.95 0.018 78);
+  --paper-deep: oklch(0.24 0.025 50);
+  --primary: oklch(0.7 0.14 38);
+  --primary-foreground: oklch(0.15 0.02 38);
+  --secondary: oklch(0.32 0.04 130);
+  --secondary-foreground: oklch(0.92 0.04 130);
+  --accent: oklch(0.62 0.1 52);
+  --accent-foreground: oklch(0.15 0.04 38);
+  --butter: oklch(0.78 0.12 84);
+  --butter-foreground: oklch(0.2 0.05 60);
+  --butter-soft: oklch(0.3 0.04 84);
+  --rose: oklch(0.72 0.08 22);
+  --rose-foreground: oklch(0.2 0.05 22);
+  --rose-soft: oklch(0.3 0.03 22);
+  --sky: oklch(0.74 0.06 230);
+  --sky-foreground: oklch(0.2 0.04 230);
+  --sky-soft: oklch(0.3 0.02 230);
+  --peach-soft: oklch(0.3 0.025 52);
+  --sage-soft: oklch(0.3 0.03 130);
+  --muted: oklch(0.26 0.025 50);
+  --muted-foreground: oklch(0.66 0.025 60);
+  --destructive: oklch(0.6 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.25 0.02 155);
-  --input: oklch(0.25 0.02 155);
-  --ring: oklch(0.6 0.18 155);
-  --chart-1: oklch(0.65 0.15 155);
-  --chart-2: oklch(0.55 0.18 155);
-  --chart-3: oklch(0.6 0.15 85);
-  --chart-4: oklch(0.65 0.12 200);
-  --chart-5: oklch(0.5 0.15 30);
-  --sidebar: oklch(0.18 0.02 155);
-  --sidebar-foreground: oklch(0.95 0.01 155);
-  --sidebar-accent: oklch(0.25 0.03 155);
-  --sidebar-accent-foreground: oklch(0.95 0.01 155);
-  --sidebar-border: oklch(0.25 0.02 155);
-  --sidebar-ring: oklch(0.6 0.18 155);
+  --border: oklch(0.3 0.03 50);
+  --input: oklch(0.3 0.03 50);
+  --ring: oklch(0.7 0.14 38);
+  --chart-1: oklch(0.7 0.14 38);
+  --chart-2: oklch(0.66 0.09 130);
+  --chart-3: oklch(0.78 0.13 52);
+  --chart-4: oklch(0.84 0.13 84);
+  --chart-5: oklch(0.7 0.1 250);
+  --sidebar: oklch(0.2 0.022 50);
+  --sidebar-foreground: oklch(0.95 0.018 78);
+  --sidebar-primary: oklch(0.7 0.14 38);
+  --sidebar-primary-foreground: oklch(0.15 0.02 38);
+  --sidebar-accent: oklch(0.28 0.03 50);
+  --sidebar-accent-foreground: oklch(0.95 0.018 78);
+  --sidebar-border: oklch(0.3 0.03 50);
+  --sidebar-ring: oklch(0.7 0.14 38);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "ss01", "cv11";
+  }
+  h1, h2, h3, h4 {
+    @apply font-serif tracking-tight;
+    font-feature-settings: "ss01";
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
@@ -132,28 +201,41 @@
   input[type="radio"]:not(:disabled) {
     @apply cursor-pointer;
   }
+  /* Warm cream texture on body — very subtle paper feel */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(120, 90, 50, 0.035) 1px, transparent 0);
+    background-size: 28px 28px;
+  }
+  /* Respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
 @layer components {
   /**
-   * Custom container utility that centers content and adds responsive padding.
-   *
-   * This overrides Tailwind's default container behavior to:
-   * - Auto-center content (mx-auto)
-   * - Add responsive horizontal padding
-   * - Set max-width for large screens
-   *
-   * Usage: <div className="container">...</div>
-   *
-   * For custom widths, use max-w-* utilities directly:
-   * <div className="max-w-6xl mx-auto px-4">...</div>
+   * Tulistica container — centers content with warm responsive padding.
+   * Use: <div className="container">…</div>
    */
   .container {
     width: 100%;
     margin-left: auto;
     margin-right: auto;
-    padding-left: 1rem; /* 16px - mobile padding */
+    padding-left: 1rem;
     padding-right: 1rem;
+    position: relative;
+    z-index: 1;
   }
 
   .flex {
@@ -163,16 +245,42 @@
 
   @media (min-width: 640px) {
     .container {
-      padding-left: 1.5rem; /* 24px - tablet padding */
+      padding-left: 1.5rem;
       padding-right: 1.5rem;
     }
   }
 
   @media (min-width: 1024px) {
     .container {
-      padding-left: 2rem; /* 32px - desktop padding */
+      padding-left: 2rem;
       padding-right: 2rem;
-      max-width: 1280px; /* Standard content width */
+      max-width: 1280px;
     }
+  }
+
+  /* Tulistica · soft paper card shadow */
+  .shadow-paper {
+    box-shadow:
+      0 1px 0 rgba(56, 36, 18, 0.04),
+      0 18px 30px -22px rgba(56, 36, 18, 0.2);
+  }
+  .shadow-paper-lg {
+    box-shadow:
+      0 1px 0 rgba(56, 36, 18, 0.05),
+      0 28px 50px -28px rgba(56, 36, 18, 0.3);
+  }
+
+  /* Decorative serif underline (used in hero keywords) */
+  .deco-underline {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 14'><path d='M2 8 Q 30 -2 56 8 T 110 8 T 164 8 T 218 8' fill='none' stroke='%23b8624a' stroke-width='3' stroke-linecap='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: bottom;
+    background-size: 100% 0.6em;
+    padding-bottom: 0.1em;
+  }
+
+  /* Sidebar group eyebrow */
+  .sidebar-eyebrow {
+    @apply text-[11px] uppercase tracking-[0.14em] text-sidebar-foreground/55 font-semibold px-3 mb-1 mt-2;
   }
 }

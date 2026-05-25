@@ -1,7 +1,12 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import {
+  publicProcedure,
+  protectedProcedure,
+  adminProcedure,
+  router,
+} from "./_core/trpc";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import * as db from "./db";
@@ -23,6 +28,27 @@ import {
   searchProductsOpenFoodFacts,
 } from "./services/externalApis";
 import { notifyOwner } from "./_core/notification";
+import {
+  HOUSEHOLD_SIZES,
+  SHOPPING_CADENCES,
+  STORE_PREFERENCES,
+  SHOPPING_PRIORITIES,
+  BASKET_CATEGORIES,
+  ZONES,
+  derivePriceTier,
+  type ShopperProfile,
+} from "../shared/profile";
+import { ANALYTICS_EVENTS } from "../shared/analytics";
+import { CAMPAIGN_SURFACES } from "../shared/campaigns";
+import {
+  BRAND_COOKIE,
+  BRAND_SESSION_TTL_MS,
+  hashPassword,
+  signBrandSession,
+  slugify,
+  verifyPassword,
+} from "./_core/brandAuth";
+import { brandProcedure } from "./_core/trpc";
 
 export const appRouter = router({
   system: systemRouter,
@@ -71,6 +97,368 @@ export const appRouter = router({
         achievements,
         weeklyRank: weeklyRank?.rank,
       };
+    }),
+  }),
+
+  // ============ SHOPPER PROFILE (onboarding) ============
+  profile: router({
+    /** Returns the user's shopperProfile from preferences JSON, or null. */
+    get: protectedProcedure.query(({ ctx }) => {
+      return ctx.user.preferences?.shopperProfile ?? null;
+    }),
+
+    /**
+     * Upsert the user's shopperProfile. Derives priceTier and stamps
+     * onboardedAt server-side so the client can't fake completion.
+     */
+    update: protectedProcedure
+      .input(
+        z.object({
+          householdSize: z.enum(HOUSEHOLD_SIZES),
+          shoppingCadence: z.enum(SHOPPING_CADENCES),
+          preferredChains: z
+            .array(z.enum(STORE_PREFERENCES))
+            .min(1, "Elegí al menos una tienda")
+            .max(STORE_PREFERENCES.length),
+          shoppingPriorities: z
+            .array(z.enum(SHOPPING_PRIORITIES))
+            .min(1, "Elegí al menos una prioridad")
+            .max(3, "Máximo 3 prioridades"),
+          basketMix: z
+            .array(z.enum(BASKET_CATEGORIES))
+            .min(1, "Elegí al menos una categoría")
+            .max(3, "Máximo 3 categorías"),
+          zone: z.enum(ZONES).optional(),
+          savingsVsTimeBias: z.number().int().min(0).max(100),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const priceTier = derivePriceTier(
+          input.preferredChains,
+          input.shoppingPriorities
+        );
+        const shopperProfile: ShopperProfile = {
+          ...input,
+          priceTier,
+          onboardedAt: new Date().toISOString(),
+        };
+        await db.updateUserPreferencesJson(ctx.user.id, { shopperProfile });
+        // The user we have in ctx is stale (no shopperProfile yet); pass a
+        // synthetic with the new profile so the event has the right facets.
+        const userWithProfile = {
+          ...ctx.user,
+          preferences: { ...ctx.user.preferences, shopperProfile },
+        };
+        await db.recordAnalyticsEvent({
+          eventName: ANALYTICS_EVENTS.ONBOARDING_COMPLETED,
+          user: userWithProfile,
+          properties: {
+            priceTier,
+            householdSize: input.householdSize,
+            cadence: input.shoppingCadence,
+            preferredChainsCount: input.preferredChains.length,
+            savingsVsTimeBias: input.savingsVsTimeBias,
+          },
+        });
+        return { success: true, shopperProfile };
+      }),
+  }),
+
+  // ============ ANALYTICS ============
+  analytics: router({
+    /**
+     * Public so we can also record pre-login events (e.g. `onboarding_started`
+     * fires before profile creation). Failures are swallowed inside
+     * recordAnalyticsEvent — never surfaces to the client.
+     */
+    track: publicProcedure
+      .input(
+        z.object({
+          eventName: z.string().min(1).max(64),
+          properties: z.record(z.string(), z.unknown()).optional(),
+          sessionId: z.string().max(64).optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        await db.recordAnalyticsEvent({
+          eventName: input.eventName,
+          user: ctx.user ?? null,
+          sessionId: input.sessionId ?? null,
+          properties: input.properties ?? {},
+        });
+        return { success: true };
+      }),
+
+    /** Admin-only dashboard summary. */
+    summary: adminProcedure
+      .input(z.object({ days: z.number().int().min(1).max(90).optional() }))
+      .query(async ({ input }) => {
+        return db.getAnalyticsSummary(input.days ?? 7);
+      }),
+  }),
+
+  // ============ SPONSORED CAMPAIGNS (Fase 2) ============
+  campaigns: router({
+    /**
+     * Returns campaigns eligible for the current viewer + surface. Records
+     * an impression for each placement returned and logs an analytics event.
+     * Empty array == no campaign matched (no error, no placeholder).
+     */
+    getForSurface: publicProcedure
+      .input(
+        z.object({
+          surface: z.enum(CAMPAIGN_SURFACES),
+          limit: z.number().int().min(1).max(5).default(1),
+          keywords: z.array(z.string()).max(10).optional(),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        const placements = await db.getEligibleCampaigns(
+          input.surface,
+          ctx.user ?? null,
+          input.limit,
+          input.keywords ?? []
+        );
+        // Fire-and-forget impression bookkeeping. We don't await the analytics
+        // log so a slow inserts can't slow down the page.
+        for (const p of placements) {
+          void db.recordAdImpression(p.id);
+          void db.recordAnalyticsEvent({
+            eventName: "campaign_impression",
+            user: ctx.user ?? null,
+            properties: {
+              campaignId: p.id,
+              sponsor: p.sponsor,
+              surface: input.surface,
+              bidCpc: p.bidCpc,
+            },
+          });
+        }
+        // Strip server-only fields before returning.
+        return placements.map((p) => ({
+          id: p.id,
+          sponsor: p.sponsor,
+          type: p.type,
+          title: p.title,
+          description: p.description,
+          imageUrl: p.imageUrl,
+          targetUrl: p.targetUrl,
+          productId: p.productId,
+        }));
+      }),
+
+    /** User clicked a sponsored placement. Increments + logs event. */
+    recordClick: publicProcedure
+      .input(z.object({ campaignId: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.recordAdClick(input.campaignId);
+        await db.recordAnalyticsEvent({
+          eventName: "campaign_click",
+          user: ctx.user ?? null,
+          properties: { campaignId: input.campaignId },
+        });
+        return { success: true };
+      }),
+
+    /**
+     * Admin-only: per-campaign performance. Joined with `analytics_events`
+     * so we report event-derived CTR alongside the legacy counter.
+     */
+    adminSummary: adminProcedure.query(async () => {
+      return db.getCampaignPerformance();
+    }),
+  }),
+
+  // ============ BRAND PORTAL (Fase 3) ============
+  brand: router({
+    /** Current brand session, or null if not logged in. */
+    me: publicProcedure.query(({ ctx }) => {
+      if (!ctx.brand) return null;
+      // Never leak password fields to the client.
+      const { passwordHash: _ph, passwordSalt: _ps, ...rest } = ctx.brand;
+      return rest;
+    }),
+
+    /** Sign up a new brand. The first user who claims a brand name owns it. */
+    signup: publicProcedure
+      .input(
+        z.object({
+          brandName: z.string().min(2).max(128),
+          ownerEmail: z.string().email(),
+          password: z.string().min(8).max(120),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const email = input.ownerEmail.toLowerCase().trim();
+        const existing = await db.getBrandByEmail(email);
+        if (existing) {
+          throw new Error("Ya hay una marca registrada con ese email.");
+        }
+        const baseSlug = slugify(input.brandName);
+        if (!baseSlug) {
+          throw new Error("El nombre de la marca debe contener letras.");
+        }
+        // Tolerate slug collisions by suffixing -2, -3, …
+        let slug = baseSlug;
+        let suffix = 1;
+        while (await db.getBrandBySlug(slug)) {
+          suffix += 1;
+          slug = `${baseSlug}-${suffix}`;
+        }
+        const { hash, salt } = hashPassword(input.password);
+        const id = await db.createBrand({
+          name: input.brandName.trim(),
+          slug,
+          ownerEmail: email,
+          passwordHash: hash,
+          passwordSalt: salt,
+        });
+        if (!id) throw new Error("No pudimos crear la marca.");
+        const token = await signBrandSession({ brandId: id, slug });
+        ctx.res.cookie(BRAND_COOKIE, token, {
+          httpOnly: true,
+          sameSite: "lax",
+          maxAge: BRAND_SESSION_TTL_MS,
+          path: "/",
+        });
+        await db.recordAnalyticsEvent({
+          eventName: "brand_signup",
+          user: null,
+          properties: { brandId: id, slug },
+        });
+        return { id, slug };
+      }),
+
+    /** Email + password login. Sets the BRAND_COOKIE. */
+    login: publicProcedure
+      .input(
+        z.object({
+          ownerEmail: z.string().email(),
+          password: z.string().min(1),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const email = input.ownerEmail.toLowerCase().trim();
+        const brand = await db.getBrandByEmail(email);
+        if (!brand || !brand.isActive) {
+          throw new Error("Email o contraseña no válidos.");
+        }
+        const ok = verifyPassword(
+          input.password,
+          brand.passwordHash,
+          brand.passwordSalt
+        );
+        if (!ok) {
+          throw new Error("Email o contraseña no válidos.");
+        }
+        const token = await signBrandSession({
+          brandId: brand.id,
+          slug: brand.slug,
+        });
+        ctx.res.cookie(BRAND_COOKIE, token, {
+          httpOnly: true,
+          sameSite: "lax",
+          maxAge: BRAND_SESSION_TTL_MS,
+          path: "/",
+        });
+        await db.recordAnalyticsEvent({
+          eventName: "brand_login",
+          user: null,
+          properties: { brandId: brand.id, slug: brand.slug },
+        });
+        return { id: brand.id, slug: brand.slug, name: brand.name };
+      }),
+
+    logout: publicProcedure.mutation(({ ctx }) => {
+      ctx.res.clearCookie(BRAND_COOKIE, { path: "/", maxAge: -1 });
+      return { success: true } as const;
+    }),
+  }),
+
+  // ============ BRAND-SCOPED CAMPAIGNS (Fase 3) ============
+  brandCampaigns: router({
+    getAll: brandProcedure.query(async ({ ctx }) => {
+      const rows = await db.getCampaignsForBrand(ctx.brand.id);
+      return rows.map((c) => {
+        const imp = c.impressions ?? 0;
+        const clk = c.clicks ?? 0;
+        return {
+          ...c,
+          ctr: imp > 0 ? Math.round((clk / imp) * 10000) / 100 : 0,
+          estSpend: Math.round(clk * (c.bidCpc ?? 0) * 100) / 100,
+        };
+      });
+    }),
+
+    create: brandProcedure
+      .input(
+        z.object({
+          type: z.enum(CAMPAIGN_SURFACES),
+          title: z.string().min(2).max(255),
+          description: z.string().max(2000).optional(),
+          targetUrl: z.string().max(2000).optional(),
+          bidCpc: z.number().min(0).max(10000),
+          targetTiers: z
+            .array(z.enum(["value", "mid", "premium"]))
+            .max(3)
+            .optional(),
+          targetChains: z.array(z.string().max(64)).max(20).optional(),
+          targetBasketMix: z.array(z.string().max(32)).max(7).optional(),
+          targetMinHouseholdSize: z
+            .enum(["1", "2", "3-4", "5+"])
+            .optional(),
+          targetKeywords: z.array(z.string().max(64)).max(20).optional(),
+          activeUntil: z.date().optional(),
+          dailyBudget: z.number().min(0).max(10_000_000).optional(),
+          maxImpressionsPerUserPerDay: z.number().int().min(1).max(100).optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const id = await db.createCampaignForBrand(ctx.brand.id, {
+          type: input.type,
+          sponsor: ctx.brand.name,
+          title: input.title,
+          description: input.description ?? null,
+          targetUrl: input.targetUrl ?? null,
+          bidCpc: input.bidCpc,
+          targetTiers: input.targetTiers ?? null,
+          targetChains: input.targetChains ?? null,
+          targetBasketMix: input.targetBasketMix ?? null,
+          targetMinHouseholdSize: input.targetMinHouseholdSize ?? null,
+          targetKeywords: input.targetKeywords ?? null,
+          activeFrom: new Date(),
+          activeUntil:
+            input.activeUntil ??
+            new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          isActive: true,
+          dailyBudget: input.dailyBudget ?? null,
+          maxImpressionsPerUserPerDay: input.maxImpressionsPerUserPerDay ?? 5,
+        });
+        if (!id) throw new Error("No pudimos crear la campaña.");
+        await db.recordAnalyticsEvent({
+          eventName: "brand_campaign_created",
+          user: null,
+          properties: { brandId: ctx.brand.id, campaignId: id, bidCpc: input.bidCpc },
+        });
+        return { id };
+      }),
+
+    /** Pause or resume — owner-scoped. */
+    setActive: brandProcedure
+      .input(z.object({ id: z.number(), isActive: z.boolean() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.updateCampaign(input.id, ctx.brand.id, {
+          isActive: input.isActive,
+        });
+        return { success: true };
+      }),
+  }),
+
+  // ============ BRAND INSIGHTS (Fase 4) ============
+  brandInsights: router({
+    /** Aggregate intelligence dashboard for the logged-in brand. */
+    summary: brandProcedure.query(async ({ ctx }) => {
+      return db.getBrandInsights(ctx.brand.id);
     }),
   }),
 
@@ -181,8 +569,31 @@ export const appRouter = router({
   prices: router({
     getForProduct: publicProcedure
       .input(z.object({ productId: z.number() }))
-      .query(async ({ input }) => {
-        return db.getPricesForProduct(input.productId);
+      .query(async ({ ctx, input }) => {
+        const prices = await db.getPricesForProduct(input.productId);
+        // Personalization: if the viewer has a shopper profile, surface their
+        // preferred chains within the cheapest-price band. Cheapest is still
+        // cheapest — we only reorder among comparably-priced options (within
+        // 8% of the lowest price).
+        const preferred =
+          ctx.user?.preferences?.shopperProfile?.preferredChains ?? [];
+        if (preferred.length === 0 || prices.length < 2) {
+          return prices;
+        }
+        const lowest = Math.min(...prices.map((p) => p.price));
+        const threshold = lowest * 1.08;
+        const inBand = prices.filter((p) => p.price <= threshold);
+        const outOfBand = prices.filter((p) => p.price > threshold);
+        const isPreferred = (chain: string | null) =>
+          chain ? preferred.includes(chain as any) : false;
+        inBand.sort((a, b) => {
+          const aPref = isPreferred(a.chainId) ? 1 : 0;
+          const bPref = isPreferred(b.chainId) ? 1 : 0;
+          if (aPref !== bPref) return bPref - aPref;
+          return a.price - b.price;
+        });
+        outOfBand.sort((a, b) => a.price - b.price);
+        return [...inBand, ...outOfBand];
       }),
 
     getLatest: publicProcedure
@@ -257,6 +668,21 @@ export const appRouter = router({
           await db.updateUserTrustScore(ctx.user.id, 1);
         }
 
+        await db.recordAnalyticsEvent({
+          eventName: ANALYTICS_EVENTS.PRICE_REPORTED,
+          user: ctx.user,
+          properties: {
+            storeId: input.storeId,
+            productId: input.productId,
+            price: input.price,
+            isVerified,
+            isOutlier,
+            withinGeofence,
+            pointsEarned: points,
+            chainId: store.chainId,
+          },
+        });
+
         return {
           id,
           isVerified,
@@ -309,6 +735,17 @@ export const appRouter = router({
         });
 
         const results = await engine.optimizeCart(input.productIds, input.radiusKm);
+        const best = Array.isArray(results) ? (results as any[])[0] : null;
+        await db.recordAnalyticsEvent({
+          eventName: ANALYTICS_EVENTS.LIST_OPTIMIZED,
+          user,
+          properties: {
+            productCount: input.productIds.length,
+            radiusKm: input.radiusKm,
+            savedAmount: best?.savings ?? null,
+            strategy: best?.strategy ?? null,
+          },
+        });
         return results;
       }),
   }),
@@ -335,6 +772,11 @@ export const appRouter = router({
         const id = await db.createShoppingList({
           name: input.name,
           ownerId: ctx.user.id,
+        });
+        await db.recordAnalyticsEvent({
+          eventName: ANALYTICS_EVENTS.LIST_CREATED,
+          user: ctx.user,
+          properties: { listId: id, nameLength: input.name.length },
         });
         return { id };
       }),
@@ -384,6 +826,7 @@ export const appRouter = router({
         quantity: z.number().default(1),
         unit: z.string().optional(),
         notes: z.string().optional(),
+        source: z.string().optional(), // "search" | "recipe" | "scan" | "manual" | "pantry"
       }))
       .mutation(async ({ ctx, input }) => {
         const id = await db.addListItem({
@@ -394,6 +837,16 @@ export const appRouter = router({
           unit: input.unit,
           notes: input.notes,
           addedByUserId: ctx.user.id,
+        });
+        await db.recordAnalyticsEvent({
+          eventName: ANALYTICS_EVENTS.LIST_ITEM_ADDED,
+          user: ctx.user,
+          properties: {
+            listId: input.listId,
+            productId: input.productId,
+            source: input.source ?? "manual",
+            quantity: input.quantity,
+          },
         });
         return { id };
       }),
@@ -583,6 +1036,20 @@ Only return valid JSON, no other text.`,
           ingredients: ingredientsWithProducts,
         });
 
+        await db.recordAnalyticsEvent({
+          eventName: ANALYTICS_EVENTS.RECIPE_IMPORTED,
+          user: ctx.user,
+          properties: {
+            recipeId: id,
+            sourceUrl: input.url,
+            servings: extracted.servings,
+            ingredientCount: ingredientsWithProducts.length,
+            matchedProducts: ingredientsWithProducts.filter(
+              (i: any) => i.productId
+            ).length,
+          },
+        });
+
         return {
           id,
           name: extracted.name,
@@ -611,6 +1078,16 @@ Only return valid JSON, no other text.`,
             addedByUserId: ctx.user.id,
           });
         }
+
+        await db.recordAnalyticsEvent({
+          eventName: ANALYTICS_EVENTS.RECIPE_ADDED_TO_LIST,
+          user: ctx.user,
+          properties: {
+            recipeId: input.recipeId,
+            listId: input.listId,
+            itemsAdded: ingredients.length,
+          },
+        });
 
         return { success: true, itemsAdded: ingredients.length };
       }),
@@ -868,6 +1345,22 @@ Only return valid JSON, no other text.`,
           targetPrice: input.targetPrice,
           currentLowestPrice: lowestPrice,
           currentLowestStoreId: lowestStore?.storeId,
+        });
+        await db.recordAnalyticsEvent({
+          eventName: ANALYTICS_EVENTS.ALERT_CREATED,
+          user: ctx.user,
+          properties: {
+            alertId: id,
+            productId: input.productId,
+            targetPrice: input.targetPrice,
+            currentLowestPrice: lowestPrice,
+            gapPct:
+              lowestPrice && lowestPrice > 0
+                ? Math.round(
+                    ((lowestPrice - input.targetPrice) / lowestPrice) * 100
+                  )
+                : null,
+          },
         });
         return { id };
       }),

@@ -20,7 +20,7 @@ export const users = mysqlTable("users", {
   fuelCostPerKm: float("fuelCostPerKm").default(0.15),
   timeValuePerHour: float("timeValuePerHour").default(15),
   // Preferences
-  preferences: json("preferences").$type<{ dietaryRestrictions?: string[]; favoriteStores?: number[] }>(),
+  preferences: json("preferences").$type<import("../shared/profile").UserPreferences>(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -218,26 +218,47 @@ export const purchaseHistory = mysqlTable("purchase_history", {
 export type PurchaseHistoryEntry = typeof purchaseHistory.$inferSelect;
 
 // ============ AD CAMPAIGNS ============
+// Extended in 2026-05 with profile-aware targeting (tier, chain, basketMix,
+// householdSize). New surface types: dashboard_promo, recipe_sponsored.
 export const adCampaigns = mysqlTable("ad_campaigns", {
   id: int("id").autoincrement().primaryKey(),
+  brandId: int("brandId"), // null for internal hardcoded campaigns; FK to brands.id when self-serve
+  sponsor: varchar("sponsor", { length: 128 }), // brand/store name for "Patrocinado por X" label
   productId: int("productId"),
-  type: mysqlEnum("type", ["sponsored_search", "banner", "cart_suggestion"]).notNull(),
+  type: mysqlEnum("type", [
+    "sponsored_search",
+    "banner",
+    "cart_suggestion",
+    "dashboard_promo",
+    "recipe_sponsored",
+  ]).notNull(),
   title: varchar("title", { length: 255 }),
   description: text("description"),
   imageUrl: text("imageUrl"),
   targetUrl: text("targetUrl"),
   bidCpc: float("bidCpc").default(0), // Cost per click
-  // Targeting
+  // Legacy keyword/category targeting
   targetKeywords: json("targetKeywords").$type<string[]>(),
   targetCategories: json("targetCategories").$type<string[]>(),
-  triggerCategories: json("triggerCategories").$type<string[]>(), // For cart-based suggestions
+  triggerCategories: json("triggerCategories").$type<string[]>(),
+  // Profile-aware targeting (Fase 2)
+  targetTiers: json("targetTiers").$type<Array<"value" | "mid" | "premium">>(),
+  targetChains: json("targetChains").$type<string[]>(),
+  targetBasketMix: json("targetBasketMix").$type<string[]>(),
+  targetCadences: json("targetCadences").$type<string[]>(),
+  targetMinHouseholdSize: varchar("targetMinHouseholdSize", { length: 8 }),
   // Schedule
   activeFrom: timestamp("activeFrom"),
   activeUntil: timestamp("activeUntil"),
   isActive: boolean("isActive").default(true),
-  // Stats
+  // Stats counters (incremental; analytics_events also logs each event)
   impressions: int("impressions").default(0),
   clicks: int("clicks").default(0),
+  // Daily budget & frequency capping (bid engine v2)
+  dailyBudget: float("dailyBudget"),
+  dailySpend: float("dailySpend").default(0),
+  dailySpendDate: timestamp("dailySpendDate"), // truncated to date — we compare dates only
+  maxImpressionsPerUserPerDay: int("maxImpressionsPerUserPerDay").default(5),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -383,3 +404,47 @@ export const googlePlacesCache = mysqlTable("google_places_cache", {
 
 export type GooglePlaceCache = typeof googlePlacesCache.$inferSelect;
 export type InsertGooglePlaceCache = typeof googlePlacesCache.$inferInsert;
+
+
+// ============ ANALYTICS EVENTS ============
+// Append-only event log. Used to compose dashboards and feed the ad-targeting
+// engine. `tier` is denormalized at insert time so we don't JOIN users on every
+// aggregate. `properties` is opaque JSON — keep server-side TS types beside
+// each emitter (server/analytics.ts).
+export const analyticsEvents = mysqlTable("analytics_events", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"), // nullable for anonymous / pre-login
+  sessionId: varchar("sessionId", { length: 64 }),
+  eventName: varchar("eventName", { length: 64 }).notNull(),
+  properties: json("properties").$type<Record<string, unknown>>(),
+  // Denormalized targeting facets — derived from the user at insert time.
+  tier: varchar("tier", { length: 16 }), // value | mid | premium | null
+  cadence: varchar("cadence", { length: 16 }),
+  householdSize: varchar("householdSize", { length: 8 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => [
+  index("idx_analytics_event_time").on(table.eventName, table.createdAt),
+  index("idx_analytics_user_time").on(table.userId, table.createdAt),
+  index("idx_analytics_tier_time").on(table.tier, table.createdAt),
+]);
+
+export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
+export type InsertAnalyticsEvent = typeof analyticsEvents.$inferInsert;
+
+// ============ BRANDS (Fase 3 — brand portal) ============
+// A brand entity owns one or more ad_campaigns. Auth lives on the brand,
+// not on individual operators yet — single login per brand for now.
+export const brands = mysqlTable("brands", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 128 }).notNull(),
+  slug: varchar("slug", { length: 64 }).notNull().unique(),
+  ownerEmail: varchar("ownerEmail", { length: 320 }).notNull().unique(),
+  passwordHash: varchar("passwordHash", { length: 255 }).notNull(),
+  passwordSalt: varchar("passwordSalt", { length: 64 }).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Brand = typeof brands.$inferSelect;
+export type InsertBrand = typeof brands.$inferInsert;
