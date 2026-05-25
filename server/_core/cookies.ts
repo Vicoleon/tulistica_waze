@@ -1,4 +1,6 @@
-import type { CookieOptions, Request } from "express";
+import { BRAND_CONTEXT_COOKIE_NAME, THIRTY_DAYS_MS } from "@shared/const";
+import { parse as parseCookieHeader } from "cookie";
+import type { CookieOptions, Request, Response } from "express";
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 
@@ -34,4 +36,30 @@ export function getSessionCookieOptions(
     sameSite: secure ? "none" : "lax",
     secure,
   };
+}
+
+export function getActiveBrandIdFromRequest(req: Request): number | null {
+  const cookieHeader = req.headers.cookie;
+  if (!cookieHeader) return null;
+  const parsed = parseCookieHeader(cookieHeader);
+  const raw = parsed[BRAND_CONTEXT_COOKIE_NAME];
+  if (!raw) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+export function setActiveBrandCookie(res: Response, req: Request, brandId: number): void {
+  const opts = getSessionCookieOptions(req);
+  res.cookie(BRAND_CONTEXT_COOKIE_NAME, String(brandId), {
+    ...opts,
+    maxAge: THIRTY_DAYS_MS,
+  });
+}
+
+export function clearActiveBrandCookie(res: Response, req: Request): void {
+  const opts = getSessionCookieOptions(req);
+  res.cookie(BRAND_CONTEXT_COOKIE_NAME, "", {
+    ...opts,
+    maxAge: -1,
+  });
 }
