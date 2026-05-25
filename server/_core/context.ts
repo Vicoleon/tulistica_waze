@@ -51,24 +51,24 @@ export async function createContext(
         name: "Mock User",
         email: "mock@local.dev",
         passwordHash: null,
-        role: "admin", // Admin access for development
+        role: "super_admin",
+        emailVerified: true,
+        emailVerifiedAt: new Date(),
         trustScore: 100,
         totalPoints: 1000,
         createdAt: new Date(),
         lastSignedIn: new Date(),
         loginMethod: "mock",
-        isBlocked: false,
-        avatarUrl: null,
         homeLatitude: 9.9281,
         homeLongitude: -84.0907,
-        fuelCostPerKm: 250, // ₡250/km CRC
-        timeValuePerHour: 3000, // ₡3,000/hr CRC
+        fuelCostPerKm: 250,
+        timeValuePerHour: 3000,
         priceReportsCount: 0,
         verifiedReportsCount: 0,
         defaultRadiusKm: 10,
         preferences: mockPrefs,
         updatedAt: new Date(),
-      } as User;
+      } satisfies User;
     } else {
       user = await sdk.authenticateRequest(opts.req);
     }
