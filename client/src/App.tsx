@@ -49,6 +49,8 @@ import BrandCampaignNew from "./pages/brand/BrandCampaignNew";
 import BrandCampaignDetail from "./pages/brand/BrandCampaignDetail";
 import BrandBilling from "./pages/brand/BrandBilling";
 import BrandSettings from "./pages/brand/BrandSettings";
+import BrandStores from "./pages/brand/BrandStores";
+import BrandStoresClaim from "./pages/brand/BrandStoresClaim";
 
 function Router() {
   return (
@@ -77,6 +79,8 @@ function Router() {
       <Route path="/brand/campaigns/:id" component={BrandCampaignDetail} />
       <Route path="/brand/billing" component={BrandBilling} />
       <Route path="/brand/settings" component={BrandSettings} />
+      <Route path="/brand/stores" component={BrandStores} />
+      <Route path="/brand/stores/claim" component={BrandStoresClaim} />
 
       {/* Authenticated app routes — wrapped in DashboardLayout. */}
       <Route path="/dashboard">
