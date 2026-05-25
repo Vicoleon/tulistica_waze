@@ -7,6 +7,8 @@ import {
   verifiedProcedure,
   adminProcedure,
   superAdminProcedure,
+  vendorStaffProcedure,
+  vendorAdminProcedure,
   router,
 } from "./_core/trpc";
 import type { User } from "../drizzle/schema";
@@ -1780,6 +1782,131 @@ Only return valid JSON, no other text.`,
             to: applicant.email,
             subject: "Tu solicitud de vendedor no fue aprobada",
             body: `Lamentablemente tu solicitud para "${app.companyName}" no avanzó.${input.reviewerNote ? `\n\nMotivo: ${input.reviewerNote}` : ""}\n\nPodés volver a aplicar cuando quieras desde /vendor/apply.`,
+          }).catch(() => {});
+        }
+        return { ok: true };
+      }),
+  }),
+
+  // ============ STORE CLAIMS ============
+  storeClaims: router({
+    search: vendorStaffProcedure
+      .input(z.object({
+        query: z.string().trim().max(255).optional(),
+        city: z.string().trim().max(128).optional(),
+      }))
+      .query(async ({ input }) => {
+        return db.searchUnclaimedStores({ ...input, limit: 50 });
+      }),
+
+    myStores: vendorStaffProcedure.query(async ({ ctx }) => {
+      if (!ctx.brand) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "No hay marca activa" });
+      }
+      return db.listStoresForBrand(ctx.brand.id);
+    }),
+
+    myClaims: vendorStaffProcedure.query(async ({ ctx }) => {
+      if (!ctx.brand) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "No hay marca activa" });
+      }
+      return db.listStoreClaimsForBrand(ctx.brand.id);
+    }),
+
+    claim: vendorAdminProcedure
+      .input(z.object({
+        storeId: z.number().int().positive(),
+        justification: z.string().trim().max(2000).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.brand) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "No hay marca activa" });
+        }
+        const store = await db.getStoreById(input.storeId);
+        if (!store) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Tienda no encontrada" });
+        }
+        if (store.brandId) {
+          throw new TRPCError({ code: "CONFLICT", message: "Esa tienda ya fue reclamada" });
+        }
+        const existing = await db.getPendingClaimForBrandStore(ctx.brand.id, input.storeId);
+        if (existing) {
+          throw new TRPCError({ code: "CONFLICT", message: "Ya tenés una reclamación pendiente para esa tienda" });
+        }
+        const id = await db.createStoreClaim({
+          brandId: ctx.brand.id,
+          storeId: input.storeId,
+          claimantUserId: ctx.user.id,
+          justification: input.justification ?? null,
+        });
+        notifyOwner({
+          title: "[Tulistica] Nueva reclamación de tienda",
+          content: `${ctx.brand.companyName} → store #${input.storeId} (${store.name})`,
+        }).catch(() => {});
+        return { claimId: id };
+      }),
+
+    listPending: superAdminProcedure.query(() => db.listPendingStoreClaims()),
+
+    approve: superAdminProcedure
+      .input(z.object({
+        id: z.number().int().positive(),
+        reviewerNote: z.string().trim().max(1000).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const claim = await db.getStoreClaimById(input.id);
+        if (!claim || claim.status !== "pending") {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Reclamación no encontrada o no pendiente" });
+        }
+        // Race protection: re-fetch the store at decision time.
+        const store = await db.getStoreById(claim.storeId);
+        if (!store) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "La tienda ya no existe" });
+        }
+        if (store.brandId) {
+          throw new TRPCError({ code: "CONFLICT", message: "Esa tienda ya fue reclamada" });
+        }
+        await db.linkStoreToBrand(claim.storeId, claim.brandId);
+        await db.markStoreClaimDecided({
+          id: input.id,
+          status: "approved",
+          reviewerNote: input.reviewerNote,
+          reviewedByUserId: ctx.user.id,
+        });
+        const claimant = await db.getUserById(claim.claimantUserId);
+        if (claimant?.email) {
+          sendUserEmail({
+            to: claimant.email,
+            subject: `Reclamación aprobada: ${store.name}`,
+            body: `Tu reclamación de ${store.name} fue aprobada. Ya podés gestionar la tienda desde /brand/stores.${input.reviewerNote ? `\n\nNota del equipo: ${input.reviewerNote}` : ""}`,
+          }).catch(() => {});
+        }
+        return { ok: true };
+      }),
+
+    reject: superAdminProcedure
+      .input(z.object({
+        id: z.number().int().positive(),
+        reviewerNote: z.string().trim().max(1000).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const claim = await db.getStoreClaimById(input.id);
+        if (!claim || claim.status !== "pending") {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Reclamación no encontrada o no pendiente" });
+        }
+        await db.markStoreClaimDecided({
+          id: input.id,
+          status: "rejected",
+          reviewerNote: input.reviewerNote,
+          reviewedByUserId: ctx.user.id,
+        });
+        const claimant = await db.getUserById(claim.claimantUserId);
+        const store = await db.getStoreById(claim.storeId);
+        if (claimant?.email) {
+          sendUserEmail({
+            to: claimant.email,
+            subject: `Reclamación rechazada${store ? `: ${store.name}` : ""}`,
+            body: `Tu reclamación no avanzó.${input.reviewerNote ? `\n\nMotivo: ${input.reviewerNote}` : ""}\n\nPodés volver a aplicar desde /brand/stores/claim.`,
           }).catch(() => {});
         }
         return { ok: true };
