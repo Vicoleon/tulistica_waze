@@ -5,7 +5,7 @@
  * - Google Popular Times for crowdedness
  */
 
-import { makeRequest } from "../_core/map";
+import { makeRequest, isMapsAvailable } from "../_core/map";
 
 // ============ GOOGLE MAPS PLACES API ============
 
@@ -43,10 +43,16 @@ export async function searchNearbyGroceryStores(
   longitude: number,
   radiusMeters: number = 5000
 ): Promise<PlaceResult[]> {
+  if (!isMapsAvailable()) return [];
   try {
-    // Use the Manus proxy for Google Maps API
     const response = await makeRequest<{ results?: any[]; status: string }>(
-      `/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radiusMeters}&type=grocery_or_supermarket&keyword=grocery|supermarket|food`
+      `/maps/api/place/nearbysearch/json`,
+      {
+        location: `${latitude},${longitude}`,
+        radius: radiusMeters,
+        type: "grocery_or_supermarket",
+        keyword: "grocery|supermarket|food",
+      }
     );
 
     if (!response.results) {
@@ -75,9 +81,15 @@ export async function searchNearbyGroceryStores(
  * Get detailed place information including phone, website, hours
  */
 export async function getPlaceDetails(placeId: string): Promise<PlaceResult | null> {
+  if (!isMapsAvailable()) return null;
   try {
     const response = await makeRequest<{ result?: any; status: string }>(
-      `/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_address,geometry,formatted_phone_number,website,rating,user_ratings_total,opening_hours,price_level,types`
+      `/maps/api/place/details/json`,
+      {
+        place_id: placeId,
+        fields:
+          "name,formatted_address,geometry,formatted_phone_number,website,rating,user_ratings_total,opening_hours,price_level,types",
+      }
     );
 
     if (!response.result) {
@@ -113,13 +125,17 @@ export async function searchStoresByText(
   latitude?: number,
   longitude?: number
 ): Promise<PlaceResult[]> {
+  if (!isMapsAvailable()) return [];
   try {
-    let url = `/maps/api/place/textsearch/json?query=${encodeURIComponent(query + " grocery store")}`;
+    const params: Record<string, unknown> = { query: `${query} grocery store` };
     if (latitude && longitude) {
-      url += `&location=${latitude},${longitude}&radius=50000`;
+      params.location = `${latitude},${longitude}`;
+      params.radius = 50000;
     }
-
-    const response = await makeRequest<{ results?: any[]; status: string }>(url);
+    const response = await makeRequest<{ results?: any[]; status: string }>(
+      `/maps/api/place/textsearch/json`,
+      params
+    );
 
     if (!response.results) {
       return [];

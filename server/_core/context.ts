@@ -45,6 +45,7 @@ export async function createContext(
         openId: ENV.ownerOpenId || "mock-user-id",
         name: "Mock User",
         email: "mock@local.dev",
+        passwordHash: null,
         role: "admin", // Admin access for development
         trustScore: 100,
         totalPoints: 1000,
@@ -55,8 +56,8 @@ export async function createContext(
         avatarUrl: null,
         homeLatitude: 9.9281,
         homeLongitude: -84.0907,
-        fuelCostPerKm: 0.15,
-        timeValuePerHour: 15,
+        fuelCostPerKm: 250, // ₡250/km CRC
+        timeValuePerHour: 3000, // ₡3,000/hr CRC
         priceReportsCount: 0,
         verifiedReportsCount: 0,
         defaultRadiusKm: 10,

@@ -7,6 +7,13 @@ import {
   adminProcedure,
   router,
 } from "./_core/trpc";
+import type { User } from "../drizzle/schema";
+
+function sanitizeUser<T extends { passwordHash?: string | null } | null>(user: T): T {
+  if (!user) return user;
+  const { passwordHash, ...safe } = user as User;
+  return safe as unknown as T;
+}
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import * as db from "./db";
@@ -21,7 +28,7 @@ import {
   shouldRequireConfirmation,
   calculatePointsForPriceReport,
 } from "./services/smartCart";
-import { invokeLLM } from "./_core/llm";
+import { invokeLLM, isLlmAvailable, extractJson, invalidateLlmConfigCache, LLM_PROVIDER_LIST, type LlmProvider } from "./_core/llm";
 import {
   searchNearbyGroceryStores,
   getPlaceDetails,
@@ -32,7 +39,8 @@ import {
 } from "./services/externalApis";
 import { computeBudgetInsights } from "./services/budget";
 import { predictSeasonalDealsForUser, predictForProduct, rankPredictions } from "./services/seasonalDeals";
-import { notifyOwner } from "./_core/notification";
+import { notifyOwner, isNotificationAvailable } from "./_core/notification";
+import { isMapsAvailable } from "./_core/map";
 import {
   HOUSEHOLD_SIZES,
   SHOPPING_CADENCES,
@@ -46,6 +54,8 @@ import {
 import { ANALYTICS_EVENTS } from "../shared/analytics";
 import { CAMPAIGN_SURFACES } from "../shared/campaigns";
 import { brandProcedure } from "./_core/trpc";
+import { TRPCError } from "@trpc/server";
+import { encryptCredential, decryptCredential } from "./_core/vault";
 
 export const appRouter = router({
   system: systemRouter,
@@ -55,8 +65,124 @@ export const appRouter = router({
   brandCampaigns: brandCampaignsRouter,
   brandBilling: brandBillingRouter,
 
+  // ============ FEATURE FLAGS ============
+  features: router({
+    status: publicProcedure.query(async () => ({
+      maps: isMapsAvailable(),
+      llm: await isLlmAvailable(),
+      notifications: isNotificationAvailable(),
+    })),
+  }),
+
+  // ============ ADMIN ============
+  admin: router({
+    // List all configured LLM keys (returns only metadata + masked tail).
+    llmConfig: adminProcedure.query(async () => {
+      const activeProvider = (await db.getAppSetting("llm.activeProvider")) as
+        | LlmProvider
+        | null;
+      const keys = await Promise.all(
+        LLM_PROVIDER_LIST.map(async (provider) => {
+          const cred = await db.findAppIntegrationCredential(`llm_${provider}`);
+          if (!cred) {
+            return { provider, configured: false as const };
+          }
+          let maskedTail: string | null = null;
+          try {
+            const decoded = decryptCredential<{ apiKey: string }>(cred.ciphertext);
+            maskedTail = decoded.apiKey.slice(-4);
+          } catch {
+            // ignore — show as configured-but-undecryptable
+          }
+          const model = await db.getAppSetting(`llm.model.${provider}`);
+          return {
+            provider,
+            configured: true as const,
+            maskedTail,
+            updatedAt: cred.updatedAt,
+            model,
+          };
+        })
+      );
+      return { activeProvider, keys };
+    }),
+
+    setLlmKey: adminProcedure
+      .input(
+        z.object({
+          provider: z.enum(LLM_PROVIDER_LIST as [LlmProvider, ...LlmProvider[]]),
+          apiKey: z.string().min(8).max(500),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const ciphertext = encryptCredential({ apiKey: input.apiKey });
+        await db.upsertAppIntegrationCredential(`llm_${input.provider}`, ciphertext);
+        invalidateLlmConfigCache();
+        return { ok: true };
+      }),
+
+    deleteLlmKey: adminProcedure
+      .input(z.object({ provider: z.enum(LLM_PROVIDER_LIST as [LlmProvider, ...LlmProvider[]]) }))
+      .mutation(async ({ input }) => {
+        await db.deleteAppIntegrationCredential(`llm_${input.provider}`);
+        invalidateLlmConfigCache();
+        return { ok: true };
+      }),
+
+    setLlmActive: adminProcedure
+      .input(
+        z.object({
+          provider: z.enum(LLM_PROVIDER_LIST as [LlmProvider, ...LlmProvider[]]),
+          model: z.string().min(1).max(120),
+        })
+      )
+      .mutation(async ({ input }) => {
+        await db.setAppSetting("llm.activeProvider", input.provider);
+        await db.setAppSetting(`llm.model.${input.provider}`, input.model);
+        invalidateLlmConfigCache();
+        return { ok: true };
+      }),
+  }),
+
+  // ============ INTEGRATIONS (encrypted credential vault) ============
+  integrations: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return db.listIntegrationCredentials(ctx.user.id);
+    }),
+
+    save: protectedProcedure
+      .input(
+        z.object({
+          integration: z.enum(["automercado"]),
+          label: z.string().max(120).optional(),
+          email: z.string().email("Correo inválido"),
+          password: z.string().min(4).max(200),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const ciphertext = encryptCredential({
+          email: input.email,
+          password: input.password,
+        });
+        const id = await db.upsertIntegrationCredential({
+          userId: ctx.user.id,
+          integration: input.integration,
+          label: input.label ?? null,
+          ciphertext,
+        });
+        return { id, ok: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteIntegrationCredential(input.id, ctx.user.id);
+        return { ok: true };
+      }),
+  }),
+
   auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
+    me: publicProcedure.query(opts => sanitizeUser(opts.ctx.user)),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -67,7 +193,7 @@ export const appRouter = router({
   // ============ USER PROFILE ============
   user: router({
     getProfile: protectedProcedure.query(async ({ ctx }) => {
-      return ctx.user;
+      return sanitizeUser(ctx.user);
     }),
 
     updateLocation: protectedProcedure
@@ -546,8 +672,8 @@ export const appRouter = router({
         const engine = new SmartCartEngine({
           homeLatitude: user.homeLatitude,
           homeLongitude: user.homeLongitude,
-          fuelCostPerKm: user.fuelCostPerKm || 0.15,
-          timeValuePerHour: user.timeValuePerHour || 15,
+          fuelCostPerKm: user.fuelCostPerKm ?? 250,
+          timeValuePerHour: user.timeValuePerHour ?? 3000,
         });
 
         const results = await engine.optimizeCart(input.productIds, input.radiusKm);
@@ -772,9 +898,147 @@ export const appRouter = router({
         return db.getRecipeById(input.id);
       }),
 
-    extractFromUrl: protectedProcedure
-      .input(z.object({ url: z.string() }))
+    generate: protectedProcedure
+      .input(
+        z.object({
+          request: z.string().min(3).max(500),
+          servings: z.number().int().min(1).max(20).default(4),
+          usePantry: z.boolean().default(true),
+        })
+      )
       .mutation(async ({ ctx, input }) => {
+        if (!(await isLlmAvailable())) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message:
+              "La generación de recetas requiere configurar OPENAI_API_KEY. Activá la función en .env para habilitarla.",
+          });
+        }
+
+        // Personalize from pantry + recent purchases when available.
+        let pantryContext = "";
+        if (input.usePantry) {
+          const pantry = await db.getUserPantry(ctx.user.id);
+          const pantryNames = pantry
+            .map((p) => p.productName || p.customName)
+            .filter(Boolean)
+            .slice(0, 30);
+          if (pantryNames.length > 0) {
+            pantryContext = `\n\nProductos que la persona ya tiene en su despensa (preferí usarlos cuando aporten): ${pantryNames.join(", ")}.`;
+          }
+        }
+
+        const systemPrompt = `Sos una cocinera tica experta en cocina costarricense tradicional y comida casera del día a día. Generás recetas claras, realistas y económicas usando ingredientes y marcas comunes en Costa Rica (Dos Pinos, Lizano, Tío Pelón, Don Pedro, Sardimar, etc.).
+
+Reglas:
+- Cantidades en sistema métrico o medidas caseras (taza, cucharadita).
+- Pasos numerados, cortos y accionables (10 pasos máximo).
+- Sin notas adicionales fuera del JSON.
+- Si la persona pide algo no-tico, adaptá los ingredientes a lo que se consigue en supermercados de Costa Rica.${pantryContext}`;
+
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: systemPrompt },
+            {
+              role: "user",
+              content: `Generá una receta para ${input.servings} porciones. Pedido: "${input.request}". Devolvé únicamente JSON válido.`,
+            },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "recipe_generation",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  description: { type: "string" },
+                  servings: { type: "integer" },
+                  prepTimeMinutes: { type: "integer" },
+                  ingredients: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        name: { type: "string" },
+                        quantity: { type: "string" },
+                        unit: { type: "string" },
+                      },
+                      required: ["name", "quantity"],
+                      additionalProperties: false,
+                    },
+                  },
+                  steps: {
+                    type: "array",
+                    items: { type: "string" },
+                  },
+                },
+                required: ["name", "ingredients", "steps"],
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+
+        const content = response.choices[0]?.message?.content;
+        if (!content || typeof content !== "string") {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "El modelo no devolvió una respuesta válida.",
+          });
+        }
+
+        const recipe = extractJson<{
+          name: string;
+          description?: string;
+          servings?: number;
+          prepTimeMinutes?: number;
+          ingredients: Array<{ name: string; quantity: string; unit?: string }>;
+          steps: string[];
+        }>(content);
+
+        // Match ingredients to products in our DB so they're optimizable.
+        const ingredientsWithProducts = await Promise.all(
+          recipe.ingredients.map(async (ing) => {
+            const products = await db.searchProducts(ing.name, 1);
+            return { ...ing, productId: products[0]?.id };
+          })
+        );
+
+        const id = await db.saveRecipe({
+          userId: ctx.user.id,
+          name: recipe.name,
+          sourceUrl: null,
+          servings: recipe.servings ?? input.servings,
+          ingredients: ingredientsWithProducts,
+          steps: recipe.steps,
+          description: recipe.description,
+          prepTimeMinutes: recipe.prepTimeMinutes,
+          isAiGenerated: true,
+        });
+
+        return {
+          id,
+          name: recipe.name,
+          description: recipe.description,
+          servings: recipe.servings ?? input.servings,
+          prepTimeMinutes: recipe.prepTimeMinutes,
+          ingredients: ingredientsWithProducts,
+          steps: recipe.steps,
+        };
+      }),
+
+    extractFromUrl: protectedProcedure
+      .input(z.object({ url: z.string().url("URL inválido") }))
+      .mutation(async ({ ctx, input }) => {
+        if (!(await isLlmAvailable())) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message:
+              "La extracción de recetas requiere configurar OPENAI_API_KEY. Activá la función en .env para habilitarla.",
+          });
+        }
         // Use LLM to extract ingredients from recipe URL
         const response = await invokeLLM({
           messages: [
@@ -830,7 +1094,11 @@ Only return valid JSON, no other text.`,
         const content = response.choices[0]?.message?.content;
         if (!content || typeof content !== 'string') throw new Error("Failed to extract recipe");
 
-        const extracted = JSON.parse(content);
+        const extracted = extractJson<{
+          name: string;
+          servings?: number;
+          ingredients: Array<{ name: string; quantity?: string; unit?: string }>;
+        }>(content);
 
         // Try to match ingredients to products in database
         const ingredientsWithProducts = await Promise.all(
@@ -1043,6 +1311,136 @@ Only return valid JSON, no other text.`,
 
   // ============ PRODUCT LOOKUP (EXTERNAL) ============
   productLookup: router({
+    /**
+     * Recognize a product from a base64-encoded photo. Uses the configured
+     * vision-capable LLM. Returns a best-guess name/brand/category and tries
+     * to match against our product DB. The client can then confirm or edit.
+     */
+    fromPhoto: protectedProcedure
+      .input(
+        z.object({
+          // data:image/jpeg;base64,... or data:image/png;base64,...
+          imageDataUrl: z
+            .string()
+            .max(8_000_000, "La imagen supera el límite de 8MB")
+            .regex(/^data:image\/(png|jpeg|jpg|webp);base64,/, "Formato de imagen no soportado"),
+        })
+      )
+      .mutation(async ({ input }) => {
+        if (!(await isLlmAvailable())) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message:
+              "El reconocimiento por foto requiere configurar OPENAI_API_KEY. Activá la función en .env para habilitarla.",
+          });
+        }
+
+        const response = await invokeLLM({
+          messages: [
+            {
+              role: "system",
+              content:
+                "Sos un asistente que identifica productos de supermercado en Costa Rica. Si la imagen muestra un producto, devolvé en JSON el nombre principal, la marca y la categoría (Granos, Lácteos, Bebidas, Limpieza, etc.). Si ves un código de barras EAN/UPC, devolvelo también. Si no se ve un producto claramente, devolvé identified=false y dejá los demás campos vacíos.",
+            },
+            {
+              role: "user",
+              content: [
+                { type: "text", text: "Identificá este producto." },
+                {
+                  type: "image_url",
+                  image_url: { url: input.imageDataUrl, detail: "low" },
+                },
+              ],
+            },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "product_recognition",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  identified: { type: "boolean" },
+                  name: { type: "string" },
+                  brand: { type: "string" },
+                  category: { type: "string" },
+                  barcode: { type: "string" },
+                  confidence: {
+                    type: "string",
+                    enum: ["low", "medium", "high"],
+                  },
+                },
+                required: ["identified", "name", "brand", "category", "barcode", "confidence"],
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+
+        const content = response.choices[0]?.message?.content;
+        if (!content || typeof content !== "string") {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "El modelo no devolvió una respuesta válida.",
+          });
+        }
+        const parsed = extractJson<{
+          identified: boolean;
+          name: string;
+          brand: string;
+          category: string;
+          barcode: string;
+          confidence: "low" | "medium" | "high";
+        }>(content);
+
+        if (!parsed.identified) {
+          return { identified: false as const };
+        }
+
+        // Try DB match: by barcode first (when present), then by name+brand search.
+        let matchedProduct = null;
+        if (parsed.barcode) {
+          matchedProduct = await db.getProductByBarcode(parsed.barcode);
+        }
+        if (!matchedProduct && parsed.name) {
+          const query = parsed.brand ? `${parsed.name} ${parsed.brand}` : parsed.name;
+          const results = await db.searchProducts(query, 1);
+          matchedProduct = results[0] ?? null;
+        }
+
+        // No match — seed a new product so it has an id usable by pantry/lists.
+        // High-confidence recognitions get persisted; low-confidence ones are
+        // returned without persistence so callers can require user confirmation.
+        let createdId: number | null = null;
+        if (!matchedProduct && parsed.confidence !== "low") {
+          createdId = await db.createProduct({
+            barcode: parsed.barcode || undefined,
+            name: parsed.name.trim(),
+            brand: parsed.brand?.trim() || undefined,
+            category: parsed.category?.trim() || undefined,
+          });
+        }
+        const product =
+          matchedProduct ??
+          (createdId
+            ? {
+                id: createdId,
+                barcode: parsed.barcode || null,
+                name: parsed.name,
+                brand: parsed.brand || null,
+                category: parsed.category || null,
+              }
+            : null);
+
+        return {
+          identified: true as const,
+          recognition: parsed,
+          product,
+          created: !matchedProduct && createdId !== null,
+        };
+      }),
+
     byBarcode: publicProcedure
       .input(z.object({ barcode: z.string() }))
       .query(async ({ input }) => {
@@ -1218,10 +1616,12 @@ Only return valid JSON, no other text.`,
           if (lowestPrice <= alert.targetPrice) {
             // Price dropped below target!
             const product = await db.getProductById(input.productId);
-            await notifyOwner({
-              title: `Price Drop Alert: ${product?.name}`,
-              content: `${product?.name} is now $${lowestPrice.toFixed(2)} (your target: $${alert.targetPrice.toFixed(2)})`,
-            });
+            if (isNotificationAvailable()) {
+              await notifyOwner({
+                title: `Alerta de precio: ${product?.name}`,
+                content: `${product?.name} ahora cuesta ₡${lowestPrice.toLocaleString("es-CR")} (tu objetivo: ₡${alert.targetPrice.toLocaleString("es-CR")})`,
+              });
+            }
             await db.markAlertNotified(alert.id);
             notified++;
           }
