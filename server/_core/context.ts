@@ -48,8 +48,10 @@ export async function createContext(
       user = {
         id: 1,
         openId: ENV.ownerOpenId || "mock-user-id",
-        name: "Mock User",
-        email: "mock@local.dev",
+        // Costa Rican placeholder so the nav doesn't render "Mock" anywhere.
+        // Override via MOCK_USER_NAME / MOCK_USER_EMAIL env vars.
+        name: process.env.MOCK_USER_NAME || "Andrea Solano",
+        email: process.env.MOCK_USER_EMAIL || "andrea@tulistica.cr",
         passwordHash: null,
         role: "admin", // Admin access for development
         trustScore: 100,
