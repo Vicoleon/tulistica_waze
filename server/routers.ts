@@ -1,7 +1,12 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import {
+  publicProcedure,
+  protectedProcedure,
+  adminProcedure,
+  router,
+} from "./_core/trpc";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import * as db from "./db";
@@ -28,6 +33,19 @@ import {
 import { computeBudgetInsights } from "./services/budget";
 import { predictSeasonalDealsForUser, predictForProduct, rankPredictions } from "./services/seasonalDeals";
 import { notifyOwner } from "./_core/notification";
+import {
+  HOUSEHOLD_SIZES,
+  SHOPPING_CADENCES,
+  STORE_PREFERENCES,
+  SHOPPING_PRIORITIES,
+  BASKET_CATEGORIES,
+  ZONES,
+  derivePriceTier,
+  type ShopperProfile,
+} from "../shared/profile";
+import { ANALYTICS_EVENTS } from "../shared/analytics";
+import { CAMPAIGN_SURFACES } from "../shared/campaigns";
+import { brandProcedure } from "./_core/trpc";
 
 export const appRouter = router({
   system: systemRouter,
@@ -81,6 +99,182 @@ export const appRouter = router({
         achievements,
         weeklyRank: weeklyRank?.rank,
       };
+    }),
+  }),
+
+  // ============ SHOPPER PROFILE (onboarding) ============
+  profile: router({
+    /** Returns the user's shopperProfile from preferences JSON, or null. */
+    get: protectedProcedure.query(({ ctx }) => {
+      return ctx.user.preferences?.shopperProfile ?? null;
+    }),
+
+    /**
+     * Upsert the user's shopperProfile. Derives priceTier and stamps
+     * onboardedAt server-side so the client can't fake completion.
+     */
+    update: protectedProcedure
+      .input(
+        z.object({
+          householdSize: z.enum(HOUSEHOLD_SIZES),
+          shoppingCadence: z.enum(SHOPPING_CADENCES),
+          preferredChains: z
+            .array(z.enum(STORE_PREFERENCES))
+            .min(1, "Elegí al menos una tienda")
+            .max(STORE_PREFERENCES.length),
+          shoppingPriorities: z
+            .array(z.enum(SHOPPING_PRIORITIES))
+            .min(1, "Elegí al menos una prioridad")
+            .max(3, "Máximo 3 prioridades"),
+          basketMix: z
+            .array(z.enum(BASKET_CATEGORIES))
+            .min(1, "Elegí al menos una categoría")
+            .max(3, "Máximo 3 categorías"),
+          zone: z.enum(ZONES).optional(),
+          savingsVsTimeBias: z.number().int().min(0).max(100),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const priceTier = derivePriceTier(
+          input.preferredChains,
+          input.shoppingPriorities
+        );
+        const shopperProfile: ShopperProfile = {
+          ...input,
+          priceTier,
+          onboardedAt: new Date().toISOString(),
+        };
+        await db.updateUserPreferencesJson(ctx.user.id, { shopperProfile });
+        // The user we have in ctx is stale (no shopperProfile yet); pass a
+        // synthetic with the new profile so the event has the right facets.
+        const userWithProfile = {
+          ...ctx.user,
+          preferences: { ...ctx.user.preferences, shopperProfile },
+        };
+        await db.recordAnalyticsEvent({
+          eventName: ANALYTICS_EVENTS.ONBOARDING_COMPLETED,
+          user: userWithProfile,
+          properties: {
+            priceTier,
+            householdSize: input.householdSize,
+            cadence: input.shoppingCadence,
+            preferredChainsCount: input.preferredChains.length,
+            savingsVsTimeBias: input.savingsVsTimeBias,
+          },
+        });
+        return { success: true, shopperProfile };
+      }),
+  }),
+
+  // ============ ANALYTICS ============
+  analytics: router({
+    /**
+     * Public so we can also record pre-login events (e.g. `onboarding_started`
+     * fires before profile creation). Failures are swallowed inside
+     * recordAnalyticsEvent — never surfaces to the client.
+     */
+    track: publicProcedure
+      .input(
+        z.object({
+          eventName: z.string().min(1).max(64),
+          properties: z.record(z.string(), z.unknown()).optional(),
+          sessionId: z.string().max(64).optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        await db.recordAnalyticsEvent({
+          eventName: input.eventName,
+          user: ctx.user ?? null,
+          sessionId: input.sessionId ?? null,
+          properties: input.properties ?? {},
+        });
+        return { success: true };
+      }),
+
+    /** Admin-only dashboard summary. */
+    summary: adminProcedure
+      .input(z.object({ days: z.number().int().min(1).max(90).optional() }))
+      .query(async ({ input }) => {
+        return db.getAnalyticsSummary(input.days ?? 7);
+      }),
+  }),
+
+  // ============ SPONSORED CAMPAIGNS (Fase 2) ============
+  campaigns: router({
+    /**
+     * Returns campaigns eligible for the current viewer + surface. Records
+     * an impression for each placement returned and logs an analytics event.
+     * Empty array == no campaign matched (no error, no placeholder).
+     */
+    getForSurface: publicProcedure
+      .input(
+        z.object({
+          surface: z.enum(CAMPAIGN_SURFACES),
+          limit: z.number().int().min(1).max(5).default(1),
+          keywords: z.array(z.string()).max(10).optional(),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        const placements = await db.getEligibleCampaigns(
+          input.surface,
+          ctx.user ?? null,
+          input.limit,
+          input.keywords ?? []
+        );
+        // Fire-and-forget impression bookkeeping. We don't await the analytics
+        // log so a slow inserts can't slow down the page.
+        for (const p of placements) {
+          void db.recordAdImpression(p.id);
+          void db.recordAnalyticsEvent({
+            eventName: "campaign_impression",
+            user: ctx.user ?? null,
+            properties: {
+              campaignId: p.id,
+              sponsor: p.sponsor,
+              surface: input.surface,
+              bidCpc: p.bidCpc,
+            },
+          });
+        }
+        // Strip server-only fields before returning.
+        return placements.map((p) => ({
+          id: p.id,
+          sponsor: p.sponsor,
+          type: p.type,
+          title: p.title,
+          description: p.description,
+          imageUrl: p.imageUrl,
+          targetUrl: p.targetUrl,
+          productId: p.productId,
+        }));
+      }),
+
+    /** User clicked a sponsored placement. Increments + logs event. */
+    recordClick: publicProcedure
+      .input(z.object({ campaignId: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.recordAdClick(input.campaignId);
+        await db.recordAnalyticsEvent({
+          eventName: "campaign_click",
+          user: ctx.user ?? null,
+          properties: { campaignId: input.campaignId },
+        });
+        return { success: true };
+      }),
+
+    /**
+     * Admin-only: per-campaign performance. Joined with `analytics_events`
+     * so we report event-derived CTR alongside the legacy counter.
+     */
+    adminSummary: adminProcedure.query(async () => {
+      return db.getCampaignPerformance();
+    }),
+  }),
+  // ============ BRAND INSIGHTS (Fase 4) ============
+  brandInsights: router({
+    /** Aggregate intelligence dashboard for the logged-in brand. */
+    summary: brandProcedure.query(async ({ ctx }) => {
+      return db.getBrandInsights(ctx.brand.id);
     }),
   }),
 
@@ -191,8 +385,31 @@ export const appRouter = router({
   prices: router({
     getForProduct: publicProcedure
       .input(z.object({ productId: z.number() }))
-      .query(async ({ input }) => {
-        return db.getPricesForProduct(input.productId);
+      .query(async ({ ctx, input }) => {
+        const prices = await db.getPricesForProduct(input.productId);
+        // Personalization: if the viewer has a shopper profile, surface their
+        // preferred chains within the cheapest-price band. Cheapest is still
+        // cheapest — we only reorder among comparably-priced options (within
+        // 8% of the lowest price).
+        const preferred =
+          ctx.user?.preferences?.shopperProfile?.preferredChains ?? [];
+        if (preferred.length === 0 || prices.length < 2) {
+          return prices;
+        }
+        const lowest = Math.min(...prices.map((p) => p.price));
+        const threshold = lowest * 1.08;
+        const inBand = prices.filter((p) => p.price <= threshold);
+        const outOfBand = prices.filter((p) => p.price > threshold);
+        const isPreferred = (chain: string | null) =>
+          chain ? preferred.includes(chain as any) : false;
+        inBand.sort((a, b) => {
+          const aPref = isPreferred(a.chainId) ? 1 : 0;
+          const bPref = isPreferred(b.chainId) ? 1 : 0;
+          if (aPref !== bPref) return bPref - aPref;
+          return a.price - b.price;
+        });
+        outOfBand.sort((a, b) => a.price - b.price);
+        return [...inBand, ...outOfBand];
       }),
 
     getLatest: publicProcedure
@@ -267,6 +484,21 @@ export const appRouter = router({
           await db.updateUserTrustScore(ctx.user.id, 1);
         }
 
+        await db.recordAnalyticsEvent({
+          eventName: ANALYTICS_EVENTS.PRICE_REPORTED,
+          user: ctx.user,
+          properties: {
+            storeId: input.storeId,
+            productId: input.productId,
+            price: input.price,
+            isVerified,
+            isOutlier,
+            withinGeofence,
+            pointsEarned: points,
+            chainId: store.chainId,
+          },
+        });
+
         return {
           id,
           isVerified,
@@ -319,6 +551,17 @@ export const appRouter = router({
         });
 
         const results = await engine.optimizeCart(input.productIds, input.radiusKm);
+        const best = Array.isArray(results) ? (results as any[])[0] : null;
+        await db.recordAnalyticsEvent({
+          eventName: ANALYTICS_EVENTS.LIST_OPTIMIZED,
+          user,
+          properties: {
+            productCount: input.productIds.length,
+            radiusKm: input.radiusKm,
+            savedAmount: best?.savings ?? null,
+            strategy: best?.strategy ?? null,
+          },
+        });
         return results;
       }),
   }),
@@ -345,6 +588,11 @@ export const appRouter = router({
         const id = await db.createShoppingList({
           name: input.name,
           ownerId: ctx.user.id,
+        });
+        await db.recordAnalyticsEvent({
+          eventName: ANALYTICS_EVENTS.LIST_CREATED,
+          user: ctx.user,
+          properties: { listId: id, nameLength: input.name.length },
         });
         return { id };
       }),
@@ -394,6 +642,7 @@ export const appRouter = router({
         quantity: z.number().default(1),
         unit: z.string().optional(),
         notes: z.string().optional(),
+        source: z.string().optional(), // "search" | "recipe" | "scan" | "manual" | "pantry"
       }))
       .mutation(async ({ ctx, input }) => {
         const id = await db.addListItem({
@@ -404,6 +653,16 @@ export const appRouter = router({
           unit: input.unit,
           notes: input.notes,
           addedByUserId: ctx.user.id,
+        });
+        await db.recordAnalyticsEvent({
+          eventName: ANALYTICS_EVENTS.LIST_ITEM_ADDED,
+          user: ctx.user,
+          properties: {
+            listId: input.listId,
+            productId: input.productId,
+            source: input.source ?? "manual",
+            quantity: input.quantity,
+          },
         });
         return { id };
       }),
@@ -593,6 +852,20 @@ Only return valid JSON, no other text.`,
           ingredients: ingredientsWithProducts,
         });
 
+        await db.recordAnalyticsEvent({
+          eventName: ANALYTICS_EVENTS.RECIPE_IMPORTED,
+          user: ctx.user,
+          properties: {
+            recipeId: id,
+            sourceUrl: input.url,
+            servings: extracted.servings,
+            ingredientCount: ingredientsWithProducts.length,
+            matchedProducts: ingredientsWithProducts.filter(
+              (i: any) => i.productId
+            ).length,
+          },
+        });
+
         return {
           id,
           name: extracted.name,
@@ -621,6 +894,16 @@ Only return valid JSON, no other text.`,
             addedByUserId: ctx.user.id,
           });
         }
+
+        await db.recordAnalyticsEvent({
+          eventName: ANALYTICS_EVENTS.RECIPE_ADDED_TO_LIST,
+          user: ctx.user,
+          properties: {
+            recipeId: input.recipeId,
+            listId: input.listId,
+            itemsAdded: ingredients.length,
+          },
+        });
 
         return { success: true, itemsAdded: ingredients.length };
       }),
@@ -878,6 +1161,22 @@ Only return valid JSON, no other text.`,
           targetPrice: input.targetPrice,
           currentLowestPrice: lowestPrice,
           currentLowestStoreId: lowestStore?.storeId,
+        });
+        await db.recordAnalyticsEvent({
+          eventName: ANALYTICS_EVENTS.ALERT_CREATED,
+          user: ctx.user,
+          properties: {
+            alertId: id,
+            productId: input.productId,
+            targetPrice: input.targetPrice,
+            currentLowestPrice: lowestPrice,
+            gapPct:
+              lowestPrice && lowestPrice > 0
+                ? Math.round(
+                    ((lowestPrice - input.targetPrice) / lowestPrice) * 100
+                  )
+                : null,
+          },
         });
         return { id };
       }),

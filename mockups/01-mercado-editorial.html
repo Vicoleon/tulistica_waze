@@ -1,0 +1,787 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mockup 01 — Mercado Editorial · Grocery Waze</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #f6f0e6;
+    --paper-deep: #efe7d6;
+    --ink: #1c1612;
+    --ink-soft: #5a4b3a;
+    --rule: #2a1f17;
+    --terracotta: #c9522b;
+    --coffee: #6b3e1f;
+    --jungle: #1f5b3a;
+    --gold: #d4a017;
+    --tomato: #e23a2e;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 0 28px; }
+
+  /* Masthead */
+  .masthead {
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper);
+  }
+  .masthead-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 14px 0 8px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .masthead-row .left { display: flex; gap: 20px; }
+  .masthead-row .right { display: flex; gap: 20px; justify-content: flex-end; }
+  .masthead-title {
+    text-align: center;
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 800;
+    font-size: clamp(40px, 6vw, 76px);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    padding: 14px 0 22px;
+    border-bottom: 3px double var(--rule);
+    border-top: 1px solid var(--rule);
+    background:
+      radial-gradient(ellipse at 50% 100%, rgba(201,82,43,0.08), transparent 60%),
+      var(--paper);
+  }
+  .masthead-title .amp {
+    font-style: italic;
+    font-weight: 300;
+    color: var(--terracotta);
+  }
+  .nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .nav a { padding: 6px 4px; border-bottom: 2px solid transparent; transition: border-color 200ms; }
+  .nav a:hover { border-color: var(--terracotta); }
+  .nav .cta-pill {
+    padding: 8px 16px;
+    border: 1.5px solid var(--rule);
+    border-radius: 999px;
+    background: var(--ink);
+    color: var(--paper);
+    font-weight: 600;
+    transition: background 200ms, color 200ms;
+  }
+  .nav .cta-pill:hover { background: var(--terracotta); border-color: var(--terracotta); }
+
+  /* Issue strip */
+  .issue {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--rule);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+  }
+  .issue .ticker {
+    display: flex; gap: 24px; overflow: hidden;
+  }
+  .issue .ticker span b {
+    color: var(--jungle); font-weight: 600;
+  }
+  .issue .ticker span .down { color: var(--tomato); }
+
+  /* Hero */
+  .hero {
+    display: grid;
+    grid-template-columns: 1.4fr 1px 1fr;
+    gap: 40px;
+    padding: 56px 0 40px;
+    border-bottom: 1px solid var(--rule);
+    align-items: start;
+  }
+  .hero .divider { background: var(--rule); width: 1px; height: 100%; }
+  .kicker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    color: var(--terracotta);
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  .headline {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 300;
+    font-size: clamp(44px, 6vw, 88px);
+    line-height: 0.96;
+    letter-spacing: -0.025em;
+    margin: 0 0 22px;
+  }
+  .headline em {
+    font-style: italic;
+    font-weight: 600;
+    color: var(--terracotta);
+  }
+  .headline .underline {
+    text-decoration: underline;
+    text-decoration-thickness: 4px;
+    text-underline-offset: 8px;
+    text-decoration-color: var(--gold);
+  }
+  .dek {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 22px;
+    line-height: 1.4;
+    color: var(--ink-soft);
+    max-width: 60ch;
+    margin: 0 0 28px;
+  }
+  .byline {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    display: flex; gap: 16px; flex-wrap: wrap;
+  }
+  .byline .dot { color: var(--terracotta); }
+
+  .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 14px 22px;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 15px;
+    border: 1.5px solid var(--rule);
+    cursor: pointer;
+    transition: all 200ms ease;
+  }
+  .btn-primary { background: var(--ink); color: var(--paper); }
+  .btn-primary:hover { background: var(--terracotta); border-color: var(--terracotta); }
+  .btn-ghost { background: transparent; }
+  .btn-ghost:hover { background: var(--paper-deep); }
+
+  /* Hero side: featured price */
+  .featured-card {
+    border: 1px solid var(--rule);
+    background: var(--paper-deep);
+    padding: 24px;
+    border-radius: 4px;
+  }
+  .featured-card .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+  }
+  .featured-card h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    margin: 8px 0 4px;
+    font-weight: 600;
+  }
+  .featured-card .sub { color: var(--ink-soft); font-size: 14px; margin-bottom: 18px; }
+  .price-grid {
+    border-top: 1px solid var(--rule);
+    margin-top: 16px;
+    padding-top: 14px;
+    display: grid; gap: 10px;
+  }
+  .price-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+  }
+  .price-row .store { display: flex; align-items: center; gap: 10px; }
+  .price-row .swatch {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--terracotta);
+  }
+  .price-row .price { font-weight: 600; font-size: 15px; }
+  .price-row.best {
+    color: var(--jungle);
+  }
+  .price-row.best .swatch { background: var(--jungle); }
+  .price-row.best .price::after {
+    content: ' • mejor';
+    color: var(--jungle);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-left: 6px;
+  }
+  .price-row.worst { color: var(--ink-soft); text-decoration: line-through; }
+  .featured-card .save {
+    margin-top: 18px;
+    padding: 12px 14px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    display: flex; justify-content: space-between;
+    border-radius: 2px;
+  }
+  .featured-card .save b { color: var(--gold); font-size: 16px; letter-spacing: 0.04em; }
+
+  /* Section header */
+  .section {
+    padding: 64px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .section-hd {
+    display: flex; justify-content: space-between; align-items: end;
+    border-bottom: 3px double var(--rule);
+    padding-bottom: 20px;
+    margin-bottom: 36px;
+  }
+  .section-hd h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(30px, 3.5vw, 48px);
+    margin: 0;
+    letter-spacing: -0.02em;
+  }
+  .section-hd .meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  /* Editorial features grid */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 32px 28px;
+  }
+  .feature {
+    grid-column: span 4;
+    display: flex; flex-direction: column; gap: 12px;
+    border-top: 1px solid var(--rule);
+    padding-top: 18px;
+  }
+  .feature.lead { grid-column: span 6; grid-row: span 2; }
+  .feature .num {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 18px;
+    color: var(--terracotta);
+  }
+  .feature h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 24px;
+    line-height: 1.15;
+    font-weight: 600;
+    margin: 0;
+  }
+  .feature.lead h3 { font-size: 38px; }
+  .feature p {
+    font-size: 15px;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+  .feature .ico {
+    width: 28px; height: 28px;
+    color: var(--coffee);
+  }
+  .feature .read {
+    margin-top: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    border-bottom: 1px solid var(--terracotta);
+    align-self: flex-start;
+    padding-bottom: 2px;
+  }
+
+  /* Two-column report */
+  .report {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 56px;
+    align-items: start;
+  }
+  .report .body {
+    column-count: 2;
+    column-gap: 32px;
+    font-size: 16px;
+    color: var(--ink);
+    line-height: 1.7;
+  }
+  .report .body p:first-child::first-letter {
+    font-family: 'Fraunces', serif;
+    font-size: 5.4em;
+    float: left;
+    line-height: 0.85;
+    padding: 6px 12px 0 0;
+    color: var(--terracotta);
+    font-weight: 800;
+  }
+  .pull {
+    border-top: 4px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    padding: 18px 0;
+    margin: 24px 0;
+    font-family: 'Fraunces', serif;
+    font-size: 26px;
+    line-height: 1.25;
+    font-style: italic;
+    color: var(--coffee);
+  }
+  .pull cite {
+    display: block; margin-top: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-style: normal;
+  }
+  .leaderboard {
+    border: 1px solid var(--rule);
+    background: var(--paper-deep);
+    padding: 24px;
+  }
+  .leaderboard h4 {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    margin: 0 0 4px;
+  }
+  .leaderboard .sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 18px;
+  }
+  .lb-row {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    align-items: center;
+    padding: 12px 0;
+    border-top: 1px solid var(--rule);
+    font-size: 14px;
+  }
+  .lb-row .r {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    color: var(--terracotta);
+    font-style: italic;
+  }
+  .lb-row .name b { font-weight: 600; }
+  .lb-row .name span { display: block; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-soft); letter-spacing: 0.1em; }
+  .lb-row .pts {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+  }
+
+  /* How it works */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 36px;
+  }
+  .step {
+    border-top: 4px solid var(--terracotta);
+    padding-top: 20px;
+  }
+  .step .n {
+    font-family: 'Fraunces', serif;
+    font-size: 64px;
+    line-height: 1;
+    font-weight: 300;
+    color: var(--coffee);
+    font-style: italic;
+  }
+  .step h4 {
+    font-family: 'Fraunces', serif;
+    font-size: 24px;
+    margin: 14px 0 8px;
+  }
+  .step p { color: var(--ink-soft); margin: 0; font-size: 15px; }
+
+  /* Map teaser */
+  .map-teaser {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    border: 1px solid var(--rule);
+    overflow: hidden;
+  }
+  .map-text { padding: 36px; background: var(--paper-deep); }
+  .map-text .kicker { margin-bottom: 12px; }
+  .map-text h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 38px; font-weight: 600;
+    line-height: 1.05;
+    margin: 0 0 14px;
+    letter-spacing: -0.02em;
+  }
+  .map-text p { color: var(--ink-soft); font-size: 16px; }
+  .map-viz {
+    background:
+      radial-gradient(circle at 30% 30%, rgba(201,82,43,0.18), transparent 50%),
+      radial-gradient(circle at 70% 60%, rgba(31,91,58,0.18), transparent 50%),
+      repeating-linear-gradient(45deg, var(--paper-deep) 0 18px, var(--paper) 18px 22px);
+    position: relative;
+    min-height: 320px;
+  }
+  .pin {
+    position: absolute;
+    width: 28px; height: 28px;
+    background: var(--terracotta);
+    border: 2px solid var(--rule);
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    box-shadow: 0 6px 14px rgba(0,0,0,0.18);
+  }
+  .pin.green { background: var(--jungle); }
+  .pin.gold { background: var(--gold); }
+  .pin .lbl {
+    position: absolute;
+    left: 32px; top: -4px;
+    transform: rotate(45deg);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 2px 6px;
+    white-space: nowrap;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* CTA */
+  .closing {
+    padding: 96px 0 80px;
+    background: var(--ink);
+    color: var(--paper);
+    text-align: center;
+  }
+  .closing .ed {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 18px;
+  }
+  .closing h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 300;
+    font-size: clamp(40px, 5vw, 72px);
+    line-height: 1;
+    margin: 0 auto 24px;
+    max-width: 16ch;
+    letter-spacing: -0.02em;
+  }
+  .closing h2 em { font-style: italic; color: var(--terracotta); font-weight: 600; }
+  .closing p { color: rgba(246,240,230,0.7); max-width: 56ch; margin: 0 auto 32px; font-size: 18px; }
+  .closing .btn-primary { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+  .closing .btn-primary:hover { background: var(--terracotta); color: var(--paper); border-color: var(--terracotta); }
+
+  /* Footer */
+  .colophon {
+    padding: 36px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  }
+
+  /* Mobile */
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; }
+    .hero .divider { display: none; }
+    .features .feature, .features .feature.lead { grid-column: span 12; }
+    .report { grid-template-columns: 1fr; }
+    .report .body { column-count: 1; }
+    .steps { grid-template-columns: 1fr; }
+    .map-teaser { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+  <!-- Masthead -->
+  <header class="masthead">
+    <div class="wrap">
+      <div class="masthead-row">
+        <div class="left"><span>Edición San José</span><span>Lun 24 · 05 · 26</span></div>
+        <div><span>Vol. iii · No. 142</span></div>
+        <div class="right"><span>Despejado · 24°c</span><span>₡ 521.40 / usd</span></div>
+      </div>
+      <h1 class="masthead-title">Grocery <span class="amp">&</span> Waze</h1>
+      <nav class="nav wrap" style="padding-left:0;padding-right:0;">
+        <div style="display:flex;gap:22px;">
+          <a href="#">Portada</a>
+          <a href="#">Precios</a>
+          <a href="#">Tiendas</a>
+          <a href="#">Recetas</a>
+          <a href="#">Comunidad</a>
+          <a href="#">Yo</a>
+        </div>
+        <a href="#" class="cta-pill">Crear cuenta gratis</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <!-- Ticker -->
+    <div class="issue">
+      <div class="ticker">
+        <span>arroz 1kg <b>↓ ₡120</b></span>
+        <span>aceite 1l <b>↓ ₡85</b></span>
+        <span>leche 1l <span class="down">↑ ₡40</span></span>
+        <span>frijol 900g <b>↓ ₡220</b></span>
+        <span>café 500g <b>↓ ₡310</b></span>
+      </div>
+      <div>actualizado hace 12 min</div>
+    </div>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div>
+        <div class="kicker">Reportaje · El precio justo</div>
+        <h1 class="headline">Donde está la <em>canasta</em> más <span class="underline">barata</span> hoy.</h1>
+        <p class="dek">Una redacción de compradores escribe los precios reales del día. Cruzamos 187 tiendas en Costa Rica para que usted pague lo justo y vuelva con vuelto.</p>
+        <div class="byline">
+          <span><span class="dot">●</span> Por la comunidad</span>
+          <span>14 mercados · 187 tiendas</span>
+          <span>1,240 precios reportados hoy</span>
+        </div>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#">
+            <svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18l-2 13H5L3 6z"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            Empezar mi lista
+          </a>
+          <a class="btn btn-ghost" href="#">
+            <svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            Buscar un producto
+          </a>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <aside class="featured-card">
+        <div class="label">Producto del día · arroz 1 kg</div>
+        <h3>Arroz Tío Pelón</h3>
+        <div class="sub">Reportado en 24 tiendas en las últimas 4 horas</div>
+        <div class="price-grid">
+          <div class="price-row best">
+            <div class="store"><span class="swatch"></span><span>PriceSmart Tres Ríos</span></div>
+            <div class="price">₡ 1.290</div>
+          </div>
+          <div class="price-row">
+            <div class="store"><span class="swatch"></span><span>Walmart Heredia</span></div>
+            <div class="price">₡ 1.450</div>
+          </div>
+          <div class="price-row">
+            <div class="store"><span class="swatch"></span><span>Más x Menos Escazú</span></div>
+            <div class="price">₡ 1.520</div>
+          </div>
+          <div class="price-row worst">
+            <div class="store"><span class="swatch"></span><span>AM/PM Centro</span></div>
+            <div class="price">₡ 1.890</div>
+          </div>
+        </div>
+        <div class="save"><span>Si compra en la mejor:</span><b>Ahorra ₡ 600</b></div>
+      </aside>
+    </section>
+
+    <!-- Features as editorial -->
+    <section class="section">
+      <div class="section-hd">
+        <h2>Lo que esta edición trae</h2>
+        <span class="meta">06 herramientas · 01 propósito</span>
+      </div>
+      <div class="features">
+        <article class="feature lead">
+          <span class="num">i.</span>
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4"/><path d="M3 17l9 4 9-4"/></svg>
+          <h3>El Smart Cart decide por usted: una vuelta o varias.</h3>
+          <p>Nuestro algoritmo compara su lista con los precios crowdsourcing de toda el área metropolitana. Le dice si conviene una sola tienda o partir el viaje — y cuánto se ahorra en cada escenario, con gasolina incluida.</p>
+          <span class="read">Leer cómo funciona →</span>
+        </article>
+
+        <article class="feature">
+          <span class="num">ii.</span>
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <h3>Mapa de tiendas, no de pines.</h3>
+          <p>Búsqueda geoespacial: la tienda cercana con su producto, no la cadena que paga más.</p>
+          <span class="read">Ver mapa →</span>
+        </article>
+
+        <article class="feature">
+          <span class="num">iii.</span>
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="2" height="16"/><rect x="7" y="4" width="1" height="16"/><rect x="10" y="4" width="3" height="16"/><rect x="15" y="4" width="1" height="16"/><rect x="18" y="4" width="3" height="16"/></svg>
+          <h3>Escanee, reporte, gane puntos.</h3>
+          <p>Su teléfono lee el código y registra el precio en segundos. La comunidad se lo agradece.</p>
+          <span class="read">Cómo escanear →</span>
+        </article>
+
+        <article class="feature">
+          <span class="num">iv.</span>
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12V6h14v6"/><path d="M5 12h14l-1 8H6L5 12z"/><path d="M9 16h6"/></svg>
+          <h3>Listas compartidas en familia.</h3>
+          <p>Tu mamá tacha el aceite desde la casa, vos ves la actualización en el pasillo del Walmart.</p>
+          <span class="read">Compartir lista →</span>
+        </article>
+
+        <article class="feature">
+          <span class="num">v.</span>
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v6"/><path d="M5 8h14l-2 12H7L5 8z"/><path d="M9 13h6"/></svg>
+          <h3>De receta a lista en un pegar.</h3>
+          <p>Pegue el link de una receta y los ingredientes aparecen listos, con cantidades convertidas.</p>
+          <span class="read">Probar recetas →</span>
+        </article>
+
+        <article class="feature">
+          <span class="num">vi.</span>
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7h18v13H3z"/><path d="M8 7V4h8v3"/></svg>
+          <h3>Despensa que avisa.</h3>
+          <p>Sabe cuándo se le acaba el arroz antes que usted. Sin spam, sin culpas.</p>
+          <span class="read">Mi despensa →</span>
+        </article>
+      </div>
+    </section>
+
+    <!-- Report -->
+    <section class="section">
+      <div class="section-hd">
+        <h2>Reportaje de la comunidad</h2>
+        <span class="meta">1,240 reportes esta semana</span>
+      </div>
+      <div class="report">
+        <div class="body">
+          <p>Sarah M. entra al PriceSmart de Tres Ríos un martes a las 10:14. Saca el teléfono, escanea un litro de aceite Capullo y ve algo raro: el precio que ella conoce hace tres meses subió un 18%. Reporta el cambio en Grocery Waze. Diez minutos después, otro miembro a tres kilómetros confirma el mismo precio en otro local.</p>
+          <p>Eso, multiplicado por 200 productos y 187 tiendas, es lo que esta plataforma hace cada día: un periodismo de precios en tiempo real, escrito a varias manos.</p>
+          <p>El motor detrás del sistema no son los algoritmos sino una red de compradores que ganan puntos por cada precio verificado. Z-scores y geofences detectan los datos sospechosos. Lo demás se publica al instante para que cualquiera en San José pague lo justo.</p>
+          <p>No vendemos sus datos. No tomamos comisión por tienda. La canasta más barata es la que la comunidad encuentra — y nosotros la publicamos.</p>
+        </div>
+
+        <aside>
+          <div class="pull">
+            "Antes hacía la compra en piloto automático. Ahora reviso Grocery Waze en el parqueo. He ahorrado ₡ 48.000 este mes solo eligiendo bien la tienda."
+            <cite>— María F., Curridabat · usuaria desde feb 2026</cite>
+          </div>
+          <div class="leaderboard">
+            <h4>Reporteros de la semana</h4>
+            <div class="sub">Top contribuidores · Vol. 142</div>
+            <div class="lb-row"><span class="r">i.</span><span class="name"><b>Sarah M.</b><span>Tres Ríos · 87 reportes</span></span><span class="pts">12 450</span></div>
+            <div class="lb-row"><span class="r">ii.</span><span class="name"><b>Juan D.</b><span>Heredia · 71 reportes</span></span><span class="pts">11 200</span></div>
+            <div class="lb-row"><span class="r">iii.</span><span class="name"><b>Emilia R.</b><span>Escazú · 68 reportes</span></span><span class="pts">10 890</span></div>
+            <div class="lb-row"><span class="r">iv.</span><span class="name"><b>Carlos V.</b><span>Cartago · 54 reportes</span></span><span class="pts">9 410</span></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Map teaser -->
+    <section class="section">
+      <div class="section-hd">
+        <h2>El mapa que conoce el barrio</h2>
+        <span class="meta">187 tiendas · 15 ciudades</span>
+      </div>
+      <div class="map-teaser">
+        <div class="map-text">
+          <div class="kicker">Vista en vivo</div>
+          <h3>Las mejores ofertas, alfilereadas en su área.</h3>
+          <p>El verde es lo que conviene; el dorado, ofertas relámpago de la última hora; el rojo, evite esta semana. Tape un pin y reciba la ruta optimizada en su lista actual.</p>
+          <div style="margin-top:22px;display:flex;gap:10px;flex-wrap:wrap;">
+            <a class="btn btn-primary" href="#">Abrir mapa</a>
+            <a class="btn btn-ghost" href="#">Tiendas cerca</a>
+          </div>
+        </div>
+        <div class="map-viz" aria-hidden="true">
+          <div class="pin green" style="top:18%;left:22%;"><span class="lbl">PriceSmart · ₡1.290</span></div>
+          <div class="pin" style="top:42%;left:55%;"><span class="lbl">Walmart · ₡1.450</span></div>
+          <div class="pin gold" style="top:60%;left:32%;"><span class="lbl">Megasuper · ₡1.380</span></div>
+          <div class="pin" style="top:74%;left:68%;"><span class="lbl">AM/PM · ₡1.890</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="section">
+      <div class="section-hd">
+        <h2>Cómo funciona — en tres movimientos</h2>
+        <span class="meta">Tutorial breve</span>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <span class="n">01</span>
+          <h4>Escriba (o pegue) su lista.</h4>
+          <p>Una receta del Times, un mensaje de WhatsApp, una nota: lo convertimos en lista lista para comprar.</p>
+        </div>
+        <div class="step">
+          <span class="n">02</span>
+          <h4>Vemos los precios por usted.</h4>
+          <p>Smart Cart compara las 187 tiendas y decide: una sola vuelta o ruta optimizada.</p>
+        </div>
+        <div class="step">
+          <span class="n">03</span>
+          <h4>Compra y reporta.</h4>
+          <p>Si encuentra un precio distinto, escanéelo. Suma puntos y ayuda al barrio.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Closing CTA -->
+  <section class="closing">
+    <div class="wrap">
+      <div class="ed">Editorial · La última palabra</div>
+      <h2>Comer mejor no debería <em>costar</em> más.</h2>
+      <p>Únase a 12.480 compradores que cada semana ahorran sin renunciar a lo que les gusta.</p>
+      <a class="btn btn-primary" href="#">Crear mi cuenta — es gratis</a>
+    </div>
+  </section>
+
+  <footer class="wrap">
+    <div class="colophon">
+      <span>© Grocery Waze · San José, Costa Rica · 2026</span>
+      <span>Edición digital · Vol. iii No. 142</span>
+      <span>Hecho con café y datos abiertos</span>
+    </div>
+  </footer>
+</body>
+</html>

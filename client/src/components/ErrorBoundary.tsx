@@ -24,31 +24,40 @@ class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex items-center justify-center min-h-screen p-8 bg-background">
-          <div className="flex flex-col items-center w-full max-w-2xl p-8">
-            <AlertTriangle
-              size={48}
-              className="text-destructive mb-6 flex-shrink-0"
-            />
-
-            <h2 className="text-xl mb-4">An unexpected error occurred.</h2>
-
-            <div className="p-4 w-full rounded bg-muted overflow-auto mb-6">
-              <pre className="text-sm text-muted-foreground whitespace-break-spaces">
-                {this.state.error?.stack}
-              </pre>
+        <div className="flex items-center justify-center min-h-screen p-6 bg-background">
+          <div className="flex flex-col items-center w-full max-w-2xl rounded-3xl border bg-card p-10 shadow-paper">
+            <div className="w-16 h-16 rounded-full bg-rose-soft text-destructive grid place-items-center mb-6">
+              <AlertTriangle size={28} />
             </div>
+
+            <h2 className="font-serif text-3xl text-center mb-2">
+              Algo se nos cayó del carrito.
+            </h2>
+            <p className="text-muted-foreground text-center mb-6 max-w-md">
+              Tu lista está a salvo. Recargá la página y seguimos donde dejamos.
+            </p>
+
+            <details className="w-full mb-6">
+              <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Ver detalle técnico
+              </summary>
+              <div className="mt-3 p-4 w-full rounded-xl bg-muted overflow-auto">
+                <pre className="text-xs text-muted-foreground whitespace-break-spaces font-mono">
+                  {this.state.error?.stack}
+                </pre>
+              </div>
+            </details>
 
             <button
               onClick={() => window.location.reload()}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg",
-                "bg-primary text-primary-foreground",
-                "hover:opacity-90 cursor-pointer"
+                "inline-flex items-center gap-2 px-6 py-3 rounded-full",
+                "bg-primary text-primary-foreground font-semibold",
+                "hover:-translate-y-0.5 transition-transform shadow-paper cursor-pointer"
               )}
             >
               <RotateCcw size={16} />
-              Reload Page
+              Recargar página
             </button>
           </div>
         </div>

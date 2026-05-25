@@ -1,0 +1,877 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mockup 09 — Mercadito Pinterest · Grocery Waze</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #fdfaf2;
+    --paper-2: #f6efdf;
+    --ink: #2a241c;
+    --ink-2: #5a4f3e;
+    --ink-3: #998e78;
+    --line: #ebe1c7;
+
+    --tape: rgba(255, 235, 130, 0.7);
+    --tape-pink: rgba(255, 187, 187, 0.75);
+    --tape-mint: rgba(180, 222, 178, 0.8);
+
+    --pin: #d54a4a;
+    --pin-blue: #4a6cd5;
+    --pin-yellow: #e3b34a;
+
+    --sage: #7d9a72;
+    --sage-deep: #586d50;
+    --sage-soft: #e0ebd2;
+    --rose: #d97e83;
+    --rose-soft: #fbe1e3;
+    --butter: #f0c66c;
+    --butter-soft: #fce5b4;
+    --terra: #c46f4f;
+    --terra-soft: #f3d2c1;
+    --plum: #8c5a87;
+    --plum-soft: #ead8e7;
+
+    --r-card: 18px;
+    --shadow: 0 2px 0 rgba(42,36,28,0.06), 0 18px 30px -20px rgba(42,36,28,0.22);
+    --shadow-lg: 0 2px 0 rgba(42,36,28,0.06), 0 28px 44px -22px rgba(42,36,28,0.3);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><filter id='n'><feTurbulence baseFrequency='0.7' numOctaves='2' /></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.05'/></svg>"),
+      var(--paper);
+    background-size: 100px 100px;
+    color: var(--ink);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 28px; }
+  .script { font-family: 'Caveat', cursive; }
+  .serif { font-family: 'Fraunces', Georgia, serif; }
+
+  /* Nav */
+  nav.top {
+    padding: 24px 0 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(253,250,242,0.88);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .brand {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .brand .mark {
+    width: 44px; height: 44px;
+    background: var(--rose);
+    border-radius: 50%;
+    color: white;
+    display: grid; place-items: center;
+    transform: rotate(-6deg);
+    box-shadow: 0 6px 12px -4px rgba(217,126,131,0.5);
+  }
+  .brand .mark svg { width: 20px; height: 20px; transform: rotate(6deg); }
+  .brand .name { font-family: 'Fraunces', serif; font-weight: 700; font-size: 20px; letter-spacing: -0.005em; }
+  .brand .name small { display: block; font-family: 'Caveat', cursive; font-weight: 500; font-size: 16px; color: var(--terra); line-height: 1; margin-top: -2px; transform: rotate(-2deg); transform-origin: left; }
+  .nav-links { display: flex; gap: 4px; }
+  .nav-links a {
+    padding: 8px 14px;
+    font-size: 14px; color: var(--ink-2); font-weight: 600;
+    border-radius: 999px;
+    transition: background 180ms, color 180ms;
+  }
+  .nav-links a:hover { background: var(--butter-soft); color: var(--ink); }
+  .nav-links a.active { background: var(--ink); color: var(--paper); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 22px;
+    border-radius: 999px;
+    font-weight: 700; font-size: 14px;
+    background: var(--ink); color: var(--paper);
+    border: 0;
+    cursor: pointer;
+    transition: all 180ms ease;
+    text-decoration: none;
+    box-shadow: 0 4px 0 rgba(42,36,28,0.18);
+  }
+  .btn:hover { background: var(--terra); transform: translateY(-2px); box-shadow: 0 6px 0 rgba(42,36,28,0.18); }
+  .btn:active { transform: translateY(0); box-shadow: 0 2px 0 rgba(42,36,28,0.18); }
+  .btn-soft { background: var(--paper); color: var(--ink); border: 1.5px solid var(--ink); box-shadow: 0 4px 0 rgba(42,36,28,0.12); }
+  .btn-soft:hover { background: var(--butter-soft); }
+  .btn-lg { padding: 16px 28px; font-size: 15px; }
+
+  /* Hero — moodboard layout */
+  .hero {
+    padding: 64px 0 80px;
+    position: relative;
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 56px;
+    align-items: center;
+  }
+  .hero h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: clamp(48px, 6.4vw, 88px);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin: 0 0 22px;
+    position: relative;
+  }
+  .hero h1 .script {
+    font-family: 'Caveat', cursive;
+    color: var(--terra);
+    font-weight: 700;
+    font-size: 1.05em;
+    display: inline-block;
+    transform: rotate(-2deg);
+    margin: 0 0.05em;
+  }
+  .hero h1 .circled {
+    position: relative; display: inline-block;
+    padding: 0 4px;
+  }
+  .hero h1 .circled::before {
+    content: '';
+    position: absolute; inset: -10px -10px -6px -10px;
+    border: 3px solid var(--pin);
+    border-radius: 999px;
+    transform: rotate(-3deg);
+    z-index: -1;
+  }
+  .hero .doodle-arrow {
+    position: absolute;
+    left: 35%;
+    bottom: -10px;
+    width: 80px; height: 30px;
+    color: var(--terra);
+  }
+  .scribble {
+    font-family: 'Caveat', cursive;
+    font-size: 22px;
+    color: var(--terra);
+    transform: rotate(-2deg);
+    display: inline-block;
+    margin-bottom: 20px;
+  }
+  .hero p {
+    font-size: 19px; color: var(--ink-2);
+    max-width: 56ch; margin: 0 0 32px;
+    line-height: 1.65;
+  }
+  .actions { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+  .actions .meta {
+    font-family: 'Caveat', cursive;
+    font-size: 20px;
+    color: var(--ink-3);
+    transform: rotate(-2deg);
+  }
+
+  /* Moodboard */
+  .moodboard {
+    position: relative;
+    aspect-ratio: 4/4.6;
+  }
+  .card {
+    position: absolute;
+    background: white;
+    padding: 14px 14px 22px;
+    box-shadow: var(--shadow);
+    border-radius: 6px;
+    transition: transform 250ms ease;
+  }
+  .card:hover { transform: scale(1.03) rotate(0) !important; z-index: 20; box-shadow: var(--shadow-lg); }
+  .card .img {
+    aspect-ratio: 4/3;
+    border-radius: 4px;
+    background: var(--sage-soft);
+    margin-bottom: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card .cap {
+    font-family: 'Caveat', cursive;
+    font-size: 18px;
+    color: var(--ink);
+    text-align: center;
+    line-height: 1;
+  }
+  .card .price {
+    position: absolute;
+    bottom: 8px; right: 8px;
+    background: var(--butter);
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .tape {
+    position: absolute;
+    width: 60px; height: 18px;
+    background: var(--tape);
+    top: -4px; left: 50%;
+    transform: translateX(-50%) rotate(-2deg);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+  }
+  .tape.pink { background: var(--tape-pink); transform: translateX(-50%) rotate(4deg); width: 80px; }
+  .tape.mint { background: var(--tape-mint); transform: translateX(-50%) rotate(-5deg); width: 50px; }
+  .pin {
+    position: absolute;
+    top: -6px; left: 50%;
+    transform: translateX(-50%);
+    width: 14px; height: 14px;
+    background: var(--pin);
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    border: 2px solid white;
+  }
+
+  /* Specific cards */
+  .card.c1 {
+    top: 0; left: 0;
+    width: 56%;
+    transform: rotate(-4deg);
+    z-index: 4;
+  }
+  .card.c1 .img {
+    background:
+      radial-gradient(circle at 30% 40%, #e8a070 0 22%, transparent 23%),
+      radial-gradient(circle at 60% 50%, #c46f4f 0 28%, transparent 29%),
+      radial-gradient(circle at 75% 30%, #d97e83 0 18%, transparent 19%),
+      var(--terra-soft);
+  }
+  .card.c2 {
+    top: 24%; right: 0;
+    width: 50%;
+    transform: rotate(5deg);
+    z-index: 3;
+  }
+  .card.c2 .img {
+    background:
+      radial-gradient(circle at 50% 50%, #f0c66c 0 30%, transparent 31%),
+      radial-gradient(circle at 25% 65%, #e3b34a 0 16%, transparent 17%),
+      radial-gradient(circle at 70% 70%, #d49b3a 0 14%, transparent 15%),
+      var(--butter-soft);
+  }
+  .card.c3 {
+    bottom: 16%; left: 8%;
+    width: 44%;
+    transform: rotate(3deg);
+    z-index: 5;
+  }
+  .card.c3 .img {
+    background:
+      radial-gradient(ellipse at 50% 55%, #7d9a72 0 35%, transparent 36%),
+      radial-gradient(circle at 30% 30%, #586d50 0 14%, transparent 15%),
+      radial-gradient(circle at 70% 25%, #586d50 0 12%, transparent 13%),
+      var(--sage-soft);
+  }
+  .card.c4 {
+    bottom: 0; right: 6%;
+    width: 42%;
+    transform: rotate(-6deg);
+    z-index: 2;
+  }
+  .card.c4 .img {
+    background:
+      radial-gradient(circle at 30% 55%, #d54a4a 0 18%, transparent 19%),
+      radial-gradient(circle at 55% 45%, #d54a4a 0 20%, transparent 21%),
+      radial-gradient(circle at 75% 55%, #d54a4a 0 16%, transparent 17%),
+      var(--rose-soft);
+  }
+  .sticker {
+    position: absolute;
+    background: var(--butter);
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-family: 'Caveat', cursive;
+    font-size: 18px;
+    font-weight: 700;
+    z-index: 10;
+    box-shadow: 0 4px 0 rgba(42,36,28,0.18);
+  }
+  .sticker.heart { top: 6%; right: 8%; background: var(--rose); color: white; transform: rotate(10deg); padding: 10px; border-radius: 50%; width: 56px; height: 56px; display: grid; place-items: center; }
+  .sticker.save { bottom: 30%; right: -10px; background: var(--sage); color: white; transform: rotate(8deg); }
+  .sticker.save b { font-family: 'Fraunces', serif; font-size: 22px; display: block; line-height: 1; }
+  .sticker.fresh { top: 50%; left: -20px; background: var(--terra); color: white; transform: rotate(-12deg); }
+
+  /* Sections */
+  .section { padding: 84px 0; position: relative; }
+  .section.paper { background: var(--paper-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .section-hd { max-width: 760px; margin: 0 auto 56px; text-align: center; position: relative; }
+  .section-hd .eye {
+    display: inline-block;
+    font-family: 'Caveat', cursive;
+    color: var(--terra);
+    font-size: 22px;
+    margin-bottom: 12px;
+    transform: rotate(-2deg);
+  }
+  .section-hd h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: clamp(36px, 4.4vw, 56px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin: 0 0 14px;
+  }
+  .section-hd h2 em { font-style: italic; color: var(--terra); }
+  .section-hd p { color: var(--ink-2); font-size: 17px; margin: 0; }
+
+  /* Features: pinned cards */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px 28px;
+  }
+  .pcard {
+    background: white;
+    padding: 18px 18px 26px;
+    border-radius: 6px;
+    box-shadow: var(--shadow);
+    position: relative;
+    min-height: 320px;
+    display: flex; flex-direction: column;
+    transition: transform 220ms ease;
+    cursor: pointer;
+  }
+  .pcard:nth-child(odd) { transform: rotate(-1.5deg); }
+  .pcard:nth-child(even) { transform: rotate(1.2deg); }
+  .pcard:nth-child(3n) { transform: rotate(0.5deg); }
+  .pcard:hover { transform: rotate(0); }
+  .pcard .pin { left: 22px; transform: rotate(0deg); }
+  .pcard .pin.blue { background: var(--pin-blue); left: auto; right: 22px; }
+  .pcard .pin.yellow { background: var(--pin-yellow); }
+  .pcard .label {
+    background: var(--sage-soft);
+    aspect-ratio: 16/9;
+    border-radius: 4px;
+    margin-bottom: 18px;
+    position: relative;
+    display: grid; place-items: center;
+    color: var(--sage-deep);
+    overflow: hidden;
+  }
+  .pcard.r .label { background: var(--rose-soft); color: var(--rose); }
+  .pcard.b .label { background: var(--butter-soft); color: #8b6512; }
+  .pcard.t .label { background: var(--terra-soft); color: var(--terra); }
+  .pcard.p .label { background: var(--plum-soft); color: var(--plum); }
+  .pcard .label svg { width: 56px; height: 56px; }
+  .pcard h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 22px;
+    margin: 0 0 6px;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
+  }
+  .pcard p { color: var(--ink-2); font-size: 14.5px; margin: 0 0 14px; }
+  .pcard .badge {
+    margin-top: auto;
+    align-self: flex-start;
+    background: var(--butter);
+    border: 1.5px solid var(--ink);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-family: 'Caveat', cursive;
+    font-size: 16px;
+    font-weight: 700;
+    transform: rotate(-2deg);
+  }
+  .pcard.r .badge { background: var(--rose); color: white; border-color: var(--ink); }
+  .pcard.b .badge { background: var(--sage); color: white; }
+  .pcard.t .badge { background: var(--terra); color: white; }
+  .pcard.p .badge { background: var(--plum); color: white; }
+
+  /* List + map row */
+  .duo {
+    display: grid; grid-template-columns: 1fr 1.05fr;
+    gap: 32px;
+    align-items: start;
+  }
+  .duo .panel {
+    background: white;
+    padding: 28px;
+    border-radius: var(--r-card);
+    box-shadow: var(--shadow);
+    position: relative;
+  }
+  .duo .panel.tilt-l { transform: rotate(-1.2deg); }
+  .duo .panel.tilt-r { transform: rotate(1.2deg); }
+  .panel-head {
+    display: flex; justify-content: space-between; align-items: end;
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 2px dashed var(--line);
+  }
+  .panel-head h3 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 22px; margin: 0; letter-spacing: -0.015em; }
+  .panel-head .script { color: var(--terra); font-size: 20px; transform: rotate(-2deg); }
+  .grocery-row {
+    display: grid; grid-template-columns: 22px 1fr auto;
+    gap: 10px; align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--line);
+    font-size: 14.5px;
+  }
+  .grocery-row:last-child { border-bottom: 0; }
+  .grocery-row .check {
+    width: 18px; height: 18px; border-radius: 4px;
+    border: 1.5px solid var(--ink);
+  }
+  .grocery-row .check.done {
+    background: var(--ink); color: white;
+    display: grid; place-items: center;
+  }
+  .grocery-row.done { color: var(--ink-3); text-decoration: line-through; }
+  .grocery-row .by {
+    font-family: 'Caveat', cursive;
+    font-size: 13px;
+    color: var(--terra);
+  }
+  .grocery-row .by.sage { color: var(--sage-deep); }
+
+  .map-pin-board {
+    aspect-ratio: 1.4/1;
+    background:
+      repeating-linear-gradient(45deg, transparent 0 24px, rgba(42,36,28,0.025) 24px 26px),
+      var(--paper-2);
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    position: relative;
+    overflow: hidden;
+  }
+  .map-pin {
+    position: absolute;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: white;
+    border: 2.5px solid var(--ink);
+    display: grid; place-items: center;
+    box-shadow: 0 6px 0 rgba(42,36,28,0.18);
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 14px;
+    transform: translate(-50%, -50%);
+  }
+  .map-pin .lbl {
+    position: absolute;
+    top: 100%; left: 50%; transform: translate(-50%, 8px);
+    background: var(--butter);
+    border: 1.5px solid var(--ink);
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-family: 'Caveat', cursive;
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+    box-shadow: 0 3px 0 rgba(42,36,28,0.18);
+  }
+  .map-pin.best { background: var(--sage); color: white; }
+  .map-pin.best .lbl { background: var(--sage-soft); }
+  .map-pin.bad { background: var(--rose); color: white; }
+  .map-pin.bad .lbl { background: var(--rose-soft); }
+  .map-savings {
+    position: absolute;
+    bottom: 16px; left: 16px;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 10px 16px;
+    border-radius: 999px;
+    font-family: 'Caveat', cursive;
+    font-size: 20px;
+    font-weight: 700;
+    box-shadow: 0 4px 0 rgba(42,36,28,0.18);
+    transform: rotate(-2deg);
+  }
+  .map-savings b { font-family: 'Fraunces', serif; font-weight: 700; }
+
+  /* Testimonial polaroids */
+  .testimonials {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+  }
+  .polaroid {
+    background: white;
+    padding: 14px 14px 24px;
+    border-radius: 4px;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+  }
+  .polaroid:nth-child(1) { transform: rotate(-2deg); }
+  .polaroid:nth-child(2) { transform: rotate(1.5deg); margin-top: 18px; }
+  .polaroid:nth-child(3) { transform: rotate(-1deg); margin-top: -8px; }
+  .polaroid .photo {
+    aspect-ratio: 1/1;
+    border-radius: 2px;
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
+    background: var(--sage-soft);
+    display: grid; place-items: center;
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 64px;
+    color: var(--sage-deep);
+  }
+  .polaroid:nth-child(1) .photo { background: var(--terra-soft); color: var(--terra); }
+  .polaroid:nth-child(2) .photo { background: var(--butter-soft); color: #a87a14; }
+  .polaroid:nth-child(3) .photo { background: var(--rose-soft); color: var(--rose); }
+  .polaroid .quote {
+    font-family: 'Caveat', cursive;
+    font-size: 19px;
+    line-height: 1.3;
+    margin: 0 0 10px;
+    color: var(--ink);
+  }
+  .polaroid .who {
+    font-family: 'Fraunces', serif;
+    font-size: 14px;
+    color: var(--ink-2);
+    font-style: italic;
+  }
+  .polaroid .who b { color: var(--ink); font-weight: 700; font-style: normal; }
+  .polaroid .tape { width: 100px; }
+
+  /* Closing */
+  .closing {
+    padding: 96px 0 80px;
+    text-align: center;
+    background: var(--butter-soft);
+    border-top: 1px solid var(--line);
+    position: relative;
+    overflow: hidden;
+  }
+  .closing::before, .closing::after {
+    content: ''; position: absolute;
+    width: 240px; height: 240px;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .closing::before { top: -80px; left: -80px; background: radial-gradient(circle, var(--sage-soft), transparent 70%); }
+  .closing::after { bottom: -100px; right: -80px; background: radial-gradient(circle, var(--rose-soft), transparent 70%); }
+  .closing h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: clamp(42px, 5.4vw, 70px);
+    line-height: 1.02;
+    letter-spacing: -0.022em;
+    margin: 0 auto 22px;
+    max-width: 18ch;
+    position: relative;
+  }
+  .closing h2 .script {
+    font-family: 'Caveat', cursive;
+    color: var(--terra);
+    font-weight: 700;
+    display: inline-block;
+    transform: rotate(-3deg);
+  }
+  .closing p { position: relative; color: var(--ink-2); font-size: 18px; max-width: 52ch; margin: 0 auto 30px; }
+  .closing .actions { position: relative; justify-content: center; }
+
+  footer { padding: 32px 0 44px; color: var(--ink-3); font-size: 14px; font-family: 'Caveat', cursive; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+  @media (max-width: 980px) {
+    .hero-grid { grid-template-columns: 1fr; }
+    .features { grid-template-columns: 1fr; }
+    .duo { grid-template-columns: 1fr; }
+    .testimonials { grid-template-columns: 1fr; }
+    .polaroid:nth-child(2), .polaroid:nth-child(3) { margin-top: 0; }
+    .nav-links { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="top">
+      <a class="brand" href="#">
+        <span class="mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 6h18l-2 13H5L3 6z"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        </span>
+        <div class="name">
+          Grocery Waze
+          <small>— mi mercadito —</small>
+        </div>
+      </a>
+      <div class="nav-links">
+        <a class="active" href="#">Mi tablero</a>
+        <a href="#">Listas</a>
+        <a href="#">Recetas</a>
+        <a href="#">Tiendas</a>
+        <a href="#">Despensa</a>
+      </div>
+      <a class="btn" href="#">Empezar gratis →</a>
+    </nav>
+  </div>
+
+  <!-- Hero -->
+  <section class="wrap hero">
+    <div class="hero-grid">
+      <div>
+        <span class="scribble">— una libreta para hogares con cabeza ✿</span>
+        <h1>Mi lista de la <span class="script">semana</span>,<br/>al mejor <span class="circled">precio</span> cerca de casa.</h1>
+        <p>Anote, comparta con la familia, pegue una receta del internet — nosotros buscamos los precios y ordenamos el mandado. Sin sorpresas en la caja, sin volver a olvidarse del cilantro.</p>
+        <div class="actions">
+          <a class="btn btn-lg" href="#">Crear mi lista</a>
+          <a class="btn btn-soft btn-lg" href="#">Ver demo · 60s</a>
+          <span class="meta">— gratis, sin tarjeta ✿</span>
+        </div>
+      </div>
+
+      <div class="moodboard" aria-hidden="true">
+        <span class="sticker heart">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </span>
+        <span class="sticker save"><small style="font-family:'Fraunces',serif;font-size:11px;font-weight:600;display:block;">ahorraste</small><b>₡ 6.560</b></span>
+        <span class="sticker fresh">¡fresquito!</span>
+
+        <div class="card c1">
+          <span class="tape pink"></span>
+          <div class="img">
+            <span class="price">₡ 3.890</span>
+          </div>
+          <div class="cap">— pollo del domingo —</div>
+        </div>
+        <div class="card c2">
+          <span class="tape"></span>
+          <div class="img">
+            <span class="price">₡ 2.450</span>
+          </div>
+          <div class="cap">aceite capullo · ofertón</div>
+        </div>
+        <div class="card c3">
+          <span class="tape mint"></span>
+          <div class="img">
+            <span class="price">₡ 450</span>
+          </div>
+          <div class="cap">cilantro fresco · feria</div>
+        </div>
+        <div class="card c4">
+          <span class="pin"></span>
+          <div class="img">
+            <span class="price">₡ 1.290</span>
+          </div>
+          <div class="cap">tomates maduros</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="section paper">
+    <div class="wrap">
+      <div class="section-hd">
+        <span class="eye">— lo que cabe en su libreta —</span>
+        <h2>Todo en <em>un tablero</em>, como su recetario.</h2>
+        <p>Listas, recetas, precios y despensa — sin abrir cinco apps ni copiar y pegar.</p>
+      </div>
+
+      <div class="features">
+        <article class="pcard">
+          <span class="pin"></span>
+          <div class="label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="9" r="3"/><path d="M3 19v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+          </div>
+          <h3>Lista compartida</h3>
+          <p>Su esposo agrega el aceite desde el carro, su hija marca el pan desde la sala.</p>
+          <span class="badge">funciona en familia ✿</span>
+        </article>
+
+        <article class="pcard r">
+          <span class="pin blue"></span>
+          <div class="label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 8a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v9H5z"/><path d="M9 17v3"/><path d="M15 17v3"/></svg>
+          </div>
+          <h3>De receta a lista</h3>
+          <p>Pegue un link de cocina y sacamos los ingredientes — listos para comprar.</p>
+          <span class="badge">copia y pega ✿</span>
+        </article>
+
+        <article class="pcard b">
+          <span class="pin yellow"></span>
+          <div class="label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4"/><path d="M3 17l9 4 9-4"/></svg>
+          </div>
+          <h3>Comparador con cabeza</h3>
+          <p>Una sola tienda o ruta partida — le decimos cuál conviene esta semana.</p>
+          <span class="badge">ahorra 17% en promedio</span>
+        </article>
+
+        <article class="pcard t">
+          <span class="pin"></span>
+          <div class="label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <h3>Mapa del barrio</h3>
+          <p>Tiendas cerca con precios reales, filtros por radio o por categoría.</p>
+          <span class="badge">187 tiendas en cr</span>
+        </article>
+
+        <article class="pcard p">
+          <span class="pin blue"></span>
+          <div class="label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7h18v13H3z"/><path d="M8 7V4h8v3"/></svg>
+          </div>
+          <h3>Despensa suave</h3>
+          <p>Avisa antes de que se acabe el café. Sin sustos, sin spam.</p>
+          <span class="badge">aprende su ritmo ✿</span>
+        </article>
+
+        <article class="pcard">
+          <span class="pin yellow"></span>
+          <div class="label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="2" height="16"/><rect x="7" y="4" width="1" height="16"/><rect x="10" y="4" width="3" height="16"/><rect x="15" y="4" width="1" height="16"/><rect x="18" y="4" width="3" height="16"/></svg>
+          </div>
+          <h3>Escanear y reportar</h3>
+          <p>Si el precio cambió, escanéelo. La comunidad lo agradece — y le da puntos.</p>
+          <span class="badge">1,240 reportes hoy</span>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Duo: list + map -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-hd">
+        <span class="eye">— así se ve por dentro —</span>
+        <h2>Su lista y el <em>mapa</em>, lado a lado.</h2>
+      </div>
+
+      <div class="duo">
+        <article class="panel tilt-l">
+          <span class="tape pink" style="left:30px;"></span>
+          <div class="panel-head">
+            <h3>Mi lista · sábado</h3>
+            <span class="script">14 cositas ✿</span>
+          </div>
+          <div class="grocery-row done">
+            <span class="check done"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+            <span>Pollo entero · 1.4 kg</span>
+            <span class="by">— mamá</span>
+          </div>
+          <div class="grocery-row done">
+            <span class="check done"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+            <span>Arroz Tío Pelón · 2 kg</span>
+            <span class="by sage">— papá</span>
+          </div>
+          <div class="grocery-row">
+            <span class="check"></span>
+            <span>Aceite Capullo · 1 L</span>
+            <span class="by">— mamá</span>
+          </div>
+          <div class="grocery-row">
+            <span class="check"></span>
+            <span>Cilantro fresco · manojo</span>
+            <span class="by sage">— sofía</span>
+          </div>
+          <div class="grocery-row">
+            <span class="check"></span>
+            <span>Tomate maduro · 1 kg</span>
+            <span class="by">— mamá</span>
+          </div>
+          <div class="grocery-row">
+            <span class="check"></span>
+            <span>Frijol negro · 900 g</span>
+            <span class="by sage">— papá</span>
+          </div>
+          <div class="grocery-row">
+            <span class="check"></span>
+            <span>Pan integral · 1 u</span>
+            <span class="by">— mamá</span>
+          </div>
+          <div class="grocery-row">
+            <span class="check"></span>
+            <span>Café 500 g</span>
+            <span class="by sage">— sofía</span>
+          </div>
+        </article>
+
+        <article class="panel tilt-r">
+          <span class="tape mint" style="left:auto;right:30px;"></span>
+          <div class="panel-head">
+            <h3>Tiendas cerca · 5 km</h3>
+            <span class="script">¡ahorrazo! ✿</span>
+          </div>
+          <div class="map-pin-board">
+            <div class="map-pin best" style="left:28%;top:34%;">A<span class="lbl">PriceSmart · ₡11.840</span></div>
+            <div class="map-pin" style="left:60%;top:46%;">B<span class="lbl">Walmart · ₡12.290</span></div>
+            <div class="map-pin" style="left:42%;top:68%;">C<span class="lbl">Más x Menos · ₡12.560</span></div>
+            <div class="map-pin bad" style="left:78%;top:74%;">D<span class="lbl">AM/PM · ₡13.700</span></div>
+            <div class="map-savings">ahorra <b>₡ 1.860</b> si va a A</div>
+          </div>
+          <p style="margin-top:18px;color:var(--ink-2);font-size:14.5px;">Toque cualquier pin para ver el detalle de su lista y la ruta sugerida.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials as polaroids -->
+  <section class="section paper">
+    <div class="wrap">
+      <div class="section-hd">
+        <span class="eye">— historias del barrio —</span>
+        <h2>Hogares costarricenses que <em>ya comen mejor</em>.</h2>
+      </div>
+
+      <div class="testimonials">
+        <article class="polaroid">
+          <span class="tape pink"></span>
+          <div class="photo">MF</div>
+          <p class="quote">"Llevo ₡ 48,000 ahorrados este mes solo eligiendo bien la tienda. Y la lista compartida con mi hijo nos quitó tres peleas."</p>
+          <p class="who"><b>María F.</b> · Curridabat, mamá de dos</p>
+        </article>
+
+        <article class="polaroid">
+          <span class="tape mint"></span>
+          <div class="photo">DR</div>
+          <p class="quote">"Yo cocino los domingos y odiaba hacer la lista. Ahora pego el link de la receta y se arma sola. Magia."</p>
+          <p class="who"><b>Diana R.</b> · Heredia, abuela de cuatro</p>
+        </article>
+
+        <article class="polaroid">
+          <span class="tape"></span>
+          <div class="photo">JV</div>
+          <p class="quote">"Lo abro en el parqueo antes de bajar. Sé exactamente qué tienda tiene el mejor precio. Vuelvo con vuelto siempre."</p>
+          <p class="who"><b>Juan V.</b> · Escazú, papá moderno</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Closing -->
+  <section class="closing">
+    <div class="wrap">
+      <h2>Una compra más <span class="script">linda</span>.<br/>Una caja más liviana.</h2>
+      <p>Únase a 12,480 hogares que ya tienen su mercadito digital — gratis, sin enredos.</p>
+      <div class="actions" style="display:flex;gap:14px;flex-wrap:wrap;">
+        <a class="btn btn-lg" href="#">Empezar gratis</a>
+        <a class="btn btn-soft btn-lg" href="#">Conocer cómo funciona</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="wrap">
+    <span>© Grocery Waze · mi mercadito digital · 2026</span>
+    <span>hecho con cariño en cr ✿</span>
+  </footer>
+</body>
+</html>

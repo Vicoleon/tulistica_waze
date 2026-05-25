@@ -2,10 +2,18 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
+import DashboardLayout from "./components/DashboardLayout";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+
+// Public / marketing
 import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Onboarding from "./pages/Onboarding";
+
+// Authenticated app pages
 import Dashboard from "./pages/Dashboard";
+import Admin from "./pages/Admin";
 import Stores from "./pages/Stores";
 import Products from "./pages/Products";
 import ShoppingLists from "./pages/ShoppingLists";
@@ -20,6 +28,8 @@ import MapView from "./pages/MapView";
 import PriceAlerts from "./pages/PriceAlerts";
 import Budget from "./pages/Budget";
 import SeasonalDeals from "./pages/SeasonalDeals";
+
+// Brand portal (c02ee38 implementation)
 import BrandLogin from "./pages/brand/BrandLogin";
 import BrandRegister from "./pages/brand/BrandRegister";
 import BrandVerifyEmail from "./pages/brand/BrandVerifyEmail";
@@ -35,24 +45,14 @@ import BrandSettings from "./pages/brand/BrandSettings";
 function Router() {
   return (
     <Switch>
+      {/* Public routes — render their own marketing chrome. */}
       <Route path="/" component={Home} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/stores" component={Stores} />
-      <Route path="/products" component={Products} />
-      <Route path="/lists" component={ShoppingLists} />
-      <Route path="/lists/:id" component={ListDetail} />
-      <Route path="/scanner" component={Scanner} />
-      <Route path="/optimize" component={Optimize} />
-      <Route path="/pantry" component={Pantry} />
-      <Route path="/recipes" component={Recipes} />
-      <Route path="/leaderboard" component={Leaderboard} />
-      <Route path="/profile" component={Profile} />
-      <Route path="/map" component={MapView} />
-      <Route path="/alerts" component={PriceAlerts} />
-      <Route path="/budget" component={Budget} />
-      <Route path="/seasonal" component={SeasonalDeals} />
+      <Route path="/login" component={Login} />
 
-      {/* Brand portal */}
+      {/* Onboarding — authenticated but lives outside the dashboard shell. */}
+      <Route path="/onboarding" component={Onboarding} />
+
+      {/* Brand portal — separate product with its own chrome. */}
       <Route path="/brand" component={BrandLogin} />
       <Route path="/brand/login" component={BrandLogin} />
       <Route path="/brand/register" component={BrandRegister} />
@@ -65,6 +65,88 @@ function Router() {
       <Route path="/brand/campaigns/:id" component={BrandCampaignDetail} />
       <Route path="/brand/billing" component={BrandBilling} />
       <Route path="/brand/settings" component={BrandSettings} />
+
+      {/* Authenticated app routes — wrapped in DashboardLayout. */}
+      <Route path="/dashboard">
+        <DashboardLayout>
+          <Dashboard />
+        </DashboardLayout>
+      </Route>
+      <Route path="/stores">
+        <DashboardLayout>
+          <Stores />
+        </DashboardLayout>
+      </Route>
+      <Route path="/products">
+        <DashboardLayout>
+          <Products />
+        </DashboardLayout>
+      </Route>
+      <Route path="/lists">
+        <DashboardLayout>
+          <ShoppingLists />
+        </DashboardLayout>
+      </Route>
+      <Route path="/lists/:id">
+        <DashboardLayout>
+          <ListDetail />
+        </DashboardLayout>
+      </Route>
+      <Route path="/scanner">
+        <DashboardLayout>
+          <Scanner />
+        </DashboardLayout>
+      </Route>
+      <Route path="/optimize">
+        <DashboardLayout>
+          <Optimize />
+        </DashboardLayout>
+      </Route>
+      <Route path="/pantry">
+        <DashboardLayout>
+          <Pantry />
+        </DashboardLayout>
+      </Route>
+      <Route path="/recipes">
+        <DashboardLayout>
+          <Recipes />
+        </DashboardLayout>
+      </Route>
+      <Route path="/leaderboard">
+        <DashboardLayout>
+          <Leaderboard />
+        </DashboardLayout>
+      </Route>
+      <Route path="/profile">
+        <DashboardLayout>
+          <Profile />
+        </DashboardLayout>
+      </Route>
+      <Route path="/map">
+        <DashboardLayout>
+          <MapView />
+        </DashboardLayout>
+      </Route>
+      <Route path="/alerts">
+        <DashboardLayout>
+          <PriceAlerts />
+        </DashboardLayout>
+      </Route>
+      <Route path="/budget">
+        <DashboardLayout>
+          <Budget />
+        </DashboardLayout>
+      </Route>
+      <Route path="/seasonal">
+        <DashboardLayout>
+          <SeasonalDeals />
+        </DashboardLayout>
+      </Route>
+      <Route path="/admin">
+        <DashboardLayout>
+          <Admin />
+        </DashboardLayout>
+      </Route>
 
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

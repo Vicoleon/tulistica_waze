@@ -74,6 +74,15 @@ vi.mock("./db", () => ({
     id: 1,
     name: "Test Product",
   }),
+  recordAnalyticsEvent: vi.fn().mockResolvedValue(undefined),
+  getAnalyticsSummary: vi.fn().mockResolvedValue({
+    days: 7,
+    totalEvents: 0,
+    byTier: [],
+    byEvent: [],
+    topQueries: [],
+    onboardingFunnel: { started: 0, completed: 0, skipped: 0 },
+  }),
 }));
 
 type AuthenticatedUser = NonNullable<TrpcContext["user"]>;

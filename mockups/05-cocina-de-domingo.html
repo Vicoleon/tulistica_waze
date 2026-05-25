@@ -1,0 +1,822 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mockup 05 — Cocina de Domingo · Grocery Waze</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --cream: #fbf5e9;
+    --cream-deep: #f3ead4;
+    --paper: #ffffff;
+    --ink: #2a2118;
+    --ink-2: #6a5a44;
+    --ink-3: #a39880;
+    --rule: #e6dcc1;
+
+    --terra: #c8654a;
+    --terra-soft: #f6d8c8;
+    --sage: #7a9a6e;
+    --sage-soft: #dfe9d3;
+    --butter: #f3c14b;
+    --butter-soft: #fbe9b1;
+    --berry: #b34a55;
+
+    --radius: 22px;
+    --radius-sm: 14px;
+    --shadow: 0 1px 0 rgba(42,33,24,0.04), 0 16px 28px -22px rgba(42,33,24,0.22);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(168,140,98,0.05) 1px, transparent 0);
+    background-size: 28px 28px;
+  }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 28px; }
+  .serif { font-family: 'Fraunces', Georgia, serif; }
+
+  /* Nav */
+  nav.top {
+    padding: 22px 0 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0;
+    background: rgba(251,245,233,0.88);
+    backdrop-filter: blur(12px);
+    z-index: 50;
+    border-bottom: 1px solid var(--rule);
+  }
+  .brand {
+    display: flex; align-items: center; gap: 14px;
+    font-family: 'Fraunces', serif;
+    font-weight: 600; font-size: 22px;
+    letter-spacing: -0.01em;
+  }
+  .brand .mark {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--terra-soft);
+    color: var(--terra);
+    display: grid; place-items: center;
+    border: 1.5px solid var(--terra);
+  }
+  .brand .mark svg { width: 22px; height: 22px; }
+  .brand small {
+    display: block;
+    font-family: 'Inter', sans-serif; font-weight: 400; font-size: 11px;
+    color: var(--ink-3);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-top: -2px;
+  }
+  .nav-links { display: flex; gap: 4px; }
+  .nav-links a {
+    padding: 8px 14px;
+    font-size: 14px;
+    color: var(--ink-2);
+    font-weight: 500;
+    border-radius: 999px;
+    transition: background 180ms, color 180ms;
+  }
+  .nav-links a:hover { background: var(--cream-deep); color: var(--ink); }
+  .nav-links a.active { background: var(--ink); color: var(--cream); }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 20px;
+    border-radius: 999px;
+    font-weight: 500; font-size: 14px;
+    border: 1.5px solid var(--ink);
+    background: var(--ink); color: var(--cream);
+    cursor: pointer;
+    transition: all 180ms ease;
+    text-decoration: none;
+  }
+  .btn:hover { background: var(--terra); border-color: var(--terra); transform: translateY(-1px); }
+  .btn-soft {
+    background: transparent; color: var(--ink); border-color: var(--rule);
+  }
+  .btn-soft:hover { background: var(--paper); border-color: var(--ink); color: var(--ink); }
+  .btn-lg { padding: 16px 26px; font-size: 15px; }
+
+  /* Hero */
+  .hero {
+    padding: 64px 0 32px;
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap: 56px;
+    align-items: center;
+  }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 12px;
+    font-family: 'Fraunces', serif;
+    font-style: italic; font-size: 16px;
+    color: var(--terra);
+    margin-bottom: 22px;
+  }
+  .eyebrow .line { width: 32px; height: 1px; background: var(--terra); }
+  .hero h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: clamp(48px, 6vw, 84px);
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+    margin: 0 0 22px;
+  }
+  .hero h1 em { font-style: italic; color: var(--terra); font-weight: 600; }
+  .hero h1 .deco { position: relative; display: inline-block; }
+  .hero h1 .deco::after {
+    content: '';
+    position: absolute; left: 0; right: 0; bottom: -8px;
+    height: 14px;
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 14'><path d='M2 8 Q 30 -2 56 8 T 110 8 T 164 8 T 218 8' fill='none' stroke='%23c8654a' stroke-width='2.5' stroke-linecap='round'/></svg>") no-repeat;
+    background-size: 100% 100%;
+  }
+  .hero p {
+    font-size: 19px; color: var(--ink-2);
+    max-width: 56ch; margin: 0 0 28px; line-height: 1.65;
+  }
+  .actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .actions .note {
+    font-family: 'Fraunces', serif; font-style: italic;
+    color: var(--ink-3); font-size: 14px;
+  }
+
+  /* Hero illustration: open recipe book */
+  .book {
+    position: relative;
+    aspect-ratio: 5/4;
+    background: var(--paper);
+    border-radius: var(--radius);
+    border: 1.5px solid var(--rule);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .book::after {
+    content: '';
+    position: absolute; top: 0; bottom: 0; left: 50%;
+    width: 1px;
+    background: linear-gradient(180deg, transparent, var(--rule) 12%, var(--rule) 88%, transparent);
+  }
+  .book .page {
+    padding: 28px;
+    position: relative;
+  }
+  .book .page.left { background: linear-gradient(90deg, var(--cream) 0%, var(--paper) 60%); }
+  .book .page.right { background: linear-gradient(270deg, var(--cream) 0%, var(--paper) 60%); }
+  .book .label {
+    font-family: 'Fraunces', serif; font-style: italic; color: var(--terra);
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+  .book h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1.05;
+    margin: 0 0 14px;
+    letter-spacing: -0.02em;
+  }
+  .book .ingredient {
+    display: grid; grid-template-columns: 18px 1fr auto;
+    align-items: center; gap: 10px;
+    padding: 6px 0;
+    font-size: 14px;
+    border-bottom: 1px dashed var(--rule);
+  }
+  .book .ingredient .check {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ink-3);
+  }
+  .book .ingredient .check.done {
+    background: var(--sage); border-color: var(--sage);
+    display: grid; place-items: center;
+    color: white;
+  }
+  .book .ingredient.done { color: var(--ink-3); text-decoration: line-through; }
+  .book .ingredient .qty { font-family: 'Fraunces', serif; font-style: italic; font-size: 13px; color: var(--ink-3); }
+  .book .stamp {
+    position: absolute;
+    bottom: 18px; right: 18px;
+    transform: rotate(-6deg);
+    border: 2px solid var(--terra);
+    color: var(--terra);
+    padding: 8px 14px;
+    border-radius: 14px;
+    font-family: 'Fraunces', serif;
+    font-style: italic; font-size: 14px;
+    background: rgba(255,255,255,0.7);
+  }
+  .book .stamp b { font-weight: 600; font-style: normal; font-size: 18px; display: block; line-height: 1; }
+  .book .pricetag {
+    display: flex; flex-direction: column;
+    gap: 4px;
+    padding: 12px 14px;
+    background: var(--sage-soft);
+    border-radius: 12px;
+    border: 1px dashed var(--sage);
+    margin-top: 16px;
+  }
+  .book .pricetag .l { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-2); }
+  .book .pricetag .v { font-family: 'Fraunces', serif; font-weight: 600; font-size: 22px; color: var(--sage); letter-spacing: -0.01em; }
+  .book .pricetag .save { font-size: 12px; color: var(--ink-2); font-style: italic; font-family: 'Fraunces', serif; }
+  .book svg.veg {
+    position: absolute; top: 14px; right: 14px;
+    color: var(--sage);
+    opacity: 0.45;
+  }
+
+  /* small price tags floating */
+  .tag-float {
+    position: absolute;
+    background: var(--butter-soft);
+    border: 1px solid var(--butter);
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-family: 'Fraunces', serif;
+    font-size: 13px;
+    font-weight: 600;
+    transform: rotate(-3deg);
+    box-shadow: 0 6px 14px -8px rgba(42,33,24,0.3);
+  }
+  .tag-float.b { background: var(--terra-soft); border-color: var(--terra); transform: rotate(4deg); top: -16px; left: -10px; }
+  .tag-float.c { background: var(--sage-soft); border-color: var(--sage); transform: rotate(-4deg); bottom: -12px; right: 16px; }
+
+  /* Section */
+  .section { padding: 80px 0; }
+  .section.alt { background: var(--paper); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .section-hd { max-width: 720px; margin: 0 auto 48px; text-align: center; }
+  .section-hd .eyebrow { justify-content: center; }
+  .section-hd .eyebrow .line { background: var(--ink-3); }
+  .section-hd h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: clamp(34px, 4vw, 54px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin: 0 0 12px;
+  }
+  .section-hd h2 em { font-style: italic; color: var(--terra); }
+  .section-hd p { color: var(--ink-2); font-size: 17px; margin: 0; }
+
+  /* Recipe-style feature cards */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .recipe-card {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    padding: 28px;
+    box-shadow: var(--shadow);
+    transition: transform 200ms ease, box-shadow 200ms ease;
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    min-height: 280px;
+    position: relative;
+  }
+  .recipe-card:hover { transform: translateY(-4px); }
+  .recipe-card .number {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 14px; color: var(--terra);
+    margin-bottom: 10px;
+  }
+  .recipe-card .ico {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--cream-deep);
+    color: var(--terra);
+    display: grid; place-items: center;
+    margin-bottom: 16px;
+    border: 1px solid var(--rule);
+  }
+  .recipe-card.sage .ico { background: var(--sage-soft); color: var(--sage); border-color: var(--sage); }
+  .recipe-card.butter .ico { background: var(--butter-soft); color: #a47714; border-color: var(--butter); }
+  .recipe-card.terra .ico { background: var(--terra-soft); color: var(--terra); border-color: var(--terra); }
+  .recipe-card h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 24px;
+    line-height: 1.12;
+    margin: 0 0 8px;
+    letter-spacing: -0.015em;
+  }
+  .recipe-card p { color: var(--ink-2); margin: 0 0 18px; font-size: 14.5px; }
+  .recipe-card .meta {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px dashed var(--rule);
+    display: flex; justify-content: space-between;
+    font-family: 'Fraunces', serif; font-style: italic;
+    font-size: 13px; color: var(--ink-3);
+  }
+  .recipe-card .meta b { color: var(--ink); font-weight: 600; font-style: normal; font-family: 'Inter', sans-serif; font-size: 12px; }
+
+  /* Three-step "receta" */
+  .steps-receta {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+  }
+  .step-r {
+    text-align: center;
+    padding: 0 12px;
+  }
+  .step-r .n {
+    width: 80px; height: 80px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    background: var(--cream-deep);
+    border: 1.5px dashed var(--terra);
+    color: var(--terra);
+    font-family: 'Fraunces', serif;
+    font-style: italic; font-weight: 600;
+    font-size: 36px;
+    display: grid; place-items: center;
+  }
+  .step-r h4 { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; margin: 0 0 10px; letter-spacing: -0.01em; }
+  .step-r p { color: var(--ink-2); font-size: 15px; margin: 0; }
+
+  /* Community / testimonial */
+  .testimonial {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    padding: 48px;
+    text-align: center;
+    max-width: 880px; margin: 0 auto;
+    box-shadow: var(--shadow);
+    position: relative;
+  }
+  .testimonial::before {
+    content: '"';
+    font-family: 'Fraunces', serif;
+    font-size: 200px;
+    line-height: 0.5;
+    color: var(--terra-soft);
+    position: absolute;
+    top: 56px; left: 36px;
+    pointer-events: none;
+  }
+  .testimonial p {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 28px;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    margin: 0 0 26px;
+    position: relative;
+  }
+  .testimonial .who {
+    display: inline-flex; align-items: center; gap: 14px;
+    font-family: 'Inter', sans-serif; font-size: 14px;
+    color: var(--ink-2);
+  }
+  .testimonial .who .avatar {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: var(--sage-soft);
+    color: var(--sage);
+    display: grid; place-items: center;
+    font-weight: 600;
+    border: 1.5px solid var(--sage);
+  }
+  .testimonial .who b { color: var(--ink); display: block; font-weight: 600; font-size: 15px; }
+
+  /* Pantry feature row */
+  .pantry-row {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    box-shadow: var(--shadow);
+  }
+  .pantry-row .left { padding: 48px; }
+  .pantry-row .left h3 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 38px; line-height: 1.05; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .pantry-row .left p { color: var(--ink-2); font-size: 16px; margin: 0 0 22px; }
+  .pantry-row .left ul { list-style: none; padding: 0; margin: 0 0 26px; }
+  .pantry-row .left li { padding: 8px 0; font-size: 15px; color: var(--ink-2); display: flex; align-items: center; gap: 10px; }
+  .pantry-row .left li svg { color: var(--sage); flex-shrink: 0; }
+  .pantry-shelves {
+    background:
+      linear-gradient(180deg, var(--cream-deep), var(--cream));
+    padding: 36px;
+    display: grid;
+    grid-template-rows: repeat(3, 1fr);
+    gap: 0;
+    position: relative;
+  }
+  .shelf {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+    align-items: end;
+    border-bottom: 4px solid #c9a273;
+    padding-bottom: 8px;
+  }
+  .jar {
+    background: var(--paper);
+    border: 1.5px solid var(--ink-3);
+    border-radius: 8px 8px 4px 4px;
+    height: 76px;
+    position: relative;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-end;
+    overflow: hidden;
+  }
+  .jar::before {
+    content: '';
+    position: absolute; top: -6px; left: 4px; right: 4px; height: 10px;
+    background: #d8c19b;
+    border: 1.5px solid var(--ink-3);
+    border-radius: 4px 4px 2px 2px;
+  }
+  .jar .fill {
+    width: 100%;
+    background: var(--sage);
+    border-radius: 0 0 2px 2px;
+  }
+  .jar.warn .fill { background: var(--butter); }
+  .jar.low .fill { background: var(--terra); }
+  .jar .lbl {
+    position: absolute; bottom: 6px; left: 4px; right: 4px;
+    text-align: center;
+    font-family: 'Fraunces', serif; font-style: italic;
+    font-size: 11px;
+    background: rgba(251,245,233,0.92);
+    border-radius: 4px;
+    padding: 2px 4px;
+  }
+
+  /* Map (illustrated, not technical) */
+  .map-card {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .map-illust {
+    background:
+      radial-gradient(circle at 30% 30%, var(--sage-soft), transparent 60%),
+      radial-gradient(circle at 70% 60%, var(--terra-soft), transparent 60%),
+      var(--cream-deep);
+    position: relative;
+    min-height: 320px;
+  }
+  .map-illust::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(circle at 2px 2px, rgba(168,140,98,0.08) 1px, transparent 0);
+    background-size: 20px 20px;
+  }
+  .pin {
+    position: absolute;
+    transform: translate(-50%, -100%);
+  }
+  .pin svg { display: block; filter: drop-shadow(0 6px 8px rgba(42,33,24,0.2)); }
+  .pin .lbl {
+    background: var(--paper); border: 1px solid var(--ink-2);
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 12px;
+    position: absolute;
+    left: 50%; bottom: 38px;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+  .map-text { padding: 40px; display: flex; flex-direction: column; justify-content: center; }
+  .map-text h3 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 34px; line-height: 1.05; margin: 0 0 12px; letter-spacing: -0.02em; }
+  .map-text p { color: var(--ink-2); margin: 0 0 20px; font-size: 16px; }
+
+  /* Closing */
+  .closing {
+    background: var(--terra-soft);
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    padding: 96px 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .closing::before, .closing::after {
+    content: '';
+    position: absolute;
+    width: 280px; height: 280px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.5), transparent 70%);
+    pointer-events: none;
+  }
+  .closing::before { top: -80px; left: -80px; }
+  .closing::after { bottom: -120px; right: -80px; background: radial-gradient(circle, rgba(122,154,110,0.4), transparent 70%); }
+  .closing h2 {
+    position: relative;
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: clamp(42px, 5vw, 68px);
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+    margin: 0 auto 20px;
+    max-width: 18ch;
+  }
+  .closing h2 em { font-style: italic; color: var(--terra); }
+  .closing p { position: relative; color: var(--ink-2); font-size: 18px; max-width: 50ch; margin: 0 auto 30px; }
+
+  footer { padding: 32px 0 44px; color: var(--ink-3); font-size: 13px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; font-family: 'Fraunces', serif; font-style: italic; }
+
+  @media (max-width: 980px) {
+    .hero { grid-template-columns: 1fr; }
+    .features { grid-template-columns: 1fr; }
+    .steps-receta { grid-template-columns: 1fr; }
+    .pantry-row, .map-card { grid-template-columns: 1fr; }
+    .nav-links { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="top">
+      <a class="brand" href="#">
+        <span class="mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 8a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v9H5z"/><path d="M9 17v3"/><path d="M15 17v3"/></svg>
+        </span>
+        <div>
+          Grocery Waze
+          <small>casa · cocina · canasta</small>
+        </div>
+      </a>
+      <div class="nav-links">
+        <a class="active" href="#">Inicio</a>
+        <a href="#">Recetario</a>
+        <a href="#">Mi lista</a>
+        <a href="#">Despensa</a>
+        <a href="#">Tiendas</a>
+        <a href="#">Cuenta</a>
+      </div>
+      <a class="btn" href="#">Crear mi cuenta</a>
+    </nav>
+  </div>
+
+  <section class="wrap hero">
+    <div>
+      <div class="eyebrow"><span class="line"></span> Para la casa de todos los días</div>
+      <h1>La <em>libreta</em> de cocina que también sabe de <span class="deco">precios</span>.</h1>
+      <p>Apunte sus recetas favoritas, su lista de la semana y su despensa. Nosotros buscamos el mejor precio en las tiendas cerca de su casa y le decimos cuándo conviene ir.</p>
+      <div class="actions">
+        <a class="btn btn-lg" href="#">Empezar mi libreta</a>
+        <a class="btn btn-soft btn-lg" href="#">Ver cómo funciona</a>
+        <span class="note">— sin tarjeta, sin compromiso</span>
+      </div>
+    </div>
+
+    <div style="position:relative;">
+      <span class="tag-float b">Ahorró ₡ 600</span>
+      <span class="tag-float c">Ya en su despensa</span>
+      <div class="book" aria-label="Libreta de cocina con receta y precios">
+        <div class="page left">
+          <svg class="veg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+            <path d="M32 8c-6 0-10 5-10 11s4 11 10 11 10-5 10-11-4-11-10-11z" fill="currentColor" opacity="0.18"/>
+            <path d="M32 6c4 4 8 6 14 6-1 6-5 10-9 12" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+          </svg>
+          <div class="label">Receta del domingo</div>
+          <h3>Arroz con pollo<br/>de la abuela</h3>
+          <div class="ingredient done"><span class="check done"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span><span>Pollo entero</span><span class="qty">1.4 kg</span></div>
+          <div class="ingredient"><span class="check"></span><span>Arroz Tío Pelón</span><span class="qty">2 tazas</span></div>
+          <div class="ingredient"><span class="check"></span><span>Tomate maduro</span><span class="qty">4 unid.</span></div>
+          <div class="ingredient"><span class="check"></span><span>Cilantro fresco</span><span class="qty">un manojo</span></div>
+          <div class="ingredient"><span class="check"></span><span>Aceite Capullo</span><span class="qty">1/4 taza</span></div>
+        </div>
+        <div class="page right">
+          <div class="label">Precio para esta receta</div>
+          <h3>Su canasta de hoy</h3>
+          <p style="margin:0 0 12px;color:var(--ink-2);font-size:14px;">Comparamos en 4 tiendas cerca de Curridabat.</p>
+          <div class="pricetag">
+            <div class="l">Mejor precio</div>
+            <div class="v">₡ 8.490 <span style="font-family:'Fraunces',serif;font-style:italic;font-weight:400;font-size:13px;color:var(--ink-2);">en PriceSmart</span></div>
+            <div class="save">Ahorra ₡ 1.860 vs. la más cercana</div>
+          </div>
+          <p style="margin:14px 0 0;font-family:'Fraunces',serif;font-style:italic;font-size:13px;color:var(--ink-3);">— actualizado hace 8 minutos por Sarah M., Tres Ríos</p>
+          <div class="stamp"><span style="font-style:italic;">recomendado</span><b>★★★★★</b></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features as recipe cards -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-hd">
+        <div class="eyebrow"><span class="line"></span> Lo que esta cocina sabe hacer <span class="line"></span></div>
+        <h2>Seis ayudas para que <em>comer rico</em> cueste menos.</h2>
+        <p>Cada herramienta está pensada para una mamá, una abuela, un papá que cocina los domingos. No hay jerga, no hay sorpresas — solo cosas que sirven.</p>
+      </div>
+      <div class="features">
+        <article class="recipe-card terra">
+          <span class="number">Receta i ·</span>
+          <div class="ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4"/><path d="M3 17l9 4 9-4"/></svg></div>
+          <h3>Comparador inteligente</h3>
+          <p>Le decimos si conviene ir a una sola tienda o partir el mandado. Con gasolina y tiempo dentro del cálculo.</p>
+          <div class="meta"><span>Tiempo ahorrado</span><b>~ 24 min / semana</b></div>
+        </article>
+
+        <article class="recipe-card sage">
+          <span class="number">Receta ii ·</span>
+          <div class="ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+          <h3>Mapa del barrio</h3>
+          <p>Tiendas cerca de su casa con precios reales. Ve cuál tiene su producto antes de salir.</p>
+          <div class="meta"><span>Tiendas vivas</span><b>187 en cr</b></div>
+        </article>
+
+        <article class="recipe-card butter">
+          <span class="number">Receta iii ·</span>
+          <div class="ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="2" height="16"/><rect x="7" y="4" width="1" height="16"/><rect x="10" y="4" width="3" height="16"/><rect x="15" y="4" width="1" height="16"/><rect x="18" y="4" width="3" height="16"/></svg></div>
+          <h3>Escanee y reporte</h3>
+          <p>Está en la tienda y el precio cambió. Escanee el código con su teléfono y avise a la comunidad.</p>
+          <div class="meta"><span>Reportes hoy</span><b>1.240</b></div>
+        </article>
+
+        <article class="recipe-card sage">
+          <span class="number">Receta iv ·</span>
+          <div class="ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="9" r="3"/><path d="M3 19v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg></div>
+          <h3>Listas en familia</h3>
+          <p>Su esposo agrega el aceite desde el carro, su hija lo ve desde la casa. Todos en la misma lista.</p>
+          <div class="meta"><span>Listas activas</span><b>3.140</b></div>
+        </article>
+
+        <article class="recipe-card terra">
+          <span class="number">Receta v ·</span>
+          <div class="ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 8a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v9H5z"/><path d="M9 17v3"/><path d="M15 17v3"/></svg></div>
+          <h3>De receta a lista</h3>
+          <p>Pegue un enlace de una receta del internet — ingredientes y cantidades aparecen en su lista, listos.</p>
+          <div class="meta"><span>Recetas convertidas</span><b>8.420</b></div>
+        </article>
+
+        <article class="recipe-card butter">
+          <span class="number">Receta vi ·</span>
+          <div class="ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7h18v13H3z"/><path d="M8 7V4h8v3"/></svg></div>
+          <h3>Despensa que avisa</h3>
+          <p>Aprende su ritmo. Le dice "se le acaba el café en 3 días" antes de que se quede sin.</p>
+          <div class="meta"><span>Alertas enviadas</span><b>520 / semana</b></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Steps -->
+  <section class="section alt">
+    <div class="wrap">
+      <div class="section-hd">
+        <div class="eyebrow"><span class="line"></span> Tres pasos <span class="line"></span></div>
+        <h2>Tan simple como <em>seguir una receta</em>.</h2>
+      </div>
+      <div class="steps-receta">
+        <div class="step-r">
+          <div class="n">i</div>
+          <h4>Escriba su lista</h4>
+          <p>Anote lo que necesita esta semana, o pegue una receta del internet. La organizamos por usted.</p>
+        </div>
+        <div class="step-r">
+          <div class="n">ii</div>
+          <h4>Buscamos por usted</h4>
+          <p>Comparamos 187 tiendas y le mostramos cuál conviene — la cercana, la más barata o la ruta mejor.</p>
+        </div>
+        <div class="step-r">
+          <div class="n">iii</div>
+          <h4>Compre tranquila</h4>
+          <p>Vaya con la lista en el teléfono, marque lo que va comprando, y vuelva con vuelto.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pantry feature -->
+  <section class="section">
+    <div class="wrap">
+      <div class="pantry-row">
+        <div class="left">
+          <div class="eyebrow"><span class="line"></span> Despensa</div>
+          <h3>Su despensa también <em>tiene cabeza</em>.</h3>
+          <p>Marque lo que tiene y con qué frecuencia lo usa. La libreta aprende su ritmo y le avisa antes de que se quede sin algo importante.</p>
+          <ul>
+            <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Recordatorios suaves, no spam</li>
+            <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Compatible con su lista actual</li>
+            <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Mejor precio sugerido al reponer</li>
+          </ul>
+          <a class="btn" href="#">Configurar despensa</a>
+        </div>
+        <div class="pantry-shelves">
+          <div class="shelf">
+            <div class="jar"><div class="fill" style="height:78%;"></div><div class="lbl">arroz</div></div>
+            <div class="jar"><div class="fill" style="height:62%;"></div><div class="lbl">azúcar</div></div>
+            <div class="jar warn"><div class="fill" style="height:38%;"></div><div class="lbl">aceite</div></div>
+            <div class="jar"><div class="fill" style="height:84%;"></div><div class="lbl">sal</div></div>
+          </div>
+          <div class="shelf">
+            <div class="jar low"><div class="fill" style="height:14%;"></div><div class="lbl">café</div></div>
+            <div class="jar"><div class="fill" style="height:70%;"></div><div class="lbl">frijol</div></div>
+            <div class="jar"><div class="fill" style="height:54%;"></div><div class="lbl">harina</div></div>
+            <div class="jar warn"><div class="fill" style="height:32%;"></div><div class="lbl">canela</div></div>
+          </div>
+          <div class="shelf" style="border-bottom:0;">
+            <div class="jar"><div class="fill" style="height:88%;"></div><div class="lbl">avena</div></div>
+            <div class="jar"><div class="fill" style="height:48%;"></div><div class="lbl">té</div></div>
+            <div class="jar"><div class="fill" style="height:72%;"></div><div class="lbl">cocoa</div></div>
+            <div class="jar"><div class="fill" style="height:66%;"></div><div class="lbl">miel</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Map illustrated -->
+  <section class="section alt">
+    <div class="wrap">
+      <div class="map-card">
+        <div class="map-illust">
+          <div class="pin" style="left:30%;top:36%;">
+            <svg width="36" height="44" viewBox="0 0 36 44" fill="none">
+              <path d="M18 2c-9 0-15 6-15 15 0 11 15 25 15 25s15-14 15-25c0-9-6-15-15-15z" fill="#7a9a6e" stroke="#2a2118" stroke-width="1.5"/>
+              <circle cx="18" cy="16" r="6" fill="#fbf5e9"/>
+            </svg>
+            <div class="lbl">PriceSmart · ₡1.290</div>
+          </div>
+          <div class="pin" style="left:62%;top:48%;">
+            <svg width="32" height="40" viewBox="0 0 36 44" fill="none">
+              <path d="M18 2c-9 0-15 6-15 15 0 11 15 25 15 25s15-14 15-25c0-9-6-15-15-15z" fill="#f3c14b" stroke="#2a2118" stroke-width="1.5"/>
+              <circle cx="18" cy="16" r="6" fill="#fbf5e9"/>
+            </svg>
+            <div class="lbl">Más x Menos · ₡1.520</div>
+          </div>
+          <div class="pin" style="left:46%;top:72%;">
+            <svg width="28" height="36" viewBox="0 0 36 44" fill="none">
+              <path d="M18 2c-9 0-15 6-15 15 0 11 15 25 15 25s15-14 15-25c0-9-6-15-15-15z" fill="#c8654a" stroke="#2a2118" stroke-width="1.5"/>
+              <circle cx="18" cy="16" r="6" fill="#fbf5e9"/>
+            </svg>
+            <div class="lbl">AM/PM · ₡1.890</div>
+          </div>
+        </div>
+        <div class="map-text">
+          <div class="eyebrow"><span class="line"></span> En su barrio</div>
+          <h3>Tiendas cerca, <em>elegidas con tiempo</em>.</h3>
+          <p>Vea cuál tienda cerca tiene su producto, a qué precio, y cuánto se ahorra si va a una y no a otra. Sin sorpresas en la caja.</p>
+          <div class="actions">
+            <a class="btn" href="#">Abrir el mapa</a>
+            <a class="btn btn-soft" href="#">Ver tiendas favoritas</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonial -->
+  <section class="section">
+    <div class="wrap">
+      <div class="testimonial">
+        <p>Antes hacía la compra en piloto automático. Ahora reviso Grocery Waze en el parqueo. Llevo <em>₡ 48.000 ahorrados</em> este mes solo eligiendo bien la tienda — y la lista compartida con mi hijo nos quitó tres peleas.</p>
+        <div class="who">
+          <div class="avatar">MF</div>
+          <div>
+            <b>María Fernández</b>
+            <span>Mamá de dos · Curridabat · usa Grocery Waze desde feb</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Closing -->
+  <section class="closing">
+    <div class="wrap">
+      <h2>Una cocina <em>menos cara</em>, no menos rica.</h2>
+      <p>Únase a 12.480 hogares costarricenses que comen lo de siempre — y pagan menos por eso.</p>
+      <a class="btn btn-lg" href="#">Abrir mi libreta gratis</a>
+    </div>
+  </section>
+
+  <footer class="wrap">
+    <span>© Grocery Waze · una libreta de cocina con cabeza · 2026</span>
+    <span>hecho en san josé, con café</span>
+  </footer>
+</body>
+</html>

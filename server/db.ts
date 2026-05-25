@@ -10,11 +10,38 @@ import {
   InsertStoreCrowdedness, googlePlacesCache, InsertGooglePlaceCache,
   brands, brandTokens, campaignMetrics, invoices, invoiceLineItems,
   InsertBrand, InsertBrandToken, InsertCampaignMetric, InsertInvoice,
-  InsertInvoiceLineItem, Brand,
+  InsertInvoiceLineItem,
+  analyticsEvents, InsertAnalyticsEvent,
 } from "../drizzle/schema";
+import type { User, Brand } from "../drizzle/schema";
+import type { AnalyticsProperties } from "../shared/analytics";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
+
+/**
+ * Best-effort coercion of a DB date-ish value into a YYYY-MM-DD string.
+ * MySQL DATE columns come back as Date objects with Local time zero hours,
+ * but a NaN value or a string like "0000-00-00" needs defensive handling.
+ * Returns `null` when the input can't be interpreted as a real date.
+ */
+function toIsoDate(value: unknown): string | null {
+  if (!value) return null;
+  if (value instanceof Date) {
+    const t = value.getTime();
+    if (!Number.isFinite(t) || t <= 0) return null;
+    return value.toISOString().slice(0, 10);
+  }
+  if (typeof value === "string") {
+    // MySQL DATE → "YYYY-MM-DD" (already in the format we want).
+    if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value.slice(0, 10);
+    const parsed = new Date(value);
+    return Number.isFinite(parsed.getTime()) && parsed.getTime() > 0
+      ? parsed.toISOString().slice(0, 10)
+      : null;
+  }
+  return null;
+}
 
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
@@ -112,6 +139,27 @@ export async function updateUserPreferences(userId: number, prefs: {
   const db = await getDb();
   if (!db) return;
   await db.update(users).set(prefs).where(eq(users.id, userId));
+}
+
+/**
+ * Merge the user's `preferences` JSON column with `patch`. Keeps any
+ * existing keys (e.g. dietaryRestrictions, favoriteStores) and overwrites
+ * only the keys present in `patch`. Used by trpc.profile.update.
+ */
+export async function updateUserPreferencesJson(
+  userId: number,
+  patch: Partial<import("../shared/profile").UserPreferences>
+) {
+  const db = await getDb();
+  if (!db) return;
+  const row = await db
+    .select({ preferences: users.preferences })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  const current = row[0]?.preferences ?? {};
+  const next = { ...current, ...patch };
+  await db.update(users).set({ preferences: next }).where(eq(users.id, userId));
 }
 
 // ============ STORE HELPERS ============
@@ -258,6 +306,7 @@ export async function getPricesForProduct(productId: number) {
   return db.select({
     storeId: priceEntries.storeId,
     storeName: stores.name,
+    chainId: stores.chainId,
     price: priceEntries.price,
     isVerified: priceEntries.isVerified,
     updatedAt: priceEntries.updatedAt,
@@ -638,10 +687,31 @@ export async function recordAdImpression(adId: number) {
 export async function recordAdClick(adId: number) {
   const db = await getDb();
   if (!db) return;
-  await db.update(adCampaigns)
+  // Fetch the bid + current daily spend in one round-trip so we can reset
+  // the daily counter atomically when the date rolled over.
+  const rows = await db
+    .select({
+      bidCpc: adCampaigns.bidCpc,
+      dailySpend: adCampaigns.dailySpend,
+      dailySpendDate: adCampaigns.dailySpendDate,
+    })
+    .from(adCampaigns)
+    .where(eq(adCampaigns.id, adId))
+    .limit(1);
+  if (rows.length === 0) return;
+
+  const bid = rows[0].bidCpc ?? 0;
+  const lastDate = toIsoDate(rows[0].dailySpendDate);
+  const today = new Date().toISOString().slice(0, 10);
+  const newSpend = lastDate === today ? (rows[0].dailySpend ?? 0) + bid : bid;
+
+  await db
+    .update(adCampaigns)
     .set({
       clicks: sql`${adCampaigns.clicks} + 1`,
       totalSpentCents: sql`${adCampaigns.totalSpentCents} + CAST(${adCampaigns.bidCpc} * 100 AS UNSIGNED)`,
+      dailySpend: newSpend,
+      dailySpendDate: new Date(),
     })
     .where(eq(adCampaigns.id, adId));
 
@@ -658,6 +728,181 @@ export async function recordAdClick(adId: number) {
     brandId: campaign[0]?.brandId ?? null,
     clicks: 1,
     spendCents,
+  });
+}
+
+/**
+ * Picks campaigns matching the viewer's shopper profile for a given surface.
+ *
+ * Matching is best-effort permissive: if the campaign omits a targeting facet
+ * (e.g. no `targetTiers`), that facet always passes. Tie-break by `bidCpc DESC`
+ * so the marketplace rewards the higher bidder when multiple campaigns match.
+ *
+ * @param surface  which physical slot (dashboard_promo, sponsored_search, ...)
+ * @param userArg  the request's user (null for anonymous — only fully-open campaigns match)
+ * @param limit    max number of placements to return
+ * @param keywords optional — for `sponsored_search`, the user's query terms
+ */
+export async function getEligibleCampaigns(
+  surface: string,
+  userArg: User | null,
+  limit = 1,
+  keywords: string[] = []
+) {
+  const db = await getDb();
+  if (!db) return [];
+  const all = await db
+    .select()
+    .from(adCampaigns)
+    .where(and(eq(adCampaigns.type, surface as any), eq(adCampaigns.isActive, true)));
+
+  const now = new Date();
+  const profile = userArg?.preferences?.shopperProfile ?? null;
+  const userTier = profile?.priceTier ?? null;
+  const userChains = new Set(profile?.preferredChains ?? []);
+  const userBasket = new Set(profile?.basketMix ?? []);
+  const userCadence = profile?.shoppingCadence ?? null;
+  const userHousehold = profile?.householdSize ?? null;
+  const householdRank: Record<string, number> = {
+    "1": 1,
+    "2": 2,
+    "3-4": 3,
+    "5+": 4,
+  };
+
+  const lowerKeywords = keywords.map((k) => k.toLowerCase());
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Pre-filter by everything that doesn't need an extra DB query (targeting + dates + budget).
+  const targetingMatches = all.filter((c) => {
+    if (c.activeFrom && new Date(c.activeFrom) > now) return false;
+    if (c.activeUntil && new Date(c.activeUntil) < now) return false;
+
+    // Daily budget enforcement: if the campaign has a daily budget AND we've
+    // already spent it today (no rollover), skip. Crossing the date boundary
+    // implicitly resets — recordAdClick handles the reset on click.
+    if (c.dailyBudget != null && c.dailyBudget > 0) {
+      const lastDate = toIsoDate(c.dailySpendDate);
+      const todaysSpend = lastDate === today ? (c.dailySpend ?? 0) : 0;
+      if (todaysSpend >= c.dailyBudget) return false;
+    }
+
+    if (c.targetTiers && c.targetTiers.length > 0) {
+      if (!userTier || !c.targetTiers.includes(userTier)) return false;
+    }
+    if (c.targetChains && c.targetChains.length > 0) {
+      const overlap = c.targetChains.some((ch) => userChains.has(ch as any));
+      if (!overlap) return false;
+    }
+    if (c.targetBasketMix && c.targetBasketMix.length > 0) {
+      const overlap = c.targetBasketMix.some((b) => userBasket.has(b as any));
+      if (!overlap) return false;
+    }
+    if (c.targetCadences && c.targetCadences.length > 0) {
+      if (!userCadence || !c.targetCadences.includes(userCadence)) return false;
+    }
+    if (c.targetMinHouseholdSize) {
+      const min = householdRank[c.targetMinHouseholdSize] ?? 1;
+      const usr = userHousehold ? householdRank[userHousehold] ?? 1 : 0;
+      if (usr < min) return false;
+    }
+    if (c.targetKeywords && c.targetKeywords.length > 0) {
+      const overlap = c.targetKeywords.some((kw) =>
+        lowerKeywords.some((uk) => uk.includes(kw.toLowerCase()))
+      );
+      if (!overlap) return false;
+    }
+    return true;
+  });
+
+  // Frequency capping: skip campaigns this user has already seen too many
+  // times today. Single round-trip per call — we count impressions for the
+  // remaining candidates in batch.
+  let cappedCampaignIds: Set<number> = new Set();
+  const userId = userArg?.id;
+  if (userId && targetingMatches.length > 0) {
+    const candidateIds = targetingMatches.map((c) => c.id);
+    const idsCsv = candidateIds.join(",");
+    const result = await db.execute(sql`
+      SELECT JSON_EXTRACT(properties, '$.campaignId') AS campaignId,
+             COUNT(*) AS impressions
+      FROM analytics_events
+      WHERE eventName = 'campaign_impression'
+        AND userId = ${userId}
+        AND JSON_EXTRACT(properties, '$.campaignId') IN (${sql.raw(idsCsv)})
+        AND createdAt >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+      GROUP BY campaignId
+    `);
+    const unwrap = <T>(r: unknown): T[] => {
+      if (Array.isArray(r)) {
+        const first = (r as unknown[])[0];
+        if (Array.isArray(first)) return first as T[];
+        if (
+          first &&
+          typeof first === "object" &&
+          !("affectedRows" in (first as object))
+        ) {
+          return r as T[];
+        }
+      }
+      if (r && typeof r === "object" && "rows" in (r as object)) {
+        return ((r as { rows?: T[] }).rows ?? []) as T[];
+      }
+      return [];
+    };
+    const counts = unwrap<{ campaignId: number; impressions: number | string }>(
+      result
+    );
+    cappedCampaignIds = new Set(
+      counts
+        .filter((r) => {
+          const c = targetingMatches.find((t) => t.id === Number(r.campaignId));
+          const cap = c?.maxImpressionsPerUserPerDay ?? 5;
+          return Number(r.impressions) >= cap;
+        })
+        .map((r) => Number(r.campaignId))
+    );
+  }
+
+  const matches = targetingMatches.filter((c) => !cappedCampaignIds.has(c.id));
+  matches.sort((a, b) => (b.bidCpc ?? 0) - (a.bidCpc ?? 0));
+  return matches.slice(0, limit);
+}
+
+/**
+ * Per-campaign performance for the admin dashboard. Uses the counters on
+ * ad_campaigns directly — analytics_events has the same data with richer
+ * facets but for now we keep this simple.
+ */
+export async function getCampaignPerformance() {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({
+      id: adCampaigns.id,
+      sponsor: adCampaigns.sponsor,
+      type: adCampaigns.type,
+      title: adCampaigns.title,
+      bidCpc: adCampaigns.bidCpc,
+      impressions: adCampaigns.impressions,
+      clicks: adCampaigns.clicks,
+      isActive: adCampaigns.isActive,
+      activeFrom: adCampaigns.activeFrom,
+      activeUntil: adCampaigns.activeUntil,
+      createdAt: adCampaigns.createdAt,
+    })
+    .from(adCampaigns)
+    .orderBy(desc(adCampaigns.isActive), desc(adCampaigns.clicks));
+
+  return rows.map((r) => {
+    const imp = r.impressions ?? 0;
+    const clk = r.clicks ?? 0;
+    const ctr = imp > 0 ? (clk / imp) * 100 : 0;
+    return {
+      ...r,
+      ctr: Math.round(ctr * 100) / 100,
+      estSpend: Math.round(clk * (r.bidCpc ?? 0) * 100) / 100,
+    };
   });
 }
 
@@ -1281,6 +1526,140 @@ export async function invalidateBrandTokensOfType(
     ));
 }
 
+// ============ ANALYTICS (from redesign) ============
+
+interface RecordAnalyticsInput {
+  eventName: string;
+  user?: User | null;
+  sessionId?: string | null;
+  properties?: AnalyticsProperties;
+}
+
+/**
+ * Fire-and-forget event insert. Never throws — analytics failure must never
+ * break a user-facing request. Denormalizes tier/cadence/householdSize from
+ * the user's shopper profile so dashboards aggregate without JOINs.
+ */
+export async function recordAnalyticsEvent(
+  input: RecordAnalyticsInput
+): Promise<void> {
+  try {
+    const db = await getDb();
+    if (!db) return;
+    const profile = input.user?.preferences?.shopperProfile;
+    const payload: InsertAnalyticsEvent = {
+      userId: input.user?.id ?? null,
+      sessionId: input.sessionId ?? null,
+      eventName: input.eventName,
+      properties: input.properties ?? {},
+      tier: profile?.priceTier ?? null,
+      cadence: profile?.shoppingCadence ?? null,
+      householdSize: profile?.householdSize ?? null,
+    };
+    await db.insert(analyticsEvents).values(payload);
+  } catch (error) {
+    console.warn("[Analytics] Failed to record event:", error);
+  }
+}
+
+function unwrapRows<T>(result: unknown): T[] {
+  if (Array.isArray(result)) {
+    const first = (result as unknown[])[0];
+    if (Array.isArray(first)) return first as T[];
+    if (first && typeof first === "object" && !("affectedRows" in (first as object))) {
+      return result as T[];
+    }
+  }
+  if (result && typeof result === "object" && "rows" in (result as object)) {
+    return ((result as { rows?: T[] }).rows ?? []) as T[];
+  }
+  return [];
+}
+
+export async function getAnalyticsSummary(days = 7) {
+  const db = await getDb();
+  if (!db) {
+    return {
+      days,
+      totalEvents: 0,
+      byTier: [] as Array<{ tier: string; count: number }>,
+      byEvent: [] as Array<{ eventName: string; count: number }>,
+      topQueries: [] as Array<{ query: string; count: number }>,
+      onboardingFunnel: { started: 0, completed: 0, skipped: 0 },
+    };
+  }
+
+  const tierRaw = await db.execute(sql`
+    SELECT JSON_UNQUOTE(JSON_EXTRACT(preferences, '$.shopperProfile.priceTier')) AS tier,
+           COUNT(*) AS count
+    FROM users
+    WHERE JSON_EXTRACT(preferences, '$.shopperProfile.priceTier') IS NOT NULL
+    GROUP BY tier
+    ORDER BY count DESC
+  `);
+  const eventRaw = await db.execute(sql`
+    SELECT eventName, COUNT(*) AS count
+    FROM analytics_events
+    WHERE createdAt >= DATE_SUB(NOW(), INTERVAL ${sql.raw(String(days))} DAY)
+    GROUP BY eventName
+    ORDER BY count DESC
+    LIMIT 30
+  `);
+  const totalRaw = await db.execute(sql`
+    SELECT COUNT(*) AS total
+    FROM analytics_events
+    WHERE createdAt >= DATE_SUB(NOW(), INTERVAL ${sql.raw(String(days))} DAY)
+  `);
+  const queryRaw = await db.execute(sql`
+    SELECT LOWER(JSON_UNQUOTE(JSON_EXTRACT(properties, '$.query'))) AS query,
+           COUNT(*) AS count
+    FROM analytics_events
+    WHERE eventName = 'product_search'
+      AND createdAt >= DATE_SUB(NOW(), INTERVAL ${sql.raw(String(days))} DAY)
+      AND JSON_EXTRACT(properties, '$.query') IS NOT NULL
+    GROUP BY query
+    ORDER BY count DESC
+    LIMIT 10
+  `);
+  const funnelRaw = await db.execute(sql`
+    SELECT eventName, COUNT(*) AS count
+    FROM analytics_events
+    WHERE eventName IN ('onboarding_started','onboarding_skipped','onboarding_completed')
+      AND createdAt >= DATE_SUB(NOW(), INTERVAL ${sql.raw(String(days))} DAY)
+    GROUP BY eventName
+  `);
+
+  type TierRow = { tier: string | null; count: number | string };
+  type EventRow = { eventName: string | null; count: number | string };
+  type TotalRow = { total: number | string };
+  type QueryRow = { query: string | null; count: number | string };
+
+  const tiers = unwrapRows<TierRow>(tierRaw);
+  const events = unwrapRows<EventRow>(eventRaw);
+  const totals = unwrapRows<TotalRow>(totalRaw);
+  const queries = unwrapRows<QueryRow>(queryRaw);
+  const funnel = unwrapRows<EventRow>(funnelRaw);
+
+  const funnelMap = Object.fromEntries(
+    funnel.map((r) => [r.eventName ?? "", Number(r.count)])
+  );
+
+  return {
+    days,
+    totalEvents: Number(totals[0]?.total ?? 0),
+    byTier: tiers.map((r) => ({ tier: r.tier ?? "unknown", count: Number(r.count) })),
+    byEvent: events
+      .filter((r) => r.eventName)
+      .map((r) => ({ eventName: r.eventName as string, count: Number(r.count) })),
+    topQueries: queries.map((r) => ({ query: r.query ?? "(empty)", count: Number(r.count) })),
+    onboardingFunnel: {
+      started: funnelMap["onboarding_started"] ?? 0,
+      completed: funnelMap["onboarding_completed"] ?? 0,
+      skipped: funnelMap["onboarding_skipped"] ?? 0,
+    },
+  };
+}
+
 // ============ BRAND CAMPAIGN HELPERS ============
 export async function listCampaignsForBrand(brandId: number) {
   const db = await getDb();
@@ -1290,6 +1669,10 @@ export async function listCampaignsForBrand(brandId: number) {
     .where(eq(adCampaigns.brandId, brandId))
     .orderBy(desc(adCampaigns.createdAt));
 }
+
+// Note: brand/createBrand/getBrandById/getBrandByEmail helpers are defined
+// earlier in this file (c02ee38 implementation, more complete). The redesign
+// had stub versions using slug/ownerEmail fields that don't exist in our schema.
 
 export async function getCampaignForBrand(brandId: number, campaignId: number) {
   const db = await getDb();
@@ -1476,4 +1859,265 @@ export function currentPeriodMonth(date: Date = new Date()): string {
 
 export function currentDayKey(date: Date = new Date()): string {
   return todayKey(date);
+}
+
+// ============ BRAND INSIGHTS (Fase 4, from redesign) ============
+
+/**
+ * Aggregate intelligence dashboard for a single brand. Powers
+ * /brand/insights. Returns:
+ *   - audience composition (tier / household / cadence breakdown of users
+ *     who saw any of this brand's campaigns)
+ *   - 30-day daily trend (impressions, clicks)
+ *   - top product_search queries in this brand's target tiers
+ *   - tier gap: how many users per tier exist vs how many you've reached
+ *
+ * Pure read-only — never writes to the DB. Safe to call as a tab refresh.
+ */
+export async function getBrandInsights(brandId: number) {
+  const db = await getDb();
+  if (!db) {
+    return {
+      windowDays: 30,
+      campaignIds: [],
+      reach: 0,
+      audienceByTier: [],
+      audienceByHousehold: [],
+      audienceByCadence: [],
+      dailyTrend: [],
+      topQueries: [],
+      tierGap: [],
+      chainAffinity: [],
+    };
+  }
+
+  // 1. Collect this brand's campaign IDs and target tiers.
+  const myCampaigns = await db
+    .select({
+      id: adCampaigns.id,
+      targetTiers: adCampaigns.targetTiers,
+    })
+    .from(adCampaigns)
+    .where(eq(adCampaigns.brandId, brandId));
+
+  const campaignIds = myCampaigns.map((c) => c.id);
+  const targetTierSet = new Set<string>();
+  for (const c of myCampaigns) {
+    for (const t of (c.targetTiers as string[] | null) ?? []) {
+      targetTierSet.add(t);
+    }
+  }
+  const targetTiers = Array.from(targetTierSet);
+
+  // No campaigns yet → return empty shape so the UI renders the empty state.
+  if (campaignIds.length === 0) {
+    return {
+      windowDays: 30,
+      campaignIds,
+      reach: 0,
+      audienceByTier: [],
+      audienceByHousehold: [],
+      audienceByCadence: [],
+      dailyTrend: [],
+      topQueries: [],
+      tierGap: [],
+      chainAffinity: [],
+    };
+  }
+
+  const campaignIdsCsv = campaignIds.join(",");
+
+  // Helper to unwrap mysql2 execute() results.
+  const unwrap = <T>(result: unknown): T[] => {
+    if (Array.isArray(result)) {
+      const first = (result as unknown[])[0];
+      if (Array.isArray(first)) return first as T[];
+      if (
+        first &&
+        typeof first === "object" &&
+        !("affectedRows" in (first as object))
+      ) {
+        return result as T[];
+      }
+    }
+    if (result && typeof result === "object" && "rows" in (result as object)) {
+      return ((result as { rows?: T[] }).rows ?? []) as T[];
+    }
+    return [];
+  };
+
+  // 2. Total reach (unique users with at least one impression).
+  const reachRaw = await db.execute(sql`
+    SELECT COUNT(DISTINCT userId) AS reach
+    FROM analytics_events
+    WHERE eventName = 'campaign_impression'
+      AND JSON_EXTRACT(properties, '$.campaignId') IN (${sql.raw(campaignIdsCsv)})
+      AND createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+  `);
+  const reachRows = unwrap<{ reach: number | string | null }>(reachRaw);
+  const reach = Number(reachRows[0]?.reach ?? 0);
+
+  // 3. Audience by tier (denormalized — no JOIN with users needed).
+  const tierRaw = await db.execute(sql`
+    SELECT tier,
+           COUNT(DISTINCT userId) AS users,
+           COUNT(*) AS impressions
+    FROM analytics_events
+    WHERE eventName = 'campaign_impression'
+      AND JSON_EXTRACT(properties, '$.campaignId') IN (${sql.raw(campaignIdsCsv)})
+      AND createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    GROUP BY tier
+    ORDER BY impressions DESC
+  `);
+
+  // 4. Audience by household size.
+  const householdRaw = await db.execute(sql`
+    SELECT householdSize AS bucket,
+           COUNT(DISTINCT userId) AS users,
+           COUNT(*) AS impressions
+    FROM analytics_events
+    WHERE eventName = 'campaign_impression'
+      AND JSON_EXTRACT(properties, '$.campaignId') IN (${sql.raw(campaignIdsCsv)})
+      AND createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    GROUP BY householdSize
+    ORDER BY impressions DESC
+  `);
+
+  // 5. Audience by cadence.
+  const cadenceRaw = await db.execute(sql`
+    SELECT cadence AS bucket,
+           COUNT(DISTINCT userId) AS users,
+           COUNT(*) AS impressions
+    FROM analytics_events
+    WHERE eventName = 'campaign_impression'
+      AND JSON_EXTRACT(properties, '$.campaignId') IN (${sql.raw(campaignIdsCsv)})
+      AND createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    GROUP BY cadence
+    ORDER BY impressions DESC
+  `);
+
+  // 6. Daily trend (last 30 days, impressions + clicks).
+  const trendRaw = await db.execute(sql`
+    SELECT DATE(createdAt) AS day,
+           SUM(CASE WHEN eventName = 'campaign_impression' THEN 1 ELSE 0 END) AS impressions,
+           SUM(CASE WHEN eventName = 'campaign_click' THEN 1 ELSE 0 END) AS clicks
+    FROM analytics_events
+    WHERE eventName IN ('campaign_impression','campaign_click')
+      AND JSON_EXTRACT(properties, '$.campaignId') IN (${sql.raw(campaignIdsCsv)})
+      AND createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    GROUP BY day
+    ORDER BY day
+  `);
+
+  // 7. Top product_search queries from users in this brand's target tiers.
+  let queriesRaw: unknown = [];
+  if (targetTiers.length > 0) {
+    const tierList = targetTiers.map((t) => `'${t.replace(/'/g, "''")}'`).join(",");
+    queriesRaw = await db.execute(sql`
+      SELECT LOWER(JSON_UNQUOTE(JSON_EXTRACT(properties, '$.query'))) AS query,
+             COUNT(*) AS count
+      FROM analytics_events
+      WHERE eventName = 'product_search'
+        AND tier IN (${sql.raw(tierList)})
+        AND createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        AND JSON_EXTRACT(properties, '$.query') IS NOT NULL
+      GROUP BY query
+      ORDER BY count DESC
+      LIMIT 15
+    `);
+  }
+
+  // 8. Tier gap — total users per tier in the platform.
+  const platformTierRaw = await db.execute(sql`
+    SELECT JSON_UNQUOTE(JSON_EXTRACT(preferences, '$.shopperProfile.priceTier')) AS tier,
+           COUNT(*) AS users
+    FROM users
+    WHERE JSON_EXTRACT(preferences, '$.shopperProfile.priceTier') IS NOT NULL
+    GROUP BY tier
+  `);
+
+  // 9. Chain affinity — what stores the reached users prefer. We need a JOIN
+  // for this one because preferredChains lives in users.preferences.
+  const chainRaw = await db.execute(sql`
+    SELECT JSON_UNQUOTE(prefChain.chain) AS chain,
+           COUNT(DISTINCT u.id) AS users
+    FROM users u
+    JOIN JSON_TABLE(
+      u.preferences->'$.shopperProfile.preferredChains', '$[*]' COLUMNS (chain VARCHAR(64) PATH '$')
+    ) AS prefChain
+    WHERE u.id IN (
+      SELECT DISTINCT userId
+      FROM analytics_events
+      WHERE eventName = 'campaign_impression'
+        AND JSON_EXTRACT(properties, '$.campaignId') IN (${sql.raw(campaignIdsCsv)})
+        AND createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        AND userId IS NOT NULL
+    )
+    GROUP BY chain
+    ORDER BY users DESC
+    LIMIT 10
+  `);
+
+  type Row = Record<string, unknown>;
+  const tierRows = unwrap<Row>(tierRaw);
+  const householdRows = unwrap<Row>(householdRaw);
+  const cadenceRows = unwrap<Row>(cadenceRaw);
+  const trendRows = unwrap<Row>(trendRaw);
+  const queryRows = unwrap<Row>(queriesRaw);
+  const platformTierRows = unwrap<Row>(platformTierRaw);
+  const chainRows = unwrap<Row>(chainRaw);
+
+  const platformTierMap = Object.fromEntries(
+    platformTierRows.map((r) => [String(r.tier ?? "unknown"), Number(r.users)])
+  );
+
+  const tierGap = tierRows.map((r) => {
+    const tier = String(r.tier ?? "unknown");
+    const reached = Number(r.users);
+    const total = platformTierMap[tier] ?? 0;
+    return {
+      tier,
+      reached,
+      total,
+      pctReached: total > 0 ? Math.round((reached / total) * 1000) / 10 : 0,
+    };
+  });
+
+  return {
+    windowDays: 30,
+    campaignIds,
+    reach,
+    audienceByTier: tierRows.map((r) => ({
+      bucket: String(r.tier ?? "unknown"),
+      users: Number(r.users),
+      impressions: Number(r.impressions),
+    })),
+    audienceByHousehold: householdRows.map((r) => ({
+      bucket: String(r.bucket ?? "unknown"),
+      users: Number(r.users),
+      impressions: Number(r.impressions),
+    })),
+    audienceByCadence: cadenceRows.map((r) => ({
+      bucket: String(r.bucket ?? "unknown"),
+      users: Number(r.users),
+      impressions: Number(r.impressions),
+    })),
+    dailyTrend: trendRows.map((r) => ({
+      day:
+        r.day instanceof Date
+          ? r.day.toISOString().slice(0, 10)
+          : String(r.day),
+      impressions: Number(r.impressions),
+      clicks: Number(r.clicks),
+    })),
+    topQueries: queryRows.map((r) => ({
+      query: String(r.query ?? "(empty)"),
+      count: Number(r.count),
+    })),
+    tierGap,
+    chainAffinity: chainRows.map((r) => ({
+      chain: String(r.chain ?? "unknown"),
+      users: Number(r.users),
+    })),
+  };
 }

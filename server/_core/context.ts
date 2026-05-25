@@ -1,9 +1,9 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import type { Brand, User } from "../../drizzle/schema";
+import * as db from "../db";
 import { sdk } from "./sdk";
 import { ENV } from "./env";
 import { getBrandSessionFromRequest } from "../services/brandAuth";
-import { getBrandById } from "../db";
 
 export type TrpcContext = {
   req: CreateExpressContextOptions["req"];
@@ -11,6 +11,26 @@ export type TrpcContext = {
   user: User | null;
   brand: Brand | null;
 };
+
+/**
+ * Dev-only escape hatch. When `DEV_MOCK_USER_ID` is set in a non-production
+ * environment, every tRPC request is treated as authenticated as that user.
+ * Lets us review the redesign with real DB data without standing up the
+ * OAuth portal locally. The flag is ignored in production builds.
+ */
+async function loadDevMockUser(): Promise<User | null> {
+  if (process.env.NODE_ENV === "production") return null;
+  const raw = process.env.DEV_MOCK_USER_ID;
+  if (!raw) return null;
+  const id = Number(raw);
+  if (!Number.isFinite(id)) return null;
+  try {
+    return (await db.getUserById(id)) ?? null;
+  } catch (error) {
+    console.warn("[Auth] DEV_MOCK_USER_ID lookup failed:", error);
+    return null;
+  }
+}
 
 export async function createContext(
   opts: CreateExpressContextOptions
@@ -50,14 +70,19 @@ export async function createContext(
     user = null;
   }
 
+  if (!user) {
+    user = await loadDevMockUser();
+  }
+
+  // Brand session lives in a separate cookie. May coexist with a user session
+  // on the same browser — the two never conflict.
   try {
-    const session = await getBrandSessionFromRequest(opts.req);
-    if (session) {
-      const found = await getBrandById(session.brandId);
-      brand = found ?? null;
+    const claims = await getBrandSessionFromRequest(opts.req);
+    if (claims) {
+      brand = (await db.getBrandById(claims.brandId)) ?? null;
     }
-  } catch {
-    brand = null;
+  } catch (error) {
+    console.warn("[BrandAuth] Failed to resolve brand session:", error);
   }
 
   return {
