@@ -10,11 +10,13 @@ import {
   Settings,
   LogOut,
   AlertCircle,
+  Store,
 } from "lucide-react";
 import { toast } from "sonner";
 
 const NAV = [
   { href: "/brand/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/brand/stores", label: "Stores", icon: Store },
   { href: "/brand/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/brand/billing", label: "Billing", icon: Receipt },
   { href: "/brand/settings", label: "Settings", icon: Settings },
