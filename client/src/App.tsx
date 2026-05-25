@@ -32,6 +32,11 @@ import PriceAlerts from "./pages/PriceAlerts";
 import Budget from "./pages/Budget";
 import SeasonalDeals from "./pages/SeasonalDeals";
 
+// Vendor onboarding + admin queue
+import VendorApply from "./pages/vendor/VendorApply";
+import VendorApplicationStatus from "./pages/vendor/VendorApplicationStatus";
+import AdminVendorQueue from "./pages/admin/AdminVendorQueue";
+
 // Brand portal (c02ee38 implementation)
 import BrandLogin from "./pages/brand/BrandLogin";
 import BrandRegister from "./pages/brand/BrandRegister";
@@ -154,6 +159,11 @@ function Router() {
           <Admin />
         </DashboardLayout>
       </Route>
+
+      {/* Vendor onboarding + admin queue */}
+      <Route path="/vendor/apply" component={VendorApply} />
+      <Route path="/vendor/application" component={VendorApplicationStatus} />
+      <Route path="/admin/vendors" component={AdminVendorQueue} />
 
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
