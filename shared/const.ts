@@ -1,7 +1,8 @@
 export const COOKIE_NAME = "app_session_id";
-export const BRAND_COOKIE_NAME = "brand_session_id";
+export const BRAND_CONTEXT_COOKIE_NAME = "brand_ctx_id";
 export const ONE_YEAR_MS = 1000 * 60 * 60 * 24 * 365;
 export const ONE_HOUR_MS = 1000 * 60 * 60;
+export const THIRTY_DAYS_MS = 1000 * 60 * 60 * 24 * 30;
 export const AXIOS_TIMEOUT_MS = 30_000;
 export const UNAUTHED_ERR_MSG = 'Please login (10001)';
 export const NOT_ADMIN_ERR_MSG = 'You do not have required permission (10002)';
@@ -9,4 +10,3 @@ export const EMAIL_NOT_VERIFIED_ERR_MSG = 'Please verify your email before conti
 export const NOT_VENDOR_ERR_MSG = 'You are not a member of any vendor account (10004)';
 export const NOT_VENDOR_ADMIN_ERR_MSG = 'You need vendor admin permission for this action (10005)';
 export const BRAND_UNAUTHED_ERR_MSG = 'Please login as a brand (20001)';
-export const BRAND_NOT_VERIFIED_ERR_MSG = 'Please verify your email before continuing (20002)';
