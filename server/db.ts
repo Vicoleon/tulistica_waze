@@ -2461,9 +2461,3 @@ export async function getAllMembershipsForUser(userId: number): Promise<AnyMembe
     .where(eq(brandMembers.userId, userId));
   return rows.map(r => ({ brand: r.brand, membershipRole: r.membershipRole }));
 }
-
-export async function createBrandMember(data: InsertBrandMember): Promise<void> {
-  const db = await getDb();
-  if (!db) return;
-  await db.insert(brandMembers).values(data);
-}
