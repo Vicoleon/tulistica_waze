@@ -9,6 +9,9 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 // Public / marketing
 import Home from "./pages/Home";
 import SignIn from "./pages/SignIn";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import VerifyEmail from "./pages/VerifyEmail";
 import Onboarding from "./pages/Onboarding";
 
 // Authenticated app pages
@@ -48,6 +51,9 @@ function Router() {
       {/* Public routes — render their own marketing chrome. */}
       <Route path="/" component={Home} />
       <Route path="/sign-in" component={SignIn} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/verify-email" component={VerifyEmail} />
       <Route path="/login"><Redirect to="/sign-in" /></Route>
 
       {/* Onboarding — authenticated but lives outside the dashboard shell. */}
