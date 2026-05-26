@@ -99,3 +99,26 @@
 
 ## Bug Fixes
 - [ ] Fix Optimize button not working
+
+## Brand Portal (New)
+- [x] DB schema: brands, brand_tokens, campaign_metrics, invoices, invoice_line_items
+- [x] Migration 0003_brand_portal.sql
+- [x] Brand auth (register/login/logout/me) with scrypt password hashing
+- [x] Email verification (token-based) and resend flow
+- [x] Password reset (request + reset with token)
+- [x] Brand profile update + change password
+- [x] Logo upload via storagePut
+- [x] Full campaign CRUD (create, update, delete) beyond pause/resume
+- [x] Campaign image upload for creatives (5 MB cap, image/* only)
+- [x] Per-campaign performance graphs over time (recharts, configurable 7/14/30/90 day window)
+- [x] Daily campaign_metrics aggregation wired into recordAdImpression/recordAdClick
+- [x] Monthly billing aggregation from campaign_metrics
+- [x] CSV export endpoint with per-campaign spend breakdown
+- [x] Invoice generation for a period + payment intent stub (Stripe-ready)
+- [x] /brand/login, /brand/register, /brand/verify-email, /brand/forgot-password, /brand/reset-password
+- [x] /brand/dashboard with KPIs and recent campaigns/invoices
+- [x] /brand/campaigns list with pause/resume inline
+- [x] /brand/campaigns/new full form
+- [x] /brand/campaigns/:id with Performance / Creative / Edit tabs
+- [x] /brand/billing with CSV download and Pay button
+- [x] /brand/settings for profile and password

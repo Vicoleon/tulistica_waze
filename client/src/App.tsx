@@ -18,6 +18,17 @@ import Leaderboard from "./pages/Leaderboard";
 import Profile from "./pages/Profile";
 import MapView from "./pages/MapView";
 import PriceAlerts from "./pages/PriceAlerts";
+import BrandLogin from "./pages/brand/BrandLogin";
+import BrandRegister from "./pages/brand/BrandRegister";
+import BrandVerifyEmail from "./pages/brand/BrandVerifyEmail";
+import BrandForgotPassword from "./pages/brand/BrandForgotPassword";
+import BrandResetPassword from "./pages/brand/BrandResetPassword";
+import BrandDashboard from "./pages/brand/BrandDashboard";
+import BrandCampaigns from "./pages/brand/BrandCampaigns";
+import BrandCampaignNew from "./pages/brand/BrandCampaignNew";
+import BrandCampaignDetail from "./pages/brand/BrandCampaignDetail";
+import BrandBilling from "./pages/brand/BrandBilling";
+import BrandSettings from "./pages/brand/BrandSettings";
 
 function Router() {
   return (
@@ -36,6 +47,21 @@ function Router() {
       <Route path="/profile" component={Profile} />
       <Route path="/map" component={MapView} />
       <Route path="/alerts" component={PriceAlerts} />
+
+      {/* Brand portal */}
+      <Route path="/brand" component={BrandLogin} />
+      <Route path="/brand/login" component={BrandLogin} />
+      <Route path="/brand/register" component={BrandRegister} />
+      <Route path="/brand/verify-email" component={BrandVerifyEmail} />
+      <Route path="/brand/forgot-password" component={BrandForgotPassword} />
+      <Route path="/brand/reset-password" component={BrandResetPassword} />
+      <Route path="/brand/dashboard" component={BrandDashboard} />
+      <Route path="/brand/campaigns" component={BrandCampaigns} />
+      <Route path="/brand/campaigns/new" component={BrandCampaignNew} />
+      <Route path="/brand/campaigns/:id" component={BrandCampaignDetail} />
+      <Route path="/brand/billing" component={BrandBilling} />
+      <Route path="/brand/settings" component={BrandSettings} />
+
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
