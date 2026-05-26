@@ -288,7 +288,15 @@ export default function Optimize() {
                       </span>
                       <span className="inline-flex items-center gap-1">
                         <Clock className="h-3.5 w-3.5" />
-                        ~{Math.max(15, Math.round(result.tripCost * 5 + 20))} min
+                        {(() => {
+                          // Rough round-trip travel time at ~30 km/h urban avg.
+                          // Sum store distances × 2 for round-trip, then add 15 min
+                          // dwell per stop for actually shopping.
+                          const driveKm = result.stores.reduce((s, x) => s + x.distanceKm, 0) * 2;
+                          const driveMin = (driveKm / 30) * 60;
+                          const dwellMin = result.stores.length * 15;
+                          return `~${Math.max(15, Math.round(driveMin + dwellMin))} min`;
+                        })()}
                       </span>
                     </div>
                   </button>

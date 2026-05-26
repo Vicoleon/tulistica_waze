@@ -230,6 +230,7 @@ export async function getNearbyStores(lat: number, lng: number, radiusKm: number
   const db = await getDb();
   if (!db) {
     return mockStores
+      .filter((s) => !isOnlineStore(s.name, s.address))
       .map((s) => ({
         id: s.id,
         name: s.name,
@@ -246,7 +247,10 @@ export async function getNearbyStores(lat: number, lng: number, radiusKm: number
       .filter((s) => s.distanceKm <= radiusKm)
       .sort((a, b) => a.distanceKm - b.distanceKm);
   }
-  // Haversine formula for distance calculation
+  // Haversine formula for distance calculation.
+  // Exclude online/delivery-only stores — they have placeholder coordinates
+  // (often equal to the user's home) and shouldn't show as physical destinations
+  // for Smart Cart routing.
   const result = await db.select({
     id: stores.id,
     name: stores.name,
@@ -267,10 +271,23 @@ export async function getNearbyStores(lat: number, lng: number, radiusKm: number
     )`.as('distanceKm'),
   })
     .from(stores)
-    .where(eq(stores.isActive, true))
+    .where(and(
+      eq(stores.isActive, true),
+      sql`${stores.name} NOT LIKE '%(en línea)%'`,
+      sql`${stores.name} NOT LIKE '%(online)%'`,
+      sql`${stores.address} IS NULL OR ${stores.address} NOT LIKE 'Sitio web%'`,
+    ))
     .having(sql`distanceKm <= ${radiusKm}`)
     .orderBy(sql`distanceKm`);
   return result;
+}
+
+/** Online/delivery-only stores aren't physical destinations — skip them
+ *  for distance-based queries. */
+function isOnlineStore(name: string | null, address: string | null): boolean {
+  const n = (name ?? "").toLowerCase();
+  const a = (address ?? "").toLowerCase();
+  return n.includes("(en línea)") || n.includes("(online)") || a.startsWith("sitio web");
 }
 
 export async function searchStores(query: string, limit = 20) {
