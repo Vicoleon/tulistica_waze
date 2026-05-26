@@ -40,37 +40,41 @@ export async function createContext(
 
   try {
     if (sdk.isMockAuth()) {
-      // In MOCK_AUTH mode, layer any in-memory preferences updates on top of
-      // the hardcoded mock user. Without this, trpc.profile.update would
-      // succeed but the next auth.me would return stale empty preferences,
-      // bouncing the user back to /onboarding.
-      const mockPrefs = db.getMockPreferences(1) ?? {};
-      user = {
-        id: 1,
-        openId: ENV.ownerOpenId || "mock-user-id",
-        // Costa Rican placeholder so the nav doesn't render "Mock" anywhere.
-        // Override via MOCK_USER_NAME / MOCK_USER_EMAIL env vars.
-        name: process.env.MOCK_USER_NAME || "Andrea Solano",
-        email: process.env.MOCK_USER_EMAIL || "andrea@tulistica.cr",
-        passwordHash: null,
-        role: "admin", // Admin access for development
-        trustScore: 100,
-        totalPoints: 1000,
-        createdAt: new Date(),
-        lastSignedIn: new Date(),
-        loginMethod: "mock",
-        isBlocked: false,
-        avatarUrl: null,
-        homeLatitude: 9.9281,
-        homeLongitude: -84.0907,
-        fuelCostPerKm: 250, // ₡250/km CRC
-        timeValuePerHour: 3000, // ₡3,000/hr CRC
-        priceReportsCount: 0,
-        verifiedReportsCount: 0,
-        defaultRadiusKm: 10,
-        preferences: mockPrefs,
-        updatedAt: new Date(),
-      } as User;
+      // Prefer the real row in the DB (so onboarding/preferences/lists
+      // actually persist across requests). Fall back to the hardcoded mock
+      // when the DB is unreachable so devs can still demo without MySQL.
+      const realUser = await db.getUserById(1);
+      if (realUser) {
+        user = realUser;
+      } else {
+        const mockPrefs = db.getMockPreferences(1) ?? {};
+        user = {
+          id: 1,
+          openId: ENV.ownerOpenId || "mock-user-id",
+          // Costa Rican placeholder so the nav doesn't render "Mock" anywhere.
+          // Override via MOCK_USER_NAME / MOCK_USER_EMAIL env vars.
+          name: process.env.MOCK_USER_NAME || "Andrea Solano",
+          email: process.env.MOCK_USER_EMAIL || "andrea@tulistica.cr",
+          passwordHash: null,
+          role: "admin", // Admin access for development
+          trustScore: 100,
+          totalPoints: 1000,
+          createdAt: new Date(),
+          lastSignedIn: new Date(),
+          loginMethod: "mock",
+          isBlocked: false,
+          avatarUrl: null,
+          homeLatitude: 9.9281,
+          homeLongitude: -84.0907,
+          fuelCostPerKm: 250, // ₡250/km CRC
+          timeValuePerHour: 3000, // ₡3,000/hr CRC
+          priceReportsCount: 0,
+          verifiedReportsCount: 0,
+          defaultRadiusKm: 10,
+          preferences: mockPrefs,
+          updatedAt: new Date(),
+        } as User;
+      }
     } else {
       user = await sdk.authenticateRequest(opts.req);
     }
