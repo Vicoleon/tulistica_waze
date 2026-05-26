@@ -17,6 +17,11 @@ import {
 import type { User, Brand } from "../drizzle/schema";
 import type { AnalyticsProperties } from "../shared/analytics";
 import { ENV } from './_core/env';
+import {
+  mockStores, mockProducts, mockPriceEntries,
+  mockShoppingLists, mockListItems, haversineKm,
+  nextListId, nextListItemId,
+} from './_core/mockData';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -215,14 +220,31 @@ export async function createStore(store: InsertStore) {
 
 export async function getStoreById(id: number) {
   const db = await getDb();
-  if (!db) return undefined;
+  if (!db) return mockStores.find((s) => s.id === id);
   const result = await db.select().from(stores).where(eq(stores.id, id)).limit(1);
   return result[0];
 }
 
 export async function getNearbyStores(lat: number, lng: number, radiusKm: number) {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    return mockStores
+      .map((s) => ({
+        id: s.id,
+        name: s.name,
+        chainId: s.chainId,
+        address: s.address,
+        city: s.city,
+        latitude: s.latitude,
+        longitude: s.longitude,
+        imageUrl: s.imageUrl,
+        avgRating: s.avgRating,
+        hours: s.hours,
+        distanceKm: haversineKm(lat, lng, s.latitude, s.longitude),
+      }))
+      .filter((s) => s.distanceKm <= radiusKm)
+      .sort((a, b) => a.distanceKm - b.distanceKm);
+  }
   // Haversine formula for distance calculation
   const result = await db.select({
     id: stores.id,
@@ -252,7 +274,16 @@ export async function getNearbyStores(lat: number, lng: number, radiusKm: number
 
 export async function searchStores(query: string, limit = 20) {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    const q = query.toLowerCase();
+    return mockStores
+      .filter((s) =>
+        s.name.toLowerCase().includes(q) ||
+        (s.chainId ?? "").toLowerCase().includes(q) ||
+        (s.city ?? "").toLowerCase().includes(q)
+      )
+      .slice(0, limit);
+  }
   return db.select().from(stores)
     .where(and(
       eq(stores.isActive, true),
@@ -275,21 +306,31 @@ export async function createProduct(product: InsertProduct) {
 
 export async function getProductById(id: number) {
   const db = await getDb();
-  if (!db) return undefined;
+  if (!db) return mockProducts.find((p) => p.id === id);
   const result = await db.select().from(products).where(eq(products.id, id)).limit(1);
   return result[0];
 }
 
 export async function getProductByBarcode(barcode: string) {
   const db = await getDb();
-  if (!db) return undefined;
+  if (!db) return mockProducts.find((p) => p.barcode === barcode);
   const result = await db.select().from(products).where(eq(products.barcode, barcode)).limit(1);
   return result[0];
 }
 
 export async function searchProducts(query: string, limit = 30) {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    if (!query) return mockProducts.slice(0, limit);
+    const q = query.toLowerCase();
+    return mockProducts
+      .filter((p) =>
+        p.name.toLowerCase().includes(q) ||
+        (p.brand ?? "").toLowerCase().includes(q) ||
+        (p.category ?? "").toLowerCase().includes(q)
+      )
+      .slice(0, limit);
+  }
   return db.select().from(products)
     .where(or(
       like(products.name, `%${query}%`),
@@ -302,7 +343,7 @@ export async function searchProducts(query: string, limit = 30) {
 
 export async function getProductsByCategory(category: string, limit = 50) {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) return mockProducts.filter((p) => p.category === category).slice(0, limit);
   return db.select().from(products)
     .where(eq(products.category, category))
     .limit(limit);
@@ -310,7 +351,8 @@ export async function getProductsByCategory(category: string, limit = 50) {
 
 export async function getProductsByIds(ids: number[]) {
   const db = await getDb();
-  if (!db || ids.length === 0) return [];
+  if (!db) return mockProducts.filter((p) => ids.includes(p.id));
+  if (ids.length === 0) return [];
   return db.select().from(products).where(inArray(products.id, ids));
 }
 
@@ -330,7 +372,11 @@ export async function createPriceEntry(entry: InsertPriceEntry) {
 
 export async function getLatestPrice(storeId: number, productId: number) {
   const db = await getDb();
-  if (!db) return undefined;
+  if (!db) {
+    return mockPriceEntries.find(
+      (p) => p.storeId === storeId && p.productId === productId
+    );
+  }
   const result = await db.select().from(priceEntries)
     .where(and(
       eq(priceEntries.storeId, storeId),
@@ -344,7 +390,22 @@ export async function getLatestPrice(storeId: number, productId: number) {
 
 export async function getPricesForProduct(productId: number) {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    return mockPriceEntries
+      .filter((p) => p.productId === productId)
+      .map((p) => {
+        const store = mockStores.find((s) => s.id === p.storeId);
+        return {
+          storeId: p.storeId,
+          storeName: store?.name ?? null,
+          chainId: store?.chainId ?? null,
+          price: p.price,
+          isVerified: p.isVerified,
+          updatedAt: p.updatedAt,
+          voteCount: p.voteCount,
+        };
+      });
+  }
   // Get latest price per store
   return db.select({
     storeId: priceEntries.storeId,
@@ -365,8 +426,18 @@ export async function getPricesForProduct(productId: number) {
 }
 
 export async function getPriceMatrix(storeIds: number[], productIds: number[]) {
+  if (storeIds.length === 0 || productIds.length === 0) return [];
   const db = await getDb();
-  if (!db || storeIds.length === 0 || productIds.length === 0) return [];
+  if (!db) {
+    return mockPriceEntries
+      .filter((p) => storeIds.includes(p.storeId) && productIds.includes(p.productId))
+      .map((p) => ({
+        storeId: p.storeId,
+        productId: p.productId,
+        price: p.price,
+        isVerified: p.isVerified,
+      }));
+  }
   return db.select({
     storeId: priceEntries.storeId,
     productId: priceEntries.productId,
@@ -441,28 +512,46 @@ export async function incrementPriceVote(priceId: number) {
 // ============ SHOPPING LIST HELPERS ============
 export async function createShoppingList(list: InsertShoppingList) {
   const db = await getDb();
-  if (!db) return null;
+  if (!db) {
+    const id = nextListId();
+    mockShoppingLists.set(id, {
+      id,
+      name: list.name,
+      ownerId: list.ownerId,
+      isShared: list.isShared ?? false,
+      shareCode: list.shareCode ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    mockListItems.set(id, []);
+    return id;
+  }
   const result = await db.insert(shoppingLists).values(list);
   return result[0].insertId;
 }
 
 export async function getShoppingListById(id: number) {
   const db = await getDb();
-  if (!db) return undefined;
+  if (!db) return mockShoppingLists.get(id);
   const result = await db.select().from(shoppingLists).where(eq(shoppingLists.id, id)).limit(1);
   return result[0];
 }
 
 export async function getShoppingListByShareCode(code: string) {
   const db = await getDb();
-  if (!db) return undefined;
+  if (!db) {
+    const lists = Array.from(mockShoppingLists.values());
+    return lists.find((l) => l.shareCode === code);
+  }
   const result = await db.select().from(shoppingLists).where(eq(shoppingLists.shareCode, code)).limit(1);
   return result[0];
 }
 
 export async function getUserShoppingLists(userId: number) {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    return Array.from(mockShoppingLists.values()).filter((l) => l.ownerId === userId);
+  }
   // Get owned lists and shared lists
   const owned = await db.select().from(shoppingLists).where(eq(shoppingLists.ownerId, userId));
   const memberOf = await db.select({ listId: listMembers.listId })
@@ -491,14 +580,56 @@ export async function deleteShoppingList(id: number) {
 // ============ LIST ITEM HELPERS ============
 export async function addListItem(item: InsertListItem) {
   const db = await getDb();
-  if (!db) return null;
+  if (!db) {
+    const id = nextListItemId();
+    const items = mockListItems.get(item.listId) ?? [];
+    items.push({
+      id,
+      listId: item.listId,
+      productId: item.productId ?? null,
+      customName: item.customName ?? null,
+      quantity: item.quantity ?? 1,
+      unit: item.unit ?? null,
+      isChecked: false,
+      checkedByUserId: null,
+      checkedAt: null,
+      addedByUserId: item.addedByUserId ?? null,
+      notes: item.notes ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    mockListItems.set(item.listId, items);
+    return id;
+  }
   const result = await db.insert(listItems).values(item);
   return result[0].insertId;
 }
 
 export async function getListItems(listId: number) {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    const items = mockListItems.get(listId) ?? [];
+    return items.map((it) => {
+      const product = it.productId != null
+        ? mockProducts.find((p) => p.id === it.productId)
+        : undefined;
+      return {
+        id: it.id,
+        listId: it.listId,
+        productId: it.productId,
+        customName: it.customName,
+        quantity: it.quantity,
+        unit: it.unit,
+        isChecked: it.isChecked,
+        checkedByUserId: it.checkedByUserId,
+        checkedAt: it.checkedAt,
+        notes: it.notes,
+        productName: product?.name ?? null,
+        productBarcode: product?.barcode ?? null,
+        productCategory: product?.category ?? null,
+      };
+    });
+  }
   return db.select({
     id: listItems.id,
     listId: listItems.listId,
@@ -522,13 +653,28 @@ export async function getListItems(listId: number) {
 
 export async function updateListItem(id: number, data: Partial<InsertListItem>) {
   const db = await getDb();
-  if (!db) return;
+  if (!db) {
+    const allItems = Array.from(mockListItems.values()).flat();
+    const item = allItems.find((it) => it.id === id);
+    if (item) Object.assign(item, data, { updatedAt: new Date() });
+    return;
+  }
   await db.update(listItems).set(data).where(eq(listItems.id, id));
 }
 
 export async function checkListItem(id: number, userId: number, isChecked: boolean) {
   const db = await getDb();
-  if (!db) return;
+  if (!db) {
+    const allItems = Array.from(mockListItems.values()).flat();
+    const item = allItems.find((it) => it.id === id);
+    if (item) {
+      item.isChecked = isChecked;
+      item.checkedByUserId = isChecked ? userId : null;
+      item.checkedAt = isChecked ? new Date() : null;
+      item.updatedAt = new Date();
+    }
+    return;
+  }
   await db.update(listItems).set({
     isChecked,
     checkedByUserId: isChecked ? userId : null,
@@ -538,7 +684,18 @@ export async function checkListItem(id: number, userId: number, isChecked: boole
 
 export async function deleteListItem(id: number) {
   const db = await getDb();
-  if (!db) return;
+  if (!db) {
+    const entries = Array.from(mockListItems.entries());
+    for (const [listId, items] of entries) {
+      const idx = items.findIndex((it) => it.id === id);
+      if (idx !== -1) {
+        items.splice(idx, 1);
+        mockListItems.set(listId, items);
+        return;
+      }
+    }
+    return;
+  }
   await db.delete(listItems).where(eq(listItems.id, id));
 }
 
