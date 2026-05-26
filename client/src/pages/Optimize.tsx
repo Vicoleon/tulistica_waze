@@ -358,7 +358,17 @@ export default function Optimize() {
                           <ul className="space-y-1.5">
                             {storeItems.slice(0, 6).map((it, i) => (
                               <li key={i} className="flex items-baseline justify-between gap-3 text-sm">
-                                <span className="truncate text-foreground">{it.productName}</span>
+                                <span className="truncate text-foreground flex items-center gap-1.5">
+                                  {it.productName}
+                                  {it.source === "estimated" && (
+                                    <span
+                                      className="inline-flex items-center rounded-full bg-butter-soft px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-butter-foreground"
+                                      title="Precio estimado a partir del margen de cada cadena. Recordá compartir el precio real cuando estés en el súper para que otros lo vean."
+                                    >
+                                      estimado
+                                    </span>
+                                  )}
+                                </span>
                                 <span className="font-mono text-muted-foreground">
                                   {formatColones(it.price)}
                                 </span>
@@ -376,6 +386,11 @@ export default function Optimize() {
                               {formatColones(subtotal)}
                             </span>
                           </div>
+                          {storeItems.some((it) => it.source === "estimated") && (
+                            <p className="pt-1 font-serif italic text-[11px] text-muted-foreground">
+                              Algunos precios son estimados. Cuando estés en el súper, compartí el precio real para que otros lo vean.
+                            </p>
+                          )}
                         </div>
                       </li>
                     );

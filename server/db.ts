@@ -22,6 +22,7 @@ import {
   mockShoppingLists, mockListItems, haversineKm,
   nextListId, nextListItemId,
 } from './_core/mockData';
+import { derivePrice, isDerivedChain, type PriceSource } from './services/pricingFallback';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -377,18 +378,57 @@ export async function getLatestPrice(storeId: number, productId: number) {
       (p) => p.storeId === storeId && p.productId === productId
     );
   }
-  const result = await db.select().from(priceEntries)
+  // Look up the store's chain first — non-Walmart chains derive from Walmart.
+  const storeRow = await db.select({ chainId: stores.chainId })
+    .from(stores).where(eq(stores.id, storeId)).limit(1);
+  const chain = storeRow[0]?.chainId ?? null;
+  const isWalmart = (chain ?? "").toLowerCase() === "walmart";
+
+  if (isWalmart) {
+    const result = await db.select().from(priceEntries)
+      .where(and(
+        eq(priceEntries.storeId, storeId),
+        eq(priceEntries.productId, productId),
+        eq(priceEntries.isOutlier, false)
+      ))
+      .orderBy(desc(priceEntries.createdAt))
+      .limit(1);
+    return result[0] ? { ...result[0], source: "reported" as PriceSource } : undefined;
+  }
+
+  // Non-Walmart: derive from any Walmart store's price for this product.
+  const walmartRow = await db.select({ price: priceEntries.price })
+    .from(priceEntries)
+    .innerJoin(stores, eq(priceEntries.storeId, stores.id))
     .where(and(
-      eq(priceEntries.storeId, storeId),
+      eq(stores.chainId, "walmart"),
       eq(priceEntries.productId, productId),
-      eq(priceEntries.isOutlier, false)
+      eq(priceEntries.isOutlier, false),
     ))
     .orderBy(desc(priceEntries.createdAt))
     .limit(1);
-  return result[0];
+
+  if (walmartRow[0]) {
+    return {
+      storeId,
+      productId,
+      price: derivePrice(walmartRow[0].price, chain),
+      source: "estimated" as PriceSource,
+    };
+  }
+  return undefined;
 }
 
-export async function getPricesForProduct(productId: number) {
+export async function getPricesForProduct(productId: number): Promise<{
+  storeId: number;
+  storeName: string | null;
+  chainId: string | null;
+  price: number;
+  isVerified: boolean | null;
+  updatedAt: Date | null;
+  voteCount: number | null;
+  source: PriceSource;
+}[]> {
   const db = await getDb();
   if (!db) {
     return mockPriceEntries
@@ -403,11 +443,13 @@ export async function getPricesForProduct(productId: number) {
           isVerified: p.isVerified,
           updatedAt: p.updatedAt,
           voteCount: p.voteCount,
+          source: "reported" as const,
         };
       });
   }
-  // Get latest price per store
-  return db.select({
+
+  // Real entries, joined to store metadata.
+  const realRows = await db.select({
     storeId: priceEntries.storeId,
     storeName: stores.name,
     chainId: stores.chainId,
@@ -423,9 +465,79 @@ export async function getPricesForProduct(productId: number) {
       eq(priceEntries.isOutlier, false)
     ))
     .orderBy(desc(priceEntries.createdAt));
+
+  // Latest real entry per store.
+  const realByStore = new Map<number, typeof realRows[number]>();
+  for (const r of realRows) {
+    if (!realByStore.has(r.storeId)) realByStore.set(r.storeId, r);
+  }
+
+  // Walmart baseline for derivation (pick the freshest Walmart entry).
+  const walmartBaseline = realRows.find(
+    (r) => (r.chainId ?? "").toLowerCase() === "walmart"
+  );
+
+  // Every active store should show a price — derive when no real entry exists,
+  // or when the store is non-Walmart (so the user sees consistent margin-based
+  // estimates rather than stale scraped numbers).
+  const allStores = await db.select({
+    id: stores.id,
+    name: stores.name,
+    chainId: stores.chainId,
+  }).from(stores).where(eq(stores.isActive, true));
+
+  const out: Awaited<ReturnType<typeof getPricesForProduct>> = [];
+  for (const store of allStores) {
+    const isWalmart = (store.chainId ?? "").toLowerCase() === "walmart";
+    const real = realByStore.get(store.id);
+
+    if (isWalmart && real) {
+      out.push({ ...real, source: "reported" });
+      continue;
+    }
+    if (isWalmart && walmartBaseline) {
+      // Another Walmart store with no entry of its own — same chain's data,
+      // not an estimate (chain consistency assumption).
+      out.push({
+        storeId: store.id,
+        storeName: store.name,
+        chainId: store.chainId,
+        price: walmartBaseline.price,
+        isVerified: false,
+        updatedAt: walmartBaseline.updatedAt,
+        voteCount: 0,
+        source: "reported",
+      });
+      continue;
+    }
+    if (walmartBaseline) {
+      out.push({
+        storeId: store.id,
+        storeName: store.name,
+        chainId: store.chainId,
+        price: derivePrice(walmartBaseline.price, store.chainId),
+        isVerified: false,
+        updatedAt: walmartBaseline.updatedAt,
+        voteCount: 0,
+        source: "estimated",
+      });
+    } else if (real) {
+      out.push({ ...real, source: "reported" });
+    }
+    // else: no Walmart baseline, no real entry → don't list (we have no signal)
+  }
+
+  // Sort cheapest first so the UI's default ordering is "best price".
+  return out.sort((a, b) => a.price - b.price);
 }
 
-export async function getPriceMatrix(storeIds: number[], productIds: number[]) {
+export async function getPriceMatrix(storeIds: number[], productIds: number[]): Promise<{
+  storeId: number;
+  productId: number;
+  price: number;
+  isVerified: boolean | null;
+  source: PriceSource;
+}[]> {
   if (storeIds.length === 0 || productIds.length === 0) return [];
   const db = await getDb();
   if (!db) {
@@ -436,9 +548,45 @@ export async function getPriceMatrix(storeIds: number[], productIds: number[]) {
         productId: p.productId,
         price: p.price,
         isVerified: p.isVerified,
+        source: "reported" as const,
       }));
   }
-  return db.select({
+
+  // Step 1: pull all real entries for the requested store × product window,
+  // plus all Walmart-chain entries for the same products (for derivation).
+  const storeChains = await db.select({
+    id: stores.id,
+    chainId: stores.chainId,
+  }).from(stores).where(inArray(stores.id, storeIds));
+  const chainById = new Map<number, string | null>(
+    storeChains.map((s) => [s.id, s.chainId])
+  );
+
+  const walmartStoreRows = await db.select({ id: stores.id }).from(stores)
+    .where(eq(stores.chainId, "walmart"));
+  const walmartStoreIds = walmartStoreRows.map((s) => s.id);
+
+  // Walmart baseline prices by productId — used as the source of truth.
+  const walmartBase = new Map<number, number>();
+  if (walmartStoreIds.length > 0) {
+    const baseRows = await db.select({
+      productId: priceEntries.productId,
+      price: priceEntries.price,
+    })
+      .from(priceEntries)
+      .where(and(
+        inArray(priceEntries.storeId, walmartStoreIds),
+        inArray(priceEntries.productId, productIds),
+        eq(priceEntries.isOutlier, false),
+      ))
+      .orderBy(desc(priceEntries.createdAt));
+    for (const row of baseRows) {
+      if (!walmartBase.has(row.productId)) walmartBase.set(row.productId, row.price);
+    }
+  }
+
+  // Real entries inside the requested matrix.
+  const realRows = await db.select({
     storeId: priceEntries.storeId,
     productId: priceEntries.productId,
     price: priceEntries.price,
@@ -448,9 +596,78 @@ export async function getPriceMatrix(storeIds: number[], productIds: number[]) {
     .where(and(
       inArray(priceEntries.storeId, storeIds),
       inArray(priceEntries.productId, productIds),
-      eq(priceEntries.isOutlier, false)
+      eq(priceEntries.isOutlier, false),
     ))
     .orderBy(desc(priceEntries.createdAt));
+
+  // Build a "best real entry per (storeId, productId)" view — newest wins.
+  const realBySP = new Map<string, typeof realRows[number]>();
+  for (const row of realRows) {
+    const key = `${row.storeId}:${row.productId}`;
+    if (!realBySP.has(key)) realBySP.set(key, row);
+  }
+
+  // Step 2: for every (storeId, productId) in the requested window, decide:
+  // - walmart chain → use real entry as-is
+  // - other chains → derive from walmart baseline (overrides any scraped entry
+  //   from this first data batch). When a verified user report lands later,
+  //   we'll switch this to prefer it.
+  const out: {
+    storeId: number;
+    productId: number;
+    price: number;
+    isVerified: boolean | null;
+    source: PriceSource;
+  }[] = [];
+
+  for (const storeId of storeIds) {
+    const chain = chainById.get(storeId);
+    const isWalmart = (chain ?? "").toLowerCase() === "walmart";
+    for (const productId of productIds) {
+      const real = realBySP.get(`${storeId}:${productId}`);
+      const base = walmartBase.get(productId);
+
+      if (isWalmart) {
+        if (real) {
+          out.push({
+            storeId, productId,
+            price: real.price,
+            isVerified: real.isVerified,
+            source: "reported",
+          });
+        } else if (base !== undefined) {
+          // Another Walmart store — same chain, use the baseline as "reported".
+          out.push({
+            storeId, productId,
+            price: base,
+            isVerified: false,
+            source: "reported",
+          });
+        }
+        continue;
+      }
+      // Non-Walmart: derive from Walmart baseline if we have one.
+      if (base !== undefined) {
+        out.push({
+          storeId, productId,
+          price: derivePrice(base, chain),
+          isVerified: false,
+          source: "estimated",
+        });
+      } else if (real) {
+        // No Walmart baseline — fall back to whatever we have for this store.
+        out.push({
+          storeId, productId,
+          price: real.price,
+          isVerified: real.isVerified,
+          source: "reported",
+        });
+      }
+      // else: product unavailable at this store; skip — Smart Cart sees it as missing.
+    }
+  }
+
+  return out;
 }
 
 export async function getPriceStats(storeId: number, productId: number) {

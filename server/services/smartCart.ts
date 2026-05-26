@@ -15,7 +15,7 @@ interface OptimizationResult {
   tripCost: number;
   grandTotal: number;
   savings?: number;
-  itemBreakdown: { productId: number; productName: string; storeId: number; storeName: string; price: number }[];
+  itemBreakdown: { productId: number; productName: string; storeId: number; storeName: string; price: number; source: "reported" | "estimated" }[];
   missingItems: number[];
   /** Total items requested by the user. */
   requestedItemCount: number;
@@ -82,15 +82,16 @@ export class SmartCartEngine {
     const storeIds = nearbyStores.map(s => s.id);
     const priceData = await getPriceMatrix(storeIds, productIds);
 
-    // Build price matrix: { storeId: { productId: price } }
-    const priceMatrix: Map<number, Map<number, number>> = new Map();
+    // Build price matrix: { storeId: { productId: { price, source } } }
+    type PricedEntry = { price: number; source: "reported" | "estimated" };
+    const priceMatrix: Map<number, Map<number, PricedEntry>> = new Map();
     for (const store of nearbyStores) {
       priceMatrix.set(store.id, new Map());
     }
     for (const entry of priceData) {
       const storeMap = priceMatrix.get(entry.storeId);
       if (storeMap && !storeMap.has(entry.productId)) {
-        storeMap.set(entry.productId, entry.price);
+        storeMap.set(entry.productId, { price: entry.price, source: entry.source });
       }
     }
 
@@ -110,15 +111,16 @@ export class SmartCartEngine {
       const missingItems: number[] = [];
 
       for (const productId of productIds) {
-        const price = storePrices.get(productId);
-        if (price !== undefined) {
-          realCartTotal += price;
+        const entry = storePrices.get(productId);
+        if (entry !== undefined) {
+          realCartTotal += entry.price;
           itemBreakdown.push({
             productId,
             productName: productMap.get(productId)?.name || "Unknown",
             storeId: store.id,
             storeName: store.name,
-            price,
+            price: entry.price,
+            source: entry.source,
           });
         } else {
           missingItems.push(productId);
@@ -183,38 +185,40 @@ export class SmartCartEngine {
         const storeBItems: number[] = [];
 
         for (const productId of productIds) {
-          const priceA = pricesA.get(productId);
-          const priceB = pricesB.get(productId);
+          const entryA = pricesA.get(productId);
+          const entryB = pricesB.get(productId);
 
-          if (priceA === undefined && priceB === undefined) {
+          if (entryA === undefined && entryB === undefined) {
             missingItems.push(productId);
             continue;
           }
 
           // Pick the cheaper *real* price. If only one store has it, that store wins.
-          const aHas = priceA !== undefined;
-          const bHas = priceB !== undefined;
-          const pickA = aHas && (!bHas || priceA! <= priceB!);
+          const aHas = entryA !== undefined;
+          const bHas = entryB !== undefined;
+          const pickA = aHas && (!bHas || entryA!.price <= entryB!.price);
 
           if (pickA) {
-            hybridTotal += priceA!;
+            hybridTotal += entryA!.price;
             storeAItems.push(productId);
             itemBreakdown.push({
               productId,
               productName: productMap.get(productId)?.name || "Unknown",
               storeId: storeA.id,
               storeName: storeA.name,
-              price: priceA!,
+              price: entryA!.price,
+              source: entryA!.source,
             });
           } else {
-            hybridTotal += priceB!;
+            hybridTotal += entryB!.price;
             storeBItems.push(productId);
             itemBreakdown.push({
               productId,
               productName: productMap.get(productId)?.name || "Unknown",
               storeId: storeB.id,
               storeName: storeB.name,
-              price: priceB!,
+              price: entryB!.price,
+              source: entryB!.source,
             });
           }
         }
