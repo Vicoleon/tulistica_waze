@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -42,7 +42,6 @@ export default function Optimize() {
   const listId = searchParams.get("list");
   const [radius, setRadius] = useState([user?.defaultRadiusKm || 10]);
   const [selectedResult, setSelectedResult] = useState<number | null>(null);
-  const [manualTrigger, setManualTrigger] = useState(false);
 
   const { data: list } = trpc.lists.getById.useQuery(
     { id: parseInt(listId || "0") },
@@ -65,17 +64,27 @@ export default function Optimize() {
       toast.error("No hay productos para planear");
       return;
     }
-    setManualTrigger(true);
     setSelectedResult(null);
     optimize.reset();
+    lastFiredKeyRef.current = null; // allow re-firing the same key on user demand
     optimize.mutate({ productIds, radiusKm: radius[0] });
   };
 
+  // Re-optimize whenever the *set* of productIds (or the radius) actually
+  // changes. The stringified key is stable across renders so we don't re-fire
+  // for unrelated re-renders, but it DOES change when items are added/removed
+  // or when the user moves the radius slider — that's the trigger we want.
+  const productIdsKey = useMemo(() => productIds.join(","), [productIds]);
+  const lastFiredKeyRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!manualTrigger && productIds.length > 0 && !optimize.data && !optimize.isPending) {
-      optimize.mutate({ productIds, radiusKm: radius[0] });
-    }
-  }, [productIds.length, manualTrigger]);
+    if (productIds.length === 0) return;
+    if (optimize.isPending) return;
+    const fireKey = `${productIdsKey}|r=${radius[0]}`;
+    if (lastFiredKeyRef.current === fireKey) return;
+    lastFiredKeyRef.current = fireKey;
+    setSelectedResult(null);
+    optimize.mutate({ productIds, radiusKm: radius[0] });
+  }, [productIdsKey, radius[0], productIds, optimize]);
 
   const handleApplyStrategy = (index: number) => {
     const result = optimize.data?.[index];
@@ -266,6 +275,9 @@ export default function Optimize() {
                         {strategyLabel(result.type, index)}
                       </span>
                     </div>
+                    <p className="mt-1 font-serif text-base font-semibold leading-tight text-foreground line-clamp-2">
+                      {result.stores.map((s) => s.name).join(" + ")}
+                    </p>
                     <p className="mt-3 font-mono text-3xl font-semibold tracking-tight text-foreground">
                       {formatColones(result.grandTotal)}
                     </p>
@@ -288,7 +300,15 @@ export default function Optimize() {
                       </span>
                       <span className="inline-flex items-center gap-1">
                         <Clock className="h-3.5 w-3.5" />
-                        ~{Math.max(15, Math.round(result.tripCost * 5 + 20))} min
+                        {(() => {
+                          // Rough round-trip travel time at ~30 km/h urban avg.
+                          // Sum store distances × 2 for round-trip, then add 15 min
+                          // dwell per stop for actually shopping.
+                          const driveKm = result.stores.reduce((s, x) => s + x.distanceKm, 0) * 2;
+                          const driveMin = (driveKm / 30) * 60;
+                          const dwellMin = result.stores.length * 15;
+                          return `~${Math.max(15, Math.round(driveMin + dwellMin))} min`;
+                        })()}
                       </span>
                     </div>
                   </button>
@@ -358,7 +378,17 @@ export default function Optimize() {
                           <ul className="space-y-1.5">
                             {storeItems.slice(0, 6).map((it, i) => (
                               <li key={i} className="flex items-baseline justify-between gap-3 text-sm">
-                                <span className="truncate text-foreground">{it.productName}</span>
+                                <span className="truncate text-foreground flex items-center gap-1.5">
+                                  {it.productName}
+                                  {it.source === "estimated" && (
+                                    <span
+                                      className="inline-flex items-center rounded-full bg-butter-soft px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-butter-foreground"
+                                      title="Precio estimado a partir del margen de cada cadena. Recordá compartir el precio real cuando estés en el súper para que otros lo vean."
+                                    >
+                                      estimado
+                                    </span>
+                                  )}
+                                </span>
                                 <span className="font-mono text-muted-foreground">
                                   {formatColones(it.price)}
                                 </span>
@@ -376,6 +406,11 @@ export default function Optimize() {
                               {formatColones(subtotal)}
                             </span>
                           </div>
+                          {storeItems.some((it) => it.source === "estimated") && (
+                            <p className="pt-1 font-serif italic text-[11px] text-muted-foreground">
+                              Algunos precios son estimados. Cuando estés en el súper, compartí el precio real para que otros lo vean.
+                            </p>
+                          )}
                         </div>
                       </li>
                     );
