@@ -21,6 +21,29 @@ pnpm install
 pnpm dev   # http://localhost:3001/
 ```
 
+## Continue on a different computer
+
+```bash
+git clone https://github.com/Vicoleon/tulistica_waze.git
+cd tulistica_waze
+git fetch --all --tags
+git checkout claude/gallant-chatelet-38ff0b
+cp .env.template .env   # MOCK_AUTH=true is already set
+pnpm install
+pnpm dev                # http://localhost:3001/
+```
+
+That gets you back to the fully-merged working state with Andrea Solano logged in and mock CR stores/products populated.
+
+If you also want the other session's in-progress work (vendor + store claims), pull those branches too:
+
+```bash
+git checkout claude/bold-allen-a3a0bb            # 10 newer commits, vendor/store-claim work
+# To re-create the uncommitted edits that were sitting in that worktree:
+git cherry-pick --no-commit backup/bold-allen-wip-2026-05-25
+git reset HEAD                                    # back to "modified but unstaged" state
+```
+
 ## Branch map on origin
 
 | Branch | Tip | What it has |
@@ -28,7 +51,10 @@ pnpm dev   # http://localhost:3001/
 | `claude/gallant-chatelet-38ff0b` | `faff90a` | The full merged state. Use this. |
 | `claude/thirsty-sinoussi-051392` | `4558b84` | Rescue commit of the redesign (Cocina+Pastel theme, design spec, mockups). Already merged into gallant-chatelet. |
 | `claude/angry-engelbart-0ebbdc` | `e4e18a3` | Rescue commit of admin/scrapers/vault/devAuth/localAuth/legal pages/migrations 0004-0008. Already merged into gallant-chatelet. |
-| `main` | `1f38eb4`+ | Has parallel work from another session (vendor onboarding, store claims, brand_members refactor) that has NOT been merged into gallant-chatelet. Reconcile carefully. |
+| `main` | `1f38eb4` | Public main + the auth/role-model cleanup merged from bold-allen. Now fully on origin. |
+| `claude/bold-allen-a3a0bb` | `d5c80ef` | Other session's branch — has 10 vendor/store-claim/brand-portal-rebuild commits beyond what's on `main`. NOT merged into gallant-chatelet — reconcile manually if you want them. |
+| `backup/bold-allen-wip-2026-05-25` | `05aa1ae` | Snapshot of the uncommitted edits that were sitting in the bold-allen worktree. Use `git cherry-pick --no-commit` then `git reset HEAD` to restore them as unstaged edits. |
+| `backup/laughing-nightingale-wip-2026-05-25` | `57b6356` | Same brand-portal work that's already on main as c02ee38 — backed up here just in case. |
 
 ## Commit history on `claude/gallant-chatelet-38ff0b`
 
