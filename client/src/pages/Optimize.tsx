@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -42,7 +42,6 @@ export default function Optimize() {
   const listId = searchParams.get("list");
   const [radius, setRadius] = useState([user?.defaultRadiusKm || 10]);
   const [selectedResult, setSelectedResult] = useState<number | null>(null);
-  const [manualTrigger, setManualTrigger] = useState(false);
 
   const { data: list } = trpc.lists.getById.useQuery(
     { id: parseInt(listId || "0") },
@@ -65,17 +64,27 @@ export default function Optimize() {
       toast.error("No hay productos para planear");
       return;
     }
-    setManualTrigger(true);
     setSelectedResult(null);
     optimize.reset();
+    lastFiredKeyRef.current = null; // allow re-firing the same key on user demand
     optimize.mutate({ productIds, radiusKm: radius[0] });
   };
 
+  // Re-optimize whenever the *set* of productIds (or the radius) actually
+  // changes. The stringified key is stable across renders so we don't re-fire
+  // for unrelated re-renders, but it DOES change when items are added/removed
+  // or when the user moves the radius slider — that's the trigger we want.
+  const productIdsKey = useMemo(() => productIds.join(","), [productIds]);
+  const lastFiredKeyRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!manualTrigger && productIds.length > 0 && !optimize.data && !optimize.isPending) {
-      optimize.mutate({ productIds, radiusKm: radius[0] });
-    }
-  }, [productIds.length, manualTrigger]);
+    if (productIds.length === 0) return;
+    if (optimize.isPending) return;
+    const fireKey = `${productIdsKey}|r=${radius[0]}`;
+    if (lastFiredKeyRef.current === fireKey) return;
+    lastFiredKeyRef.current = fireKey;
+    setSelectedResult(null);
+    optimize.mutate({ productIds, radiusKm: radius[0] });
+  }, [productIdsKey, radius[0], productIds, optimize]);
 
   const handleApplyStrategy = (index: number) => {
     const result = optimize.data?.[index];
