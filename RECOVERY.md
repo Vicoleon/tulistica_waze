@@ -35,6 +35,32 @@ pnpm dev                # http://localhost:3001/
 
 That gets you back to the fully-merged working state with Andrea Solano logged in and mock CR stores/products populated.
 
+## With a real MySQL database
+
+If you have the `grocery-waze-db` Docker container (or any MySQL):
+
+```bash
+# 1. point .env at the real DB
+# DATABASE_URL="mysql://root:grocerywaze@localhost:3307/grocery_waze"
+
+# 2. apply schema migrations
+pnpm drizzle-kit migrate
+
+# 3. if you get the 'redesign brands schema' from an older session, reconcile:
+docker exec -i grocery-waze-db mysql -uroot -pgrocerywaze < scripts/reconcile-db-2026-05-25.sql
+
+# 4. make sure user id=1 exists (or whatever the MOCK_AUTH user id is)
+docker exec grocery-waze-db mysql -uroot -pgrocerywaze -e \
+  "INSERT INTO grocery_waze.users (id, openId, name, email, role) VALUES (1, 'user_...', 'Andrea Solano', 'andrea@tulistica.cr', 'admin') ON DUPLICATE KEY UPDATE name=VALUES(name)"
+
+# 5. seed Costa Rica stores + products
+pnpm tsx scripts/seed-minimal.ts
+```
+
+When DATABASE_URL points to a working MySQL with user id=1, MOCK_AUTH reads
+that real user from the DB (including saved shopperProfile), so onboarding,
+list mutations, and price reports all persist properly.
+
 If you also want the other session's in-progress work (vendor + store claims), pull those branches too:
 
 ```bash
