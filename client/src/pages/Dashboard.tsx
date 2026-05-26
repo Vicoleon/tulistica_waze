@@ -1,6 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { SponsoredCard } from "@/components/SponsoredCard";
+import { VerifyEmailBanner } from "@/components/VerifyEmailBanner";
 import { trpc } from "@/lib/trpc";
 import {
   Card,
@@ -106,6 +107,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 max-w-6xl">
+      <VerifyEmailBanner emailVerified={user?.emailVerified ?? true} />
       {/* 1 · Greeting */}
       <header className="space-y-2">
         <h1 className="font-serif text-3xl md:text-4xl font-semibold tracking-tight text-foreground">

@@ -56,14 +56,14 @@ export async function createContext(
           name: process.env.MOCK_USER_NAME || "Andrea Solano",
           email: process.env.MOCK_USER_EMAIL || "andrea@tulistica.cr",
           passwordHash: null,
-          role: "admin", // Admin access for development
+          role: "super_admin", // new role enum (origin/main)
+          emailVerified: true,
+          emailVerifiedAt: new Date(),
           trustScore: 100,
           totalPoints: 1000,
           createdAt: new Date(),
           lastSignedIn: new Date(),
           loginMethod: "mock",
-          isBlocked: false,
-          avatarUrl: null,
           homeLatitude: 9.9281,
           homeLongitude: -84.0907,
           fuelCostPerKm: 250, // ₡250/km CRC
@@ -73,7 +73,7 @@ export async function createContext(
           defaultRadiusKm: 10,
           preferences: mockPrefs,
           updatedAt: new Date(),
-        } as User;
+        } satisfies User;
       }
     } else {
       user = await sdk.authenticateRequest(opts.req);

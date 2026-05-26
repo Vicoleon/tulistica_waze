@@ -13,8 +13,9 @@ import {
   InsertInvoiceLineItem,
   analyticsEvents, InsertAnalyticsEvent,
   integrationCredentials, InsertIntegrationCredential, appSettings,
+  userTokens, brandMembers,
 } from "../drizzle/schema";
-import type { User, Brand } from "../drizzle/schema";
+import type { User, Brand, UserToken, InsertUserToken, BrandMember, InsertBrandMember } from "../drizzle/schema";
 import type { AnalyticsProperties } from "../shared/analytics";
 import { ENV } from './_core/env';
 import {
@@ -112,8 +113,8 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     values.role = user.role;
     updateSet.role = user.role;
   } else if (user.openId === ENV.ownerOpenId) {
-    values.role = 'admin';
-    updateSet.role = 'admin';
+    values.role = 'super_admin';
+    updateSet.role = 'super_admin';
   }
 
   if (!values.lastSignedIn) values.lastSignedIn = new Date();
@@ -2737,4 +2738,101 @@ export async function getAppSettings(prefix?: string): Promise<Record<string, st
     if (row.value !== null) out[row.key] = row.value;
   }
   return out;
+}
+
+// ============ USER TOKEN HELPERS ============
+// (userTokens, brandMembers, UserToken, InsertUserToken, BrandMember imports
+// added to the top-of-file schema import block in Step 1.)
+
+export async function createUserToken(data: InsertUserToken): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(userTokens).values(data);
+}
+
+export async function getUserToken(token: string): Promise<UserToken | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select().from(userTokens).where(eq(userTokens.token, token)).limit(1);
+  return rows[0];
+}
+
+/**
+ * Atomically validate + consume a token. Returns the userId on success.
+ * Returns null if the token is missing, used, expired, or of the wrong type.
+ */
+export async function consumeUserToken(
+  token: string,
+  expectedType: "email_verify" | "password_reset"
+): Promise<{ userId: number } | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(userTokens).where(eq(userTokens.token, token)).limit(1);
+  const row = rows[0];
+  if (!row) return null;
+  if (row.type !== expectedType) return null;
+  if (row.usedAt) return null;
+  if (row.expiresAt.getTime() < Date.now()) return null;
+  await db.update(userTokens).set({ usedAt: new Date() }).where(eq(userTokens.id, row.id));
+  return { userId: row.userId };
+}
+
+export async function invalidateUserTokensOfType(
+  userId: number,
+  type: "email_verify" | "password_reset"
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(userTokens)
+    .set({ usedAt: new Date() })
+    .where(and(
+      eq(userTokens.userId, userId),
+      eq(userTokens.type, type),
+      isNull(userTokens.usedAt),
+    ));
+}
+
+export async function markUserEmailVerified(userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users)
+    .set({ emailVerified: true, emailVerifiedAt: new Date() })
+    .where(eq(users.id, userId));
+}
+
+export async function setUserPasswordHash(userId: number, passwordHash: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
+}
+
+// ============ BRAND MEMBER HELPERS ============
+export type VendorMembership = { brand: Brand; membershipRole: "owner" | "admin" | "staff" };
+
+export async function getVendorMembershipsForUser(userId: number): Promise<VendorMembership[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({
+      brand: brands,
+      membershipRole: brandMembers.membershipRole,
+    })
+    .from(brandMembers)
+    .innerJoin(brands, eq(brandMembers.brandId, brands.id))
+    .where(and(eq(brandMembers.userId, userId), eq(brands.kind, "vendor")));
+  return rows.map(r => ({ brand: r.brand, membershipRole: r.membershipRole }));
+}
+
+export async function getAdvertiserMembershipsForUser(userId: number): Promise<VendorMembership[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({
+      brand: brands,
+      membershipRole: brandMembers.membershipRole,
+    })
+    .from(brandMembers)
+    .innerJoin(brands, eq(brandMembers.brandId, brands.id))
+    .where(and(eq(brandMembers.userId, userId), eq(brands.kind, "advertiser")));
+  return rows.map(r => ({ brand: r.brand, membershipRole: r.membershipRole }));
 }

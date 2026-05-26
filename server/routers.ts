@@ -4,6 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import {
   publicProcedure,
   protectedProcedure,
+  verifiedProcedure,
   adminProcedure,
   router,
 } from "./_core/trpc";
@@ -550,7 +551,7 @@ export const appRouter = router({
         return db.getPriceHistory(input.storeId, input.productId, input.days);
       }),
 
-    submit: protectedProcedure
+    submit: verifiedProcedure
       .input(z.object({
         storeId: z.number(),
         productId: z.number(),
@@ -635,7 +636,7 @@ export const appRouter = router({
         };
       }),
 
-    vote: protectedProcedure
+    vote: verifiedProcedure
       .input(z.object({
         priceEntryId: z.number(),
         voteType: z.enum(["confirm", "dispute"]),
@@ -708,7 +709,7 @@ export const appRouter = router({
         return { ...list, items, members };
       }),
 
-    create: protectedProcedure
+    create: verifiedProcedure
       .input(z.object({ name: z.string() }))
       .mutation(async ({ ctx, input }) => {
         const id = await db.createShoppingList({
@@ -723,7 +724,7 @@ export const appRouter = router({
         return { id };
       }),
 
-    update: protectedProcedure
+    update: verifiedProcedure
       .input(z.object({
         id: z.number(),
         name: z.string().optional(),
@@ -743,14 +744,14 @@ export const appRouter = router({
         return list;
       }),
 
-    delete: protectedProcedure
+    delete: verifiedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteShoppingList(input.id);
         return { success: true };
       }),
 
-    joinByCode: protectedProcedure
+    joinByCode: verifiedProcedure
       .input(z.object({ shareCode: z.string() }))
       .mutation(async ({ ctx, input }) => {
         const list = await db.getShoppingListByShareCode(input.shareCode);
@@ -760,7 +761,7 @@ export const appRouter = router({
         return { listId: list.id };
       }),
 
-    addItem: protectedProcedure
+    addItem: verifiedProcedure
       .input(z.object({
         listId: z.number(),
         productId: z.number().optional(),
@@ -793,7 +794,7 @@ export const appRouter = router({
         return { id };
       }),
 
-    updateItem: protectedProcedure
+    updateItem: verifiedProcedure
       .input(z.object({
         id: z.number(),
         quantity: z.number().optional(),
@@ -807,7 +808,7 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    checkItem: protectedProcedure
+    checkItem: verifiedProcedure
       .input(z.object({
         id: z.number(),
         isChecked: z.boolean(),
@@ -817,7 +818,7 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    removeItem: protectedProcedure
+    removeItem: verifiedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteListItem(input.id);
@@ -1505,7 +1506,7 @@ Only return valid JSON, no other text.`,
         };
       }),
 
-    report: protectedProcedure
+    report: verifiedProcedure
       .input(z.object({
         storeId: z.number(),
         crowdednessLevel: z.number().min(0).max(100),

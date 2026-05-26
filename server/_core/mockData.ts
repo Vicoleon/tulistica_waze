@@ -136,6 +136,7 @@ function buildStore(
     hours: null, imageUrl: null,
     avgRating, totalRatings,
     isActive: true,
+    brandId: null, // origin/main added vendor-claim support; not used in mocks
     createdAt: new Date(), updatedAt: new Date(),
   };
 }
