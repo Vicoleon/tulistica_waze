@@ -275,6 +275,9 @@ export default function Optimize() {
                         {strategyLabel(result.type, index)}
                       </span>
                     </div>
+                    <p className="mt-1 font-serif text-base font-semibold leading-tight text-foreground line-clamp-2">
+                      {result.stores.map((s) => s.name).join(" + ")}
+                    </p>
                     <p className="mt-3 font-mono text-3xl font-semibold tracking-tight text-foreground">
                       {formatColones(result.grandTotal)}
                     </p>
