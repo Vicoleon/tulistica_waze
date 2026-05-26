@@ -32,11 +32,6 @@ import PriceAlerts from "./pages/PriceAlerts";
 import Budget from "./pages/Budget";
 import SeasonalDeals from "./pages/SeasonalDeals";
 
-// Vendor onboarding + admin queue
-import VendorApply from "./pages/vendor/VendorApply";
-import VendorApplicationStatus from "./pages/vendor/VendorApplicationStatus";
-import AdminVendorQueue from "./pages/admin/AdminVendorQueue";
-
 // Brand portal (c02ee38 implementation)
 import BrandLogin from "./pages/brand/BrandLogin";
 import BrandRegister from "./pages/brand/BrandRegister";
@@ -49,8 +44,6 @@ import BrandCampaignNew from "./pages/brand/BrandCampaignNew";
 import BrandCampaignDetail from "./pages/brand/BrandCampaignDetail";
 import BrandBilling from "./pages/brand/BrandBilling";
 import BrandSettings from "./pages/brand/BrandSettings";
-import BrandStores from "./pages/brand/BrandStores";
-import BrandStoresClaim from "./pages/brand/BrandStoresClaim";
 
 function Router() {
   return (
@@ -79,8 +72,6 @@ function Router() {
       <Route path="/brand/campaigns/:id" component={BrandCampaignDetail} />
       <Route path="/brand/billing" component={BrandBilling} />
       <Route path="/brand/settings" component={BrandSettings} />
-      <Route path="/brand/stores" component={BrandStores} />
-      <Route path="/brand/stores/claim" component={BrandStoresClaim} />
 
       {/* Authenticated app routes — wrapped in DashboardLayout. */}
       <Route path="/dashboard">
@@ -163,11 +154,6 @@ function Router() {
           <Admin />
         </DashboardLayout>
       </Route>
-
-      {/* Vendor onboarding + admin queue */}
-      <Route path="/vendor/apply" component={VendorApply} />
-      <Route path="/vendor/application" component={VendorApplicationStatus} />
-      <Route path="/admin/vendors" component={AdminVendorQueue} />
 
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

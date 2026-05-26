@@ -1,5 +1,4 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link } from "wouter";
 import { BrandLayout } from "@/components/BrandLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +17,10 @@ export default function BrandSettings() {
     },
     onError: err => toast.error(err.message),
   });
+  const changePassword = trpc.brandAuth.changePassword.useMutation({
+    onSuccess: () => toast.success("Password changed"),
+    onError: err => toast.error(err.message),
+  });
 
   const [companyName, setCompanyName] = useState("");
   const [contactName, setContactName] = useState("");
@@ -25,6 +28,9 @@ export default function BrandSettings() {
   const [country, setCountry] = useState("");
   const [billingEmail, setBillingEmail] = useState("");
   const [taxId, setTaxId] = useState("");
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
 
   useEffect(() => {
     if (!brand) return;
@@ -46,6 +52,19 @@ export default function BrandSettings() {
       billingEmail: billingEmail || undefined,
       taxId: taxId || undefined,
     });
+  };
+
+  const onChangePassword = (e: FormEvent) => {
+    e.preventDefault();
+    changePassword.mutate(
+      { currentPassword, newPassword },
+      {
+        onSuccess: () => {
+          setCurrentPassword("");
+          setNewPassword("");
+        },
+      }
+    );
   };
 
   return (
@@ -106,15 +125,39 @@ export default function BrandSettings() {
         <Card>
           <CardHeader>
             <CardTitle>Change password</CardTitle>
-            <CardDescription>
-              Password management moved to your personal account. Use the password
-              reset flow there to change your sign-in password.
-            </CardDescription>
+            <CardDescription>Use at least 8 characters.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Link href="/forgot-password">
-              <Button variant="outline">Reset password</Button>
-            </Link>
+            <form onSubmit={onChangePassword} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="currentPassword">Current password</Label>
+                <Input
+                  id="currentPassword"
+                  type="password"
+                  autoComplete="current-password"
+                  value={currentPassword}
+                  onChange={e => setCurrentPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="newPassword">New password</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  required
+                  minLength={8}
+                />
+              </div>
+              <div className="flex justify-end">
+                <Button type="submit" disabled={changePassword.isPending}>
+                  {changePassword.isPending ? "Updating…" : "Update password"}
+                </Button>
+              </div>
+            </form>
           </CardContent>
         </Card>
       </div>

@@ -1,7 +1,6 @@
-import { useAuth } from "@/_core/hooks/useAuth";
 import { useBrandAuth } from "@/hooks/useBrandAuth";
 import { Button } from "@/components/ui/button";
-import { BrandSwitcher } from "@/components/BrandSwitcher";
+import { trpc } from "@/lib/trpc";
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard,
@@ -9,14 +8,13 @@ import {
   Receipt,
   Settings,
   LogOut,
+  ShoppingCart,
   AlertCircle,
-  Store,
 } from "lucide-react";
 import { toast } from "sonner";
 
 const NAV = [
   { href: "/brand/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/brand/stores", label: "Stores", icon: Store },
   { href: "/brand/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/brand/billing", label: "Billing", icon: Receipt },
   { href: "/brand/settings", label: "Settings", icon: Settings },
@@ -28,10 +26,10 @@ interface BrandLayoutProps {
 }
 
 export function BrandLayout({ children, requireVerified = false }: BrandLayoutProps) {
-  const { user, loading: userLoading } = useAuth();
-  const { brand, memberships, loading: brandLoading } = useBrandAuth();
+  const { brand, loading, isAuthenticated, isVerified, refetch } = useBrandAuth();
   const [location, navigate] = useLocation();
-  const loading = userLoading || brandLoading;
+  const logoutMutation = trpc.brandAuth.logout.useMutation();
+  const resendMutation = trpc.brandAuth.resendVerification.useMutation();
 
   if (loading) {
     return (
@@ -41,32 +39,16 @@ export function BrandLayout({ children, requireVerified = false }: BrandLayoutPr
     );
   }
 
-  if (!user) {
-    navigate("/sign-in?returnTo=" + encodeURIComponent(location));
+  if (!isAuthenticated) {
+    navigate("/brand/login");
     return null;
-  }
-
-  if (memberships.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="max-w-md text-center space-y-4">
-          <AlertCircle className="w-10 h-10 mx-auto text-amber-500" />
-          <h2 className="text-xl font-semibold">No tenés acceso a una marca</h2>
-          <p className="text-sm text-muted-foreground">
-            Para usar el portal de marcas necesitás que te inviten o registrar tu propia marca.
-          </p>
-          <Link href="/brand/register">
-            <Button>Registrar mi marca</Button>
-          </Link>
-        </div>
-      </div>
-    );
   }
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-      window.location.href = "/sign-in";
+      await logoutMutation.mutateAsync();
+      await refetch();
+      navigate("/brand/login");
     } catch {
       toast.error("Logout failed");
     }
@@ -74,31 +56,28 @@ export function BrandLayout({ children, requireVerified = false }: BrandLayoutPr
 
   const handleResend = async () => {
     try {
-      const res = await fetch("/api/auth/resend-verification", {
-        method: "POST",
-        credentials: "include",
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? "No se pudo reenviar");
-      toast.success("Correo de verificación enviado");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Error");
+      const result = await resendMutation.mutateAsync();
+      if (result.alreadyVerified) {
+        toast.success("Already verified");
+        await refetch();
+      } else {
+        toast.success("Verification email sent");
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to send");
     }
   };
-
-  const showVerifyBanner = !!user && !user.emailVerified;
-  const blockedByVerify = requireVerified && showVerifyBanner;
 
   return (
     <div className="min-h-screen bg-background flex">
       <aside className="hidden md:flex flex-col w-64 border-r bg-card">
         <Link href="/brand/dashboard" className="flex items-center gap-2 h-16 px-6 border-b">
-          <div className="w-9 h-9 rounded-full bg-primary/15 text-primary grid place-items-center">
-            <Receipt className="w-5 h-5" />
+          <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
+            <ShoppingCart className="w-5 h-5 text-primary-foreground" />
           </div>
           <div className="flex flex-col">
-            <span className="font-serif text-sm">tulistica</span>
-            <span className="text-xs text-muted-foreground">Portal de marcas</span>
+            <span className="text-sm font-bold">Grocery Waze</span>
+            <span className="text-xs text-muted-foreground">Brand portal</span>
           </div>
         </Link>
 
@@ -125,40 +104,37 @@ export function BrandLayout({ children, requireVerified = false }: BrandLayoutPr
 
         <div className="p-4 border-t">
           <div className="text-sm font-medium truncate">{brand?.companyName}</div>
-          <div className="text-xs text-muted-foreground truncate">{user.email}</div>
+          <div className="text-xs text-muted-foreground truncate">{brand?.email}</div>
           <Button
             variant="outline"
             size="sm"
             className="w-full mt-3"
             onClick={handleLogout}
           >
-            <LogOut className="w-4 h-4 mr-2" /> Cerrar sesión
+            <LogOut className="w-4 h-4 mr-2" /> Log out
           </Button>
         </div>
       </aside>
 
       <main className="flex-1 flex flex-col">
-        <header className="border-b bg-card px-4 md:px-6 h-14 flex items-center justify-between">
-          <Link href="/brand/dashboard" className="md:hidden flex items-center gap-2">
-            <span className="w-8 h-8 rounded-full bg-primary/15 text-primary grid place-items-center">
-              <Receipt className="w-4 h-4" />
-            </span>
-            <span className="font-serif text-sm">tulistica</span>
+        <header className="md:hidden border-b bg-card px-4 h-14 flex items-center justify-between">
+          <Link href="/brand/dashboard" className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+              <ShoppingCart className="w-4 h-4 text-primary-foreground" />
+            </div>
+            <span className="font-bold text-sm">Brand portal</span>
           </Link>
-          {brand && (
-            <BrandSwitcher activeBrandId={brand.id} memberships={memberships} />
-          )}
-          <Button variant="ghost" size="sm" className="md:hidden" onClick={handleLogout}>
+          <Button variant="ghost" size="sm" onClick={handleLogout}>
             <LogOut className="w-4 h-4" />
           </Button>
         </header>
 
-        {showVerifyBanner && (
+        {brand && !isVerified && (
           <div className="bg-amber-50 border-b border-amber-200 text-amber-900 px-6 py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
             <div className="flex items-start gap-2">
               <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
               <p className="text-sm">
-                Verificá tu correo <strong>{user.email}</strong> para publicar campañas o descargar facturas.
+                Verify your email <strong>{brand.email}</strong> to publish campaigns or download invoices.
               </p>
             </div>
             <Button
@@ -166,22 +142,25 @@ export function BrandLayout({ children, requireVerified = false }: BrandLayoutPr
               size="sm"
               className="ml-auto"
               onClick={handleResend}
+              disabled={resendMutation.isPending}
             >
-              Reenviar correo
+              Resend verification
             </Button>
           </div>
         )}
 
-        {blockedByVerify ? (
+        {requireVerified && !isVerified ? (
           <div className="flex-1 flex items-center justify-center p-8">
             <div className="max-w-md text-center space-y-3">
               <AlertCircle className="w-10 h-10 mx-auto text-amber-500" />
-              <h2 className="text-xl font-semibold">Verificación de correo requerida</h2>
+              <h2 className="text-xl font-semibold">Email verification required</h2>
               <p className="text-sm text-muted-foreground">
-                Confirmá tu correo antes de acceder a esta página. Te mandamos un enlace
-                a <strong>{user.email}</strong>.
+                Please confirm your email before accessing this page. We sent a
+                verification link to <strong>{brand?.email}</strong>.
               </p>
-              <Button onClick={handleResend}>Reenviar correo</Button>
+              <Button onClick={handleResend} disabled={resendMutation.isPending}>
+                Resend verification email
+              </Button>
             </div>
           </div>
         ) : (

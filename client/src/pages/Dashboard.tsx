@@ -76,10 +76,6 @@ function formatColones(amount: number): string {
 
 export default function Dashboard() {
   const { user, loading, isAuthenticated } = useAuth();
-  const vendorStatus = trpc.vendorApplications.myStatus.useQuery(undefined, {
-    enabled: !!user,
-    staleTime: 60_000,
-  });
   const [, setLocation] = useLocation();
   const [quickAddValue, setQuickAddValue] = useState("");
 
@@ -112,22 +108,6 @@ export default function Dashboard() {
   return (
     <div className="space-y-8 max-w-6xl">
       <VerifyEmailBanner emailVerified={user?.emailVerified ?? true} />
-        {vendorStatus.data?.application?.status === "pending" && (
-          <Link href="/vendor/application">
-            <div className="inline-flex items-center gap-2 rounded-full border bg-amber-50 dark:bg-amber-950/30 px-3 py-1 text-xs text-amber-900 dark:text-amber-200 hover:bg-amber-100 cursor-pointer">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-              Solicitud de vendedor: en revisión
-            </div>
-          </Link>
-        )}
-        {vendorStatus.data?.application?.status === "approved" && (
-          <Link href="/brand/dashboard">
-            <div className="inline-flex items-center gap-2 rounded-full border bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1 text-xs text-emerald-900 dark:text-emerald-200 hover:bg-emerald-100 cursor-pointer">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              ¡Sos vendedor! Ir al portal →
-            </div>
-          </Link>
-        )}
       {/* 1 · Greeting */}
       <header className="space-y-2">
         <h1 className="font-serif text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
