@@ -110,6 +110,30 @@ For real persistence: point `DATABASE_URL` at MySQL, run `pnpm db:push`,
 then `pnpm tsx scripts/seed-minimal.ts` to seed the same 8 stores + 12
 products.
 
+## Adding more physical stores (Google Places)
+
+The seed has 8 physical stores around the San José metro area, plus 6
+delivery-only "(en línea)" stores that are excluded from distance-based
+queries. To populate all of Costa Rica (15 cities × all grocery chains):
+
+```bash
+# 1. Get a Google Maps API key with Places API enabled
+#    https://console.cloud.google.com/apis/library/places-backend.googleapis.com
+# 2. Add it to .env (which is gitignored):
+GOOGLE_MAPS_API_KEY="AIza..."
+# Alternative: BUILT_IN_FORGE_API_URL + BUILT_IN_FORGE_API_KEY if proxying
+# through Manus's Forge.
+
+# 3. Run the seed (covers San José, Escazú, Santa Ana, Heredia, Alajuela,
+#    Cartago, Liberia, Puntarenas, Limón, San Pedro, Curridabat, Tibás,
+#    Moravia, Guadalupe, Desamparados):
+pnpm tsx scripts/seed-costa-rica.ts
+```
+
+The script is at `scripts/seed-costa-rica.ts` and uses the makeRequest
+helper in `server/_core/map.ts`. After it runs, physical stores will
+dominate distance-based queries.
+
 ## What's outstanding
 
 - `main` has ~50 commits of parallel work (vendor onboarding, store claims,
