@@ -239,36 +239,6 @@ export async function getStoreById(id: number) {
   return result[0];
 }
 
-export async function getNearbyStores(lat: number, lng: number, radiusKm: number) {
-  const db = await getDb();
-  if (!db) return [];
-  // Haversine formula for distance calculation
-  const result = await db.select({
-    id: stores.id,
-    name: stores.name,
-    chainId: stores.chainId,
-    address: stores.address,
-    city: stores.city,
-    latitude: stores.latitude,
-    longitude: stores.longitude,
-    imageUrl: stores.imageUrl,
-    avgRating: stores.avgRating,
-    hours: stores.hours,
-    distanceKm: sql<number>`(
-      6371 * acos(
-        cos(radians(${lat})) * cos(radians(${stores.latitude})) *
-        cos(radians(${stores.longitude}) - radians(${lng})) +
-        sin(radians(${lat})) * sin(radians(${stores.latitude}))
-      )
-    )`.as('distanceKm'),
-  })
-    .from(stores)
-    .where(eq(stores.isActive, true))
-    .having(sql`distanceKm <= ${radiusKm}`)
-    .orderBy(sql`distanceKm`);
-  return result;
-}
-
 export async function searchStores(query: string, limit = 20) {
   const db = await getDb();
   if (!db) return [];

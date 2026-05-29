@@ -2,19 +2,24 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 
-// Mock database functions
-vi.mock("./db", () => ({
-  getNearbyStores: vi.fn().mockResolvedValue([
+// Mock storeDiscovery service
+vi.mock("./services/storeDiscovery", () => ({
+  discoverPhysicalStores: vi.fn().mockResolvedValue([
     {
-      id: 1,
-      name: "Test Store",
+      placeId: "place-1",
+      name: "Walmart Escazú",
+      address: "Escazú, San José",
       latitude: 40.7128,
       longitude: -74.006,
+      chainId: "walmart",
       distanceKm: 1.5,
-      address: "123 Test St",
-      city: "New York",
+      avgRating: 4.2,
     },
   ]),
+}));
+
+// Mock database functions
+vi.mock("./db", () => ({
   searchStores: vi.fn().mockResolvedValue([
     {
       id: 1,
@@ -106,8 +111,10 @@ describe("stores router", () => {
 
     expect(result).toHaveLength(1);
     expect(result[0]).toMatchObject({
-      id: 1,
-      name: "Test Store",
+      id: 0,
+      placeId: "place-1",
+      name: "Walmart Escazú",
+      chainId: "walmart",
       distanceKm: 1.5,
     });
   });
