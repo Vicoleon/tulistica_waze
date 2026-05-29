@@ -1,14 +1,6 @@
 import { getPriceMatrix, getProductsByIds, getOnlineStoreIdsByChain } from "../db";
 import { discoverPhysicalStores } from "./storeDiscovery";
 
-interface StoreWithDistance {
-  id: number;
-  name: string;
-  latitude: number;
-  longitude: number;
-  distanceKm: number;
-}
-
 interface OptimizationResult {
   type: "SINGLE" | "SPLIT";
   stores: {
