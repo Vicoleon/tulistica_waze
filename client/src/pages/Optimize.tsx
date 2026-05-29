@@ -339,13 +339,14 @@ export default function Optimize() {
                             <p className="font-serif text-lg font-semibold tracking-tight">
                               {store.name}
                             </p>
-                            {"address" in store && typeof (store as { address?: unknown }).address === "string" ? (
+                            {"address" in store &&
+                            typeof (store as { address?: unknown }).address === "string" &&
+                            (store as { address: string }).address.trim() !== "" ? (
                               <p className="mt-0.5 font-serif italic text-sm text-muted-foreground">
                                 {(store as { address: string }).address}
                               </p>
                             ) : (
                               <p className="mt-0.5 font-mono text-xs text-muted-foreground">
-                                {/* TODO: hook to store address when available */}
                                 Dirección por confirmar
                               </p>
                             )}
