@@ -39,6 +39,8 @@ import {
   searchProductsOpenFoodFacts,
 } from "./services/externalApis";
 import { computeBudgetInsights } from "./services/budget";
+import { discoverPhysicalStores } from "./services/storeDiscovery";
+import { isOnlineStoreName } from "./services/chainMatch";
 import { predictSeasonalDealsForUser, predictForProduct, rankPredictions } from "./services/seasonalDeals";
 import { notifyOwner, isNotificationAvailable } from "./_core/notification";
 import { isMapsAvailable } from "./_core/map";
@@ -428,13 +430,33 @@ export const appRouter = router({
         radiusKm: z.number().default(10),
       }))
       .query(async ({ input }) => {
-        return db.getNearbyStores(input.latitude, input.longitude, input.radiusKm);
+        const physical = await discoverPhysicalStores(
+          input.latitude,
+          input.longitude,
+          input.radiusKm
+        );
+        // Shape compatible with the Stores/MapView client (store.id, name,
+        // chainId, city, avgRating, latitude, longitude, distanceKm, address).
+        return physical.map((s) => ({
+          id: 0, // physical branches have no DB row yet; identity is placeId
+          placeId: s.placeId,
+          name: s.name,
+          chainId: s.chainId,
+          city: null as string | null,
+          address: s.address,
+          latitude: s.latitude,
+          longitude: s.longitude,
+          avgRating: s.avgRating,
+          distanceKm: s.distanceKm,
+        }));
       }),
 
     search: publicProcedure
       .input(z.object({ query: z.string(), limit: z.number().default(20) }))
       .query(async ({ input }) => {
-        return db.searchStores(input.query, input.limit);
+        const results = await db.searchStores(input.query, input.limit);
+        // Never surface virtual online storefronts in the finder.
+        return results.filter((s) => !isOnlineStoreName(s.name));
       }),
 
     getById: publicProcedure
