@@ -26,15 +26,28 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
 import {
   ArrowLeft, ChefHat, ShoppingCart, Trash2,
-  ExternalLink, Users, Loader2, Link2, BookOpen, Wand2,
+  ExternalLink, Users, Loader2, Link2, BookOpen, Wand2, Sparkles,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 
 const EXAMPLE_SITES = ["cookpad", "ollaarrocera.cr", "recetasnestle", "youtube.com"];
+
+const RECIPE_SUGGESTIONS = [
+  "Gallo pinto tradicional",
+  "Casado con pollo",
+  "Olla de carne",
+  "Arroz con pollo",
+  "Sopa negra",
+  "Picadillo de papa",
+  "Tres leches",
+];
 
 interface Ingredient {
   name: string;
@@ -61,6 +74,9 @@ export default function Recipes() {
   const { isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
   const [recipeUrl, setRecipeUrl] = useState("");
+  const [aiRequest, setAiRequest] = useState("");
+  const [aiServings, setAiServings] = useState<number>(4);
+  const [usePantry, setUsePantry] = useState<boolean>(true);
   const [previewRecipeId, setPreviewRecipeId] = useState<number | null>(null);
   const [listPickerForRecipe, setListPickerForRecipe] = useState<number | null>(null);
   const [selectedListId, setSelectedListId] = useState<string>("");
@@ -86,6 +102,15 @@ export default function Recipes() {
       utils.recipes.getAll.invalidate();
       setRecipeUrl("");
       toast.success(`"${data.name}" se guardó en tu recetario.`);
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const generateRecipe = trpc.recipes.generate.useMutation({
+    onSuccess: (data) => {
+      utils.recipes.getAll.invalidate();
+      setAiRequest("");
+      toast.success(`"${data.name}" se generó y guardó en tu recetario.`);
     },
     onError: (err) => toast.error(err.message),
   });
@@ -210,6 +235,105 @@ export default function Recipes() {
                   {site}
                 </span>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* AI-generated recipe card */}
+        <Card className="rounded-3xl shadow-paper border-border/60 mb-10">
+          <CardContent className="p-6 md:p-8">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-11 h-11 rounded-2xl bg-accent/10 flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-accent" />
+              </div>
+              <div>
+                <h2 className="font-serif text-xl">
+                  ¿Sin link? <span className="italic text-accent">Generala con IA</span>
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Decinos qué se te antoja y armamos la receta con ingredientes de Costa Rica.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="ai-request" className="sr-only">¿Qué querés cocinar?</Label>
+                <Textarea
+                  id="ai-request"
+                  placeholder="Ej. una sopa de pollo con ingredientes de la despensa, o pasta con marisco, o un postre fácil para 6 personas..."
+                  value={aiRequest}
+                  onChange={(e) => setAiRequest(e.target.value)}
+                  rows={3}
+                  className="rounded-xl resize-none"
+                />
+                <div className="flex flex-wrap gap-1.5">
+                  {RECIPE_SUGGESTIONS.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setAiRequest(s)}
+                      className="text-xs px-3 py-1 rounded-full bg-paper-deep hover:bg-paper-deep/80 transition-colors text-foreground/70"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex items-center gap-3 rounded-xl border border-border/60 px-4 py-2 sm:flex-1">
+                  <Label htmlFor="ai-servings" className="text-sm text-muted-foreground shrink-0">
+                    Porciones
+                  </Label>
+                  <Input
+                    id="ai-servings"
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={aiServings}
+                    onChange={(e) => setAiServings(parseInt(e.target.value) || 4)}
+                    className="border-0 p-0 h-auto focus-visible:ring-0 font-mono text-sm w-16"
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-border/60 px-4 py-2 sm:flex-1">
+                  <div className="leading-tight">
+                    <Label htmlFor="use-pantry" className="text-sm font-medium cursor-pointer">
+                      Usar mi despensa
+                    </Label>
+                    <p className="text-[11px] text-muted-foreground">
+                      Personaliza con lo que ya tenés.
+                    </p>
+                  </div>
+                  <Switch
+                    id="use-pantry"
+                    checked={usePantry}
+                    onCheckedChange={setUsePantry}
+                  />
+                </div>
+              </div>
+
+              <Button
+                onClick={() =>
+                  generateRecipe.mutate({
+                    request: aiRequest,
+                    servings: aiServings,
+                    usePantry,
+                  })
+                }
+                disabled={aiRequest.trim().length < 3 || generateRecipe.isPending}
+                className="h-12 rounded-full px-6 gap-2 w-full sm:w-auto"
+              >
+                {generateRecipe.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Cocinando ideas…
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" /> Generar receta
+                  </>
+                )}
+              </Button>
             </div>
           </CardContent>
         </Card>

@@ -295,7 +295,24 @@ async function loadLlmEndpoint(): Promise<LlmEndpoint | null> {
     };
   }
 
-  // 3: legacy env var
+  // 3: legacy env vars (per-provider). DeepSeek and Gemini fall through to
+  // OpenAI when none is set; whichever is present wins in this order.
+  if (process.env.DEEPSEEK_API_KEY) {
+    return {
+      url: PROVIDER_DEFAULTS.deepseek.url,
+      apiKey: process.env.DEEPSEEK_API_KEY,
+      model: process.env.DEEPSEEK_MODEL ?? PROVIDER_DEFAULTS.deepseek.model,
+      provider: "env",
+    };
+  }
+  if (process.env.GEMINI_API_KEY) {
+    return {
+      url: PROVIDER_DEFAULTS.gemini.url,
+      apiKey: process.env.GEMINI_API_KEY,
+      model: process.env.GEMINI_MODEL ?? PROVIDER_DEFAULTS.gemini.model,
+      provider: "env",
+    };
+  }
   if (process.env.OPENAI_API_KEY) {
     return {
       url: PROVIDER_DEFAULTS.openai.url,
@@ -328,7 +345,7 @@ async function resolveLlmEndpoint(): Promise<LlmEndpoint> {
   cachedConfig = { endpoint, expiresAt: now + CACHE_TTL_MS };
   if (!endpoint) {
     throw new Error(
-      "LLM no configurado. Pegá una API key (OpenAI, Gemini o DeepSeek) en /profile (sección admin) o seteá OPENAI_API_KEY en .env."
+      "LLM no configurado. Pegá una API key en /profile (sección admin) o seteá DEEPSEEK_API_KEY / GEMINI_API_KEY / OPENAI_API_KEY en .env."
     );
   }
   return endpoint;
@@ -348,6 +365,8 @@ export async function isLlmAvailable(): Promise<boolean> {
  * Falls back to env vars only — true vault check requires the async version.
  */
 export function isLlmAvailableSync(): boolean {
+  if (process.env.DEEPSEEK_API_KEY) return true;
+  if (process.env.GEMINI_API_KEY) return true;
   if (process.env.OPENAI_API_KEY) return true;
   if (ENV.forgeApiUrl && ENV.forgeApiKey) return true;
   // If neither env is set we don't know without hitting the DB. Tell the
@@ -489,6 +508,41 @@ function injectJsonInstruction(
  * Exported so route handlers can use it instead of bare JSON.parse — that way
  * recipe / product-recognition flows survive a model swap to DeepSeek reasoner.
  */
+/**
+ * Returns the index of the closing brace/bracket that matches the opener at
+ * `start`. Skips braces inside string literals and respects backslash escapes.
+ * Returns -1 if the structure is unbalanced.
+ */
+function findBalancedJsonEnd(s: string, start: number): number {
+  const open = s[start];
+  if (open !== "{" && open !== "[") return -1;
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  for (let i = start; i < s.length; i++) {
+    const c = s[i];
+    if (escape) {
+      escape = false;
+      continue;
+    }
+    if (inString) {
+      if (c === "\\") escape = true;
+      else if (c === '"') inString = false;
+      continue;
+    }
+    if (c === '"') {
+      inString = true;
+      continue;
+    }
+    if (c === "{" || c === "[") depth++;
+    else if (c === "}" || c === "]") {
+      depth--;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
 export function extractJson<T = unknown>(content: string): T {
   if (!content) throw new Error("Empty LLM response content");
   let trimmed = content.trim();
@@ -497,19 +551,24 @@ export function extractJson<T = unknown>(content: string): T {
   const fence = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
   if (fence) {
     trimmed = fence[1].trim();
-  } else {
-    // If there's preamble text + a JSON object/array, grab from first { or [.
-    const firstBrace = trimmed.search(/[{[]/);
-    if (firstBrace > 0) {
-      trimmed = trimmed.slice(firstBrace);
-    }
-    // And trim anything after the last matching brace.
-    const lastObj = trimmed.lastIndexOf("}");
-    const lastArr = trimmed.lastIndexOf("]");
-    const lastBrace = Math.max(lastObj, lastArr);
-    if (lastBrace >= 0 && lastBrace < trimmed.length - 1) {
-      trimmed = trimmed.slice(0, lastBrace + 1);
-    }
+  }
+
+  // Skip any preamble before the first { or [.
+  const firstBrace = trimmed.search(/[{[]/);
+  if (firstBrace > 0) {
+    trimmed = trimmed.slice(firstBrace);
+  } else if (firstBrace < 0) {
+    throw new Error(
+      `Failed to parse JSON from LLM response: no '{' or '[' found. Content (first 200 chars): ${content.slice(0, 200)}`
+    );
+  }
+
+  // Find the end of the FIRST balanced JSON value — DeepSeek and other models
+  // occasionally emit a second JSON object, commentary, or trailing notes that
+  // break a naive lastIndexOf-based trim.
+  const end = findBalancedJsonEnd(trimmed, 0);
+  if (end > 0) {
+    trimmed = trimmed.slice(0, end + 1);
   }
 
   try {
