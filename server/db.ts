@@ -18,6 +18,7 @@ import {
 import type { User, Brand, UserToken, InsertUserToken, BrandMember, InsertBrandMember } from "../drizzle/schema";
 import type { AnalyticsProperties } from "../shared/analytics";
 import { ENV } from './_core/env';
+import { isOnlineStoreName } from "./services/chainMatch";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -281,6 +282,27 @@ export async function searchStores(query: string, limit = 20) {
       )
     ))
     .limit(limit);
+}
+
+/**
+ * Map each chain to the storeId of its virtual "(en línea)" storefront.
+ * These online stores hold the bootstrap/base prices for the chain. Physical
+ * branches reuse these prices until per-store prices exist.
+ */
+export async function getOnlineStoreIdsByChain(): Promise<Map<string, number>> {
+  const db = await getDb();
+  const map = new Map<string, number>();
+  if (!db) return map;
+  const rows = await db
+    .select({ id: stores.id, chainId: stores.chainId, name: stores.name })
+    .from(stores)
+    .where(eq(stores.isActive, true));
+  for (const r of rows) {
+    if (r.chainId && isOnlineStoreName(r.name) && !map.has(r.chainId)) {
+      map.set(r.chainId, r.id);
+    }
+  }
+  return map;
 }
 
 // ============ PRODUCT HELPERS ============
