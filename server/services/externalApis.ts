@@ -5,7 +5,7 @@
  * - Google Popular Times for crowdedness
  */
 
-import { makeRequest, isMapsAvailable } from "../_core/map";
+import { makeRequest, isMapsAvailable, getMapsMode, placesApiRequest } from "../_core/map";
 
 // ============ GOOGLE MAPS PLACES API ============
 
@@ -23,6 +23,62 @@ interface PlaceResult {
   website?: string;
   priceLevel?: number;
 }
+
+// ---- Places API (New) response shape + mappers ----
+interface NewPlace {
+  id: string;
+  displayName?: { text?: string };
+  formattedAddress?: string;
+  location?: { latitude: number; longitude: number };
+  rating?: number;
+  userRatingCount?: number;
+  types?: string[];
+  currentOpeningHours?: { openNow?: boolean };
+  priceLevel?: string;
+  nationalPhoneNumber?: string;
+  internationalPhoneNumber?: string;
+  websiteUri?: string;
+}
+
+// Places API (New) price level enum -> legacy 0-4 number used across the app.
+function mapNewPriceLevel(level?: string): number | undefined {
+  switch (level) {
+    case "PRICE_LEVEL_FREE":
+      return 0;
+    case "PRICE_LEVEL_INEXPENSIVE":
+      return 1;
+    case "PRICE_LEVEL_MODERATE":
+      return 2;
+    case "PRICE_LEVEL_EXPENSIVE":
+      return 3;
+    case "PRICE_LEVEL_VERY_EXPENSIVE":
+      return 4;
+    default:
+      return undefined;
+  }
+}
+
+function mapNewPlace(p: NewPlace): PlaceResult {
+  return {
+    placeId: p.id,
+    name: p.displayName?.text ?? "",
+    address: p.formattedAddress ?? "",
+    latitude: p.location?.latitude ?? 0,
+    longitude: p.location?.longitude ?? 0,
+    rating: p.rating,
+    userRatingsTotal: p.userRatingCount,
+    openNow: p.currentOpeningHours?.openNow,
+    types: p.types,
+    phone: p.nationalPhoneNumber ?? p.internationalPhoneNumber,
+    website: p.websiteUri,
+    priceLevel: mapNewPriceLevel(p.priceLevel),
+  };
+}
+
+const NEARBY_FIELD_MASK =
+  "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.types,places.currentOpeningHours.openNow,places.priceLevel";
+const DETAILS_FIELD_MASK =
+  "id,displayName,formattedAddress,location,rating,userRatingCount,currentOpeningHours.openNow,types,nationalPhoneNumber,websiteUri,priceLevel";
 
 interface PopularTimesData {
   day: number; // 0 = Sunday
@@ -45,6 +101,26 @@ export async function searchNearbyGroceryStores(
 ): Promise<PlaceResult[]> {
   if (!isMapsAvailable()) return [];
   try {
+    if (getMapsMode() === "google-direct") {
+      const data = await placesApiRequest<{ places?: NewPlace[] }>({
+        method: "POST",
+        path: "/v1/places:searchNearby",
+        fieldMask: NEARBY_FIELD_MASK,
+        body: {
+          includedTypes: ["supermarket", "grocery_store"],
+          maxResultCount: 20,
+          locationRestriction: {
+            circle: {
+              center: { latitude, longitude },
+              radius: Math.min(radiusMeters, 50000),
+            },
+          },
+        },
+      });
+      return (data.places ?? []).map(mapNewPlace);
+    }
+
+    // Forge-proxy fallback: legacy Places API.
     const response = await makeRequest<{ results?: any[]; status: string }>(
       `/maps/api/place/nearbysearch/json`,
       {
@@ -54,11 +130,9 @@ export async function searchNearbyGroceryStores(
         keyword: "grocery|supermarket|food",
       }
     );
-
     if (!response.results) {
       return [];
     }
-
     return response.results.map((place: any) => ({
       placeId: place.place_id,
       name: place.name,
@@ -83,6 +157,16 @@ export async function searchNearbyGroceryStores(
 export async function getPlaceDetails(placeId: string): Promise<PlaceResult | null> {
   if (!isMapsAvailable()) return null;
   try {
+    if (getMapsMode() === "google-direct") {
+      const place = await placesApiRequest<NewPlace>({
+        method: "GET",
+        path: `/v1/places/${encodeURIComponent(placeId)}`,
+        fieldMask: DETAILS_FIELD_MASK,
+      });
+      return mapNewPlace(place);
+    }
+
+    // Forge-proxy fallback: legacy Places API.
     const response = await makeRequest<{ result?: any; status: string }>(
       `/maps/api/place/details/json`,
       {
@@ -91,11 +175,9 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceResult | nu
           "name,formatted_address,geometry,formatted_phone_number,website,rating,user_ratings_total,opening_hours,price_level,types",
       }
     );
-
     if (!response.result) {
       return null;
     }
-
     const place = response.result;
     return {
       placeId,
@@ -127,6 +209,23 @@ export async function searchStoresByText(
 ): Promise<PlaceResult[]> {
   if (!isMapsAvailable()) return [];
   try {
+    if (getMapsMode() === "google-direct") {
+      const body: Record<string, unknown> = { textQuery: `${query} grocery store` };
+      if (latitude !== undefined && longitude !== undefined) {
+        body.locationBias = {
+          circle: { center: { latitude, longitude }, radius: 50000 },
+        };
+      }
+      const data = await placesApiRequest<{ places?: NewPlace[] }>({
+        method: "POST",
+        path: "/v1/places:searchText",
+        fieldMask: NEARBY_FIELD_MASK,
+        body,
+      });
+      return (data.places ?? []).map(mapNewPlace);
+    }
+
+    // Forge-proxy fallback: legacy Places API.
     const params: Record<string, unknown> = { query: `${query} grocery store` };
     if (latitude && longitude) {
       params.location = `${latitude},${longitude}`;
@@ -136,11 +235,9 @@ export async function searchStoresByText(
       `/maps/api/place/textsearch/json`,
       params
     );
-
     if (!response.results) {
       return [];
     }
-
     return response.results.map((place: any) => ({
       placeId: place.place_id,
       name: place.name,

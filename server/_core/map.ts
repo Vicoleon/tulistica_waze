@@ -10,7 +10,7 @@
 
 import { ENV } from "./env";
 
-type Mode = "google-direct" | "forge-proxy" | "disabled";
+export type Mode = "google-direct" | "forge-proxy" | "disabled";
 
 function detectMode(): Mode {
   if (process.env.GOOGLE_MAPS_API_KEY) return "google-direct";
@@ -70,6 +70,53 @@ export async function makeRequest<T = unknown>(
     );
   }
 
+  return (await response.json()) as T;
+}
+
+/** Current Maps integration mode (exported so callers can branch on it). */
+export function getMapsMode(): Mode {
+  return detectMode();
+}
+
+interface PlacesNewRequest {
+  method: "GET" | "POST";
+  path: string; // e.g. "/v1/places:searchNearby" or "/v1/places/{id}"
+  fieldMask: string;
+  body?: Record<string, unknown>;
+}
+
+/**
+ * Call the Places API (New) at places.googleapis.com. Requires a direct
+ * GOOGLE_MAPS_API_KEY (the Forge proxy only fronts the legacy Maps endpoints).
+ * The API key goes in the X-Goog-Api-Key header; fields are selected via
+ * X-Goog-FieldMask.
+ */
+export async function placesApiRequest<T = unknown>({
+  method,
+  path,
+  fieldMask,
+  body,
+}: PlacesNewRequest): Promise<T> {
+  const key = process.env.GOOGLE_MAPS_API_KEY;
+  if (!key) {
+    throw new Error("Places API (New) requires GOOGLE_MAPS_API_KEY");
+  }
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  const response = await fetch(`https://places.googleapis.com${normalized}`, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": key,
+      "X-Goog-FieldMask": fieldMask,
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => "");
+    throw new Error(
+      `Places API (New) request failed (${response.status} ${response.statusText}): ${errorText}`
+    );
+  }
   return (await response.json()) as T;
 }
 
