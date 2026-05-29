@@ -1,4 +1,5 @@
-import { getNearbyStores, getPriceMatrix, getProductsByIds } from "../db";
+import { getPriceMatrix, getProductsByIds, getOnlineStoreIdsByChain } from "../db";
+import { discoverPhysicalStores } from "./storeDiscovery";
 
 interface StoreWithDistance {
   id: number;
@@ -10,7 +11,17 @@ interface StoreWithDistance {
 
 interface OptimizationResult {
   type: "SINGLE" | "SPLIT";
-  stores: { id: number; name: string; distanceKm: number; items: number[] }[];
+  stores: {
+    id: number;
+    name: string;
+    distanceKm: number;
+    items: number[];
+    address?: string;
+    chainId?: string;
+    placeId?: string;
+    latitude?: number;
+    longitude?: number;
+  }[];
   cartTotal: number;
   tripCost: number;
   grandTotal: number;
@@ -68,44 +79,77 @@ export class SmartCartEngine {
   }
 
   async optimizeCart(productIds: number[], radiusKm: number): Promise<OptimizationResult[]> {
-    // 1. Get nearby stores
-    const nearbyStores = await getNearbyStores(this.userLat, this.userLon, radiusKm);
-    if (nearbyStores.length === 0) {
+    // 1. Discover nearby PHYSICAL branches (Google Places), matched to a chain.
+    const physical = await discoverPhysicalStores(this.userLat, this.userLon, radiusKm);
+    if (physical.length === 0) {
       return [];
     }
 
-    // 2. Get products info
+    // 2. Products info.
     const products = await getProductsByIds(productIds);
-    const productMap = new Map(products.map(p => [p.id, p]));
+    const productMap = new Map(products.map((p) => [p.id, p]));
 
-    // 3. Get price matrix
-    const storeIds = nearbyStores.map(s => s.id);
-    const priceData = await getPriceMatrix(storeIds, productIds);
+    // 3. Online "base" prices, keyed by chain. Physical branches reuse the
+    //    price of their chain's online storefront until per-store prices exist.
+    const onlineByChain = await getOnlineStoreIdsByChain(); // chainId -> online storeId
+    const onlineIdToChain = new Map<number, string>();
+    Array.from(onlineByChain.entries()).forEach(([chain, id]) => onlineIdToChain.set(id, chain));
+    const onlineStoreIds = Array.from(new Set(Array.from(onlineByChain.values())));
+    const priceData = await getPriceMatrix(onlineStoreIds, productIds);
 
-    // Build price matrix: { storeId: { productId: price } }
-    const priceMatrix: Map<number, Map<number, number>> = new Map();
-    for (const store of nearbyStores) {
-      priceMatrix.set(store.id, new Map());
-    }
+    // chainId -> (productId -> price)
+    const chainPrices = new Map<string, Map<number, number>>();
     for (const entry of priceData) {
-      const storeMap = priceMatrix.get(entry.storeId);
-      if (storeMap && !storeMap.has(entry.productId)) {
-        storeMap.set(entry.productId, entry.price);
-      }
+      const chain = onlineIdToChain.get(entry.storeId);
+      if (!chain) continue;
+      if (!chainPrices.has(chain)) chainPrices.set(chain, new Map());
+      const cm = chainPrices.get(chain)!;
+      if (!cm.has(entry.productId)) cm.set(entry.productId, entry.price);
+    }
+
+    // 4. Candidate branches whose chain actually has base prices.
+    interface StoreCandidate {
+      id: number; // chain's online storeId (price source / itemBreakdown.storeId)
+      placeId: string;
+      name: string;
+      address: string;
+      chainId: string;
+      latitude: number;
+      longitude: number;
+      distanceKm: number;
+    }
+    const candidates: StoreCandidate[] = physical
+      .map((p) => ({
+        id: onlineByChain.get(p.chainId) ?? -1,
+        placeId: p.placeId,
+        name: p.name,
+        address: p.address,
+        chainId: p.chainId,
+        latitude: p.latitude,
+        longitude: p.longitude,
+        distanceKm: p.distanceKm,
+      }))
+      .filter((c) => c.id !== -1);
+    if (candidates.length === 0) {
+      return [];
+    }
+
+    // Price matrix keyed by placeId so two branches of the same chain stay distinct.
+    const priceMatrix = new Map<string, Map<number, number>>();
+    for (const c of candidates) {
+      priceMatrix.set(c.placeId, chainPrices.get(c.chainId) ?? new Map());
     }
 
     const results: OptimizationResult[] = [];
-
-    // 4. Strategy A: Single Store Best Price
-    const singleStoreResults: (OptimizationResult & { storeId: number })[] = [];
     const requestedItemCount = productIds.length;
-    // Drop stores that miss more than this fraction of the cart — they're
-    // not realistic alternatives even if the few items they do carry are cheap.
     const MAX_MISSING_RATIO = 0.5;
 
-    for (const store of nearbyStores) {
-      const storePrices = priceMatrix.get(store.id) || new Map();
-      let realCartTotal = 0; // money the user would actually pay
+    // 5. Strategy A: Single Store Best Price.
+    const singleStoreResults: (OptimizationResult & { placeId: string })[] = [];
+
+    for (const store of candidates) {
+      const storePrices = priceMatrix.get(store.placeId) || new Map<number, number>();
+      let realCartTotal = 0;
       const itemBreakdown: OptimizationResult["itemBreakdown"] = [];
       const missingItems: number[] = [];
 
@@ -125,9 +169,7 @@ export class SmartCartEngine {
         }
       }
 
-      // Stores that miss more than half the cart aren't useful suggestions.
       if (missingItems.length / requestedItemCount > MAX_MISSING_RATIO) continue;
-      // Stores with nothing matched aren't useful either.
       if (itemBreakdown.length === 0) continue;
 
       const roundTripDistance = store.distanceKm * 2;
@@ -135,13 +177,18 @@ export class SmartCartEngine {
 
       singleStoreResults.push({
         type: "SINGLE",
-        storeId: store.id,
+        placeId: store.placeId,
         stores: [
           {
             id: store.id,
             name: store.name,
             distanceKm: store.distanceKm,
             items: productIds.filter((id) => !missingItems.includes(id)),
+            address: store.address,
+            chainId: store.chainId,
+            placeId: store.placeId,
+            latitude: store.latitude,
+            longitude: store.longitude,
           },
         ],
         cartTotal: Math.round(realCartTotal * 100) / 100,
@@ -154,7 +201,6 @@ export class SmartCartEngine {
       });
     }
 
-    // Sort by completeness first (fewer missing items wins), then by total cost.
     singleStoreResults.sort((a, b) => {
       if (a.missingItems.length !== b.missingItems.length) {
         return a.missingItems.length - b.missingItems.length;
@@ -164,17 +210,16 @@ export class SmartCartEngine {
 
     results.push(...singleStoreResults.slice(0, 5));
 
-    // 5. Strategy B: Split List (Dual Store)
-    // Only consider top 4 cheapest single stores to form pairs
+    // 6. Strategy B: Split List (Dual Store) over the top single-store candidates.
     const topCandidates = singleStoreResults.slice(0, 4);
 
     for (let i = 0; i < topCandidates.length; i++) {
       for (let j = i + 1; j < topCandidates.length; j++) {
-        const storeA = nearbyStores.find(s => s.id === topCandidates[i].storeId)!;
-        const storeB = nearbyStores.find(s => s.id === topCandidates[j].storeId)!;
+        const storeA = candidates.find((c) => c.placeId === topCandidates[i].placeId)!;
+        const storeB = candidates.find((c) => c.placeId === topCandidates[j].placeId)!;
 
-        const pricesA = priceMatrix.get(storeA.id) || new Map();
-        const pricesB = priceMatrix.get(storeB.id) || new Map();
+        const pricesA = priceMatrix.get(storeA.placeId) || new Map<number, number>();
+        const pricesB = priceMatrix.get(storeB.placeId) || new Map<number, number>();
 
         let hybridTotal = 0;
         const itemBreakdown: OptimizationResult["itemBreakdown"] = [];
@@ -191,7 +236,6 @@ export class SmartCartEngine {
             continue;
           }
 
-          // Pick the cheaper *real* price. If only one store has it, that store wins.
           const aHas = priceA !== undefined;
           const bHas = priceB !== undefined;
           const pickA = aHas && (!bHas || priceA! <= priceB!);
@@ -222,7 +266,6 @@ export class SmartCartEngine {
         if (missingItems.length / requestedItemCount > MAX_MISSING_RATIO) continue;
         if (storeAItems.length === 0 || storeBItems.length === 0) continue;
 
-        // Calculate multi-stop route: Home -> A -> B -> Home
         const distHomeToA = storeA.distanceKm;
         const distAToB = calculateDistance(storeA.latitude, storeA.longitude, storeB.latitude, storeB.longitude);
         const distBToHome = storeB.distanceKm;
@@ -237,8 +280,28 @@ export class SmartCartEngine {
           results.push({
             type: "SPLIT",
             stores: [
-              { id: storeA.id, name: storeA.name, distanceKm: storeA.distanceKm, items: storeAItems },
-              { id: storeB.id, name: storeB.name, distanceKm: storeB.distanceKm, items: storeBItems },
+              {
+                id: storeA.id,
+                name: storeA.name,
+                distanceKm: storeA.distanceKm,
+                items: storeAItems,
+                address: storeA.address,
+                chainId: storeA.chainId,
+                placeId: storeA.placeId,
+                latitude: storeA.latitude,
+                longitude: storeA.longitude,
+              },
+              {
+                id: storeB.id,
+                name: storeB.name,
+                distanceKm: storeB.distanceKm,
+                items: storeBItems,
+                address: storeB.address,
+                chainId: storeB.chainId,
+                placeId: storeB.placeId,
+                latitude: storeB.latitude,
+                longitude: storeB.longitude,
+              },
             ],
             cartTotal: Math.round(hybridTotal * 100) / 100,
             tripCost: Math.round(tripCost * 100) / 100,
@@ -253,7 +316,6 @@ export class SmartCartEngine {
       }
     }
 
-    // Final ranking: completeness first, then total cost.
     results.sort((a, b) => {
       if (a.missingItems.length !== b.missingItems.length) {
         return a.missingItems.length - b.missingItems.length;
