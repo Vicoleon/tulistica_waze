@@ -141,7 +141,7 @@ export default function Stores() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {storesWithTags.map(({ store, tags }) => (
               <Card
-                key={store.id}
+                key={(store as { placeId?: string }).placeId ?? String(store.id)}
                 className="rounded-3xl border border-border shadow-paper bg-card overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-paper-lg"
               >
                 <CardContent className="p-5 space-y-4">
@@ -149,7 +149,7 @@ export default function Stores() {
                   <div className="flex items-start gap-3">
                     <div
                       className={`w-12 h-12 rounded-full flex items-center justify-center font-serif text-xl font-semibold shrink-0 ${tintFor(
-                        store.chainId ?? store.id
+                        store.chainId ?? (store as { placeId?: string }).placeId ?? store.id
                       )}`}
                       aria-hidden="true"
                     >

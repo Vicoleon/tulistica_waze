@@ -204,7 +204,7 @@ export default function MapPage() {
     // Tulistica DB stores — terracotta pins.
     for (const store of filteredNearbyStores ?? []) {
       result.push({
-        id: `tul-${store.id}`,
+        id: `tul-${(store as { placeId?: string }).placeId ?? store.id}`,
         lat: store.latitude,
         lng: store.longitude,
         kind: "tulistica",
@@ -212,7 +212,7 @@ export default function MapPage() {
         onClick: () => {
           setSelectedGooglePlace(null);
           setSelectedStore({
-            id: store.id,
+            id: ((store as { placeId?: string }).placeId ?? store.id) as any,
             name: store.name,
             lat: store.latitude,
             lng: store.longitude,
