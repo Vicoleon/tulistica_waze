@@ -135,18 +135,16 @@ export function registerLocalAuthRoutes(app: Express) {
         loginMethod: "local",
         lastSignedIn: new Date(),
         role: ENV.ownerOpenId === openId ? "super_admin" : "consumer",
-        emailVerified: false,
+        // Auto-verify while we have no SMTP/email service wired up. When
+        // email delivery exists, flip this back to `false` and re-enable
+        // the gate in server/_core/trpc.ts (verifiedProcedure).
+        emailVerified: true,
+        emailVerifiedAt: new Date(),
       });
       userId = (result as any)[0]?.insertId ?? null;
     }
 
-    if (userId) {
-      try {
-        await sendVerificationEmail(userId, email, name);
-      } catch (err) {
-        console.warn("[Auth] signup verify-email send failed", err);
-      }
-    }
+    // Verification-email send is intentionally skipped — see note above.
 
     await issueSession(req, res, openId, name);
     res.json({ ok: true });
