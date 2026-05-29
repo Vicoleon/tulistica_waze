@@ -61,6 +61,8 @@ export async function createContext(
         loginMethod: "mock",
         homeLatitude: 9.9281,
         homeLongitude: -84.0907,
+        workLatitude: null,
+        workLongitude: null,
         fuelCostPerKm: 250,
         timeValuePerHour: 3000,
         priceReportsCount: 0,

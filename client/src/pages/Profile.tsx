@@ -33,8 +33,6 @@ import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 import { getLoginUrl } from "@/const";
 
-const FAVORITE_STORES_PLACEHOLDER = ["AutoMercado Escazú", "PriceSmart Heredia", "Walmart Multiplaza"];
-
 export default function Profile() {
   const { user, loading, isAuthenticated, logout } = useAuth();
   const [, setLocation] = useLocation();
@@ -46,6 +44,8 @@ export default function Profile() {
   // Location & preferences
   const [homeLatitude, setHomeLatitude] = useState("");
   const [homeLongitude, setHomeLongitude] = useState("");
+  const [workLatitude, setWorkLatitude] = useState("");
+  const [workLongitude, setWorkLongitude] = useState("");
   const [defaultRadius, setDefaultRadius] = useState([10]);
   const [fuelCost, setFuelCost] = useState("0.15");
   const [timeValue, setTimeValue] = useState("15");
@@ -55,6 +55,12 @@ export default function Profile() {
 
   const utils = trpc.useUtils();
   const updateLocation = trpc.user.updateLocation.useMutation({
+    onSuccess: () => {
+      utils.auth.me.invalidate();
+    },
+  });
+
+  const updateWorkLocation = trpc.user.updateWorkLocation.useMutation({
     onSuccess: () => {
       utils.auth.me.invalidate();
     },
@@ -73,6 +79,8 @@ export default function Profile() {
       setEditName(user.name ?? "");
       setHomeLatitude(user.homeLatitude?.toString() || "");
       setHomeLongitude(user.homeLongitude?.toString() || "");
+      setWorkLatitude(user.workLatitude?.toString() || "");
+      setWorkLongitude(user.workLongitude?.toString() || "");
       setDefaultRadius([user.defaultRadiusKm || 10]);
       setFuelCost(user.fuelCostPerKm?.toString() || "0.15");
       setTimeValue(user.timeValuePerHour?.toString() || "15");
@@ -86,6 +94,16 @@ export default function Profile() {
         longitude: parseFloat(homeLongitude),
       });
     }
+    // Work is optional: send either coords (when both fields are filled) or
+    // explicit nulls (so the user can clear it by emptying the inputs).
+    const hasWork = workLatitude && workLongitude;
+    const hasEither = workLatitude || workLongitude;
+    if (hasWork || hasEither) {
+      updateWorkLocation.mutate({
+        latitude: hasWork ? parseFloat(workLatitude) : null,
+        longitude: hasWork ? parseFloat(workLongitude) : null,
+      });
+    }
     updatePreferences.mutate({
       defaultRadiusKm: defaultRadius[0],
       fuelCostPerKm: parseFloat(fuelCost),
@@ -93,17 +111,27 @@ export default function Profile() {
     });
   };
 
-  const handleGetLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setHomeLatitude(pos.coords.latitude.toFixed(6));
-          setHomeLongitude(pos.coords.longitude.toFixed(6));
-          toast.success("Listo — usamos tu ubicación actual.");
-        },
-        () => toast.error("No pudimos leer tu ubicación.")
-      );
+  const handleGetLocation = (target: "home" | "work" = "home") => {
+    if (!navigator.geolocation) {
+      toast.error("Tu navegador no permite leer la ubicación.");
+      return;
     }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude.toFixed(6);
+        const lng = pos.coords.longitude.toFixed(6);
+        if (target === "home") {
+          setHomeLatitude(lat);
+          setHomeLongitude(lng);
+          toast.success("Listo — usamos tu ubicación actual para casa.");
+        } else {
+          setWorkLatitude(lat);
+          setWorkLongitude(lng);
+          toast.success("Listo — usamos tu ubicación actual para trabajo.");
+        }
+      },
+      () => toast.error("No pudimos leer tu ubicación.")
+    );
   };
 
   const handleLogout = async () => {
@@ -136,7 +164,10 @@ export default function Profile() {
   }
 
   const initial = (user?.name?.[0] ?? user?.email?.[0] ?? "?").toUpperCase();
-  const savingProfile = updateLocation.isPending || updatePreferences.isPending;
+  const savingProfile =
+    updateLocation.isPending ||
+    updateWorkLocation.isPending ||
+    updatePreferences.isPending;
 
   return (
     <div className="min-h-screen bg-background">
@@ -162,7 +193,7 @@ export default function Profile() {
             Mi perfil
           </h1>
           <p className="mt-2 text-muted-foreground max-w-2xl">
-            Tu cuenta, tus tiendas favoritas, tus preferencias.
+            Tu cuenta, tu ubicación, tus preferencias.
           </p>
         </section>
 
@@ -225,36 +256,6 @@ export default function Profile() {
           </div>
           <Button variant="outline" className="rounded-full h-11 gap-2">
             <Plus className="w-4 h-4" /> Invitar a alguien
-          </Button>
-        </SectionCard>
-
-        {/* Tiendas favoritas */}
-        <SectionCard
-          eyebrow="Tiendas favoritas"
-          title="Donde más comprás."
-          description="Las marcamos como tu base — aparecen primero en mapas y precios."
-        >
-          <div className="flex flex-wrap gap-2 mb-4">
-            {FAVORITE_STORES_PLACEHOLDER.map((store) => (
-              <span
-                key={store}
-                className="inline-flex items-center gap-2 rounded-full bg-peach-soft text-accent-foreground px-4 h-10 text-sm"
-              >
-                {store}
-                <button
-                  type="button"
-                  aria-label={`Quitar ${store}`}
-                  className="text-accent-foreground/60 hover:text-accent-foreground"
-                  // TODO: wire to user.removeFavoriteStore
-                  onClick={() => toast("Vamos a guardar tu cambio pronto.")}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-          <Button variant="outline" className="rounded-full h-11 gap-2">
-            <Plus className="w-4 h-4" /> Agregar tienda
           </Button>
         </SectionCard>
 
@@ -326,11 +327,55 @@ export default function Profile() {
           </div>
           <Button
             variant="outline"
-            onClick={handleGetLocation}
+            onClick={() => handleGetLocation("home")}
             className="rounded-full h-11 gap-2 mt-3 w-full sm:w-auto"
           >
             <MapPin className="w-4 h-4" /> Usar ubicación actual
           </Button>
+
+          {/* Work (optional) */}
+          <div className="mt-6 pt-6 border-t border-border space-y-3">
+            <div>
+              <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                Trabajo <span className="lowercase text-muted-foreground/70">— opcional</span>
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Si solés hacer compras cerca del trabajo, agregalo acá. Dejá ambos
+                campos vacíos para quitarlo.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-sm">Latitud</Label>
+                <Input
+                  type="number"
+                  step="0.000001"
+                  placeholder="9.9333"
+                  value={workLatitude}
+                  onChange={(e) => setWorkLatitude(e.target.value)}
+                  className="rounded-xl h-11 font-mono"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm">Longitud</Label>
+                <Input
+                  type="number"
+                  step="0.000001"
+                  placeholder="-84.0833"
+                  value={workLongitude}
+                  onChange={(e) => setWorkLongitude(e.target.value)}
+                  className="rounded-xl h-11 font-mono"
+                />
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => handleGetLocation("work")}
+              className="rounded-full h-11 gap-2 w-full sm:w-auto"
+            >
+              <MapPin className="w-4 h-4" /> Estoy en mi trabajo ahora
+            </Button>
+          </div>
 
           <div className="space-y-3 mt-6 pt-6 border-t border-border">
             <div className="flex items-center justify-between">

@@ -204,6 +204,20 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    // Optional secondary location (workplace). Pass `null` for both fields
+    // to clear it (e.g. the user removes their work address).
+    updateWorkLocation: protectedProcedure
+      .input(
+        z.object({
+          latitude: z.number().nullable(),
+          longitude: z.number().nullable(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        await db.updateUserWorkLocation(ctx.user.id, input.latitude, input.longitude);
+        return { success: true };
+      }),
+
     updatePreferences: protectedProcedure
       .input(z.object({
         defaultRadiusKm: z.number().optional(),

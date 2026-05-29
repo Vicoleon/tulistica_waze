@@ -9,6 +9,7 @@ import {
   ArrowRight,
   Check,
   Loader2,
+  MapPin,
   Receipt,
   Sparkles,
 } from "lucide-react";
@@ -28,6 +29,7 @@ import { useLocation } from "wouter";
 
 type StepKey =
   | "household"
+  | "location"
   | "cadence"
   | "chains"
   | "priorities"
@@ -36,6 +38,7 @@ type StepKey =
 
 const STEP_ORDER: StepKey[] = [
   "household",
+  "location",
   "cadence",
   "chains",
   "priorities",
@@ -190,13 +193,49 @@ export default function Onboarding() {
     },
   });
 
+  // Location is captured in the onboarding "location" step and persisted via
+  // user.updateLocation alongside profile.update on final submit. Optional —
+  // users can skip the step and set it later from Profile.
+  const updateLocation = trpc.user.updateLocation.useMutation();
+  const updateWorkLocation = trpc.user.updateWorkLocation.useMutation();
+
   const { track } = useAnalytics();
   const [stepIndex, setStepIndex] = useState(0);
   const [draft, setDraft] = useState<Draft>({
     savingsVsTimeBias: 50,
   });
+  // Optional location coords collected in the "location" step.
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [workCoords, setWorkCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationFetching, setLocationFetching] = useState<null | "home" | "work">(null);
   const stepKey = STEP_ORDER[stepIndex];
   const isLast = stepIndex === STEP_ORDER.length - 1;
+
+  const captureLocation = (target: "home" | "work") => {
+    if (!navigator.geolocation) {
+      toast.error("Tu navegador no permite leer la ubicación.");
+      return;
+    }
+    setLocationFetching(target);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const point = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        if (target === "home") setCoords(point);
+        else setWorkCoords(point);
+        setLocationFetching(null);
+        toast.success(
+          target === "home"
+            ? "Listo — guardamos tu casa."
+            : "Listo — guardamos tu trabajo."
+        );
+      },
+      () => {
+        setLocationFetching(null);
+        toast.error("No pudimos leer tu ubicación. Podés seguir sin ella.");
+      },
+      { timeout: 10000 }
+    );
+  };
 
   // Fire `onboarding_started` once when the page first mounts.
   const startedRef = useRef(false);
@@ -213,6 +252,9 @@ export default function Onboarding() {
     switch (stepKey) {
       case "household":
         return Boolean(draft.householdSize);
+      case "location":
+        // Optional — the user can advance with or without coords.
+        return true;
       case "cadence":
         return Boolean(draft.shoppingCadence);
       case "chains":
@@ -239,7 +281,18 @@ export default function Onboarding() {
       setStepIndex((s) => s + 1);
       return;
     }
-    // Final: submit
+    // Final: persist coords (if collected) alongside the shopper profile.
+    // Fire-and-forget — location is optional, and profile.update.onSuccess
+    // handles the post-onboarding navigation.
+    if (coords) {
+      updateLocation.mutate({ latitude: coords.lat, longitude: coords.lng });
+    }
+    if (workCoords) {
+      updateWorkLocation.mutate({
+        latitude: workCoords.lat,
+        longitude: workCoords.lng,
+      });
+    }
     const payload = draft as ShopperProfileInput;
     update.mutate(payload);
   };
@@ -352,6 +405,96 @@ export default function Onboarding() {
                     }
                   />
                 ))}
+              </div>
+            </Step>
+          )}
+
+          {stepKey === "location" && (
+            <Step
+              question={
+                <>
+                  ¿Desde dónde{" "}
+                  <em className="font-serif italic text-primary">hacés las compras</em>?
+                </>
+              }
+              hint="Lo usamos para mostrarte tiendas cerca y rutas que valgan la pena. Podés saltarlo y agregarlo después."
+            >
+              <div className="rounded-3xl border bg-card p-6 sm:p-8 shadow-paper space-y-5">
+                {/* Home */}
+                <div className="space-y-2">
+                  <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                    Casa
+                  </p>
+                  <Button
+                    type="button"
+                    size="lg"
+                    onClick={() => captureLocation("home")}
+                    disabled={locationFetching !== null}
+                    variant={coords ? "outline" : "default"}
+                    className="w-full rounded-full gap-2 h-12"
+                  >
+                    {locationFetching === "home" ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" /> Leyendo ubicación…
+                      </>
+                    ) : coords ? (
+                      <>
+                        <Check className="w-4 h-4" /> Casa guardada
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="w-4 h-4" /> Usar mi ubicación actual
+                      </>
+                    )}
+                  </Button>
+                  {coords && (
+                    <p className="text-xs text-muted-foreground text-center font-mono">
+                      {coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}
+                    </p>
+                  )}
+                </div>
+
+                {/* Work (optional) */}
+                <div className="space-y-2 pt-4 border-t border-border/60">
+                  <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                    Trabajo <span className="lowercase text-muted-foreground/70">— opcional</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Si solés hacer compras cerca del trabajo, agregalo desde ahí.
+                  </p>
+                  <Button
+                    type="button"
+                    size="lg"
+                    onClick={() => captureLocation("work")}
+                    disabled={locationFetching !== null}
+                    variant={workCoords ? "outline" : "secondary"}
+                    className="w-full rounded-full gap-2 h-12"
+                  >
+                    {locationFetching === "work" ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" /> Leyendo ubicación…
+                      </>
+                    ) : workCoords ? (
+                      <>
+                        <Check className="w-4 h-4" /> Trabajo guardado
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="w-4 h-4" /> Estoy en mi trabajo ahora
+                      </>
+                    )}
+                  </Button>
+                  {workCoords && (
+                    <p className="text-xs text-muted-foreground text-center font-mono">
+                      {workCoords.lat.toFixed(4)}, {workCoords.lng.toFixed(4)}
+                    </p>
+                  )}
+                </div>
+
+                <p className="text-xs text-muted-foreground text-center pt-2">
+                  Tu navegador te va a pedir permiso. Solo lo usamos para calcular
+                  distancias a tiendas — no compartimos esto con nadie.
+                </p>
               </div>
             </Step>
           )}

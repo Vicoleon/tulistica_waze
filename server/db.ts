@@ -155,6 +155,23 @@ export async function updateUserLocation(userId: number, lat: number, lng: numbe
     .where(eq(users.id, userId));
 }
 
+/**
+ * Sets (or clears, when lat+lng are null) the user's optional work location.
+ * Used by store-finder paths that want to surface stores near work in
+ * addition to home — see user.updateWorkLocation.
+ */
+export async function updateUserWorkLocation(
+  userId: number,
+  lat: number | null,
+  lng: number | null,
+) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users)
+    .set({ workLatitude: lat, workLongitude: lng })
+    .where(eq(users.id, userId));
+}
+
 export async function updateUserPreferences(userId: number, prefs: {
   defaultRadiusKm?: number;
   fuelCostPerKm?: number;

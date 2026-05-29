@@ -20,6 +20,10 @@ export const users = mysqlTable("users", {
   // Location preferences
   homeLatitude: float("homeLatitude"),
   homeLongitude: float("homeLongitude"),
+  // Optional secondary location (e.g. workplace). When set, store-finder
+  // queries can suggest stores near work in addition to home.
+  workLatitude: float("workLatitude"),
+  workLongitude: float("workLongitude"),
   defaultRadiusKm: float("defaultRadiusKm").default(10),
   fuelCostPerKm: float("fuelCostPerKm").default(250), // ₡250/km — typical CR sedan
   timeValuePerHour: float("timeValuePerHour").default(3000), // ₡3,000/hr — CR opportunity cost
