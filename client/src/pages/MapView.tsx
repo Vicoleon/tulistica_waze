@@ -18,6 +18,7 @@ import { Link, useSearch, useLocation } from "wouter";
 import { toast } from "sonner";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { ANALYTICS_EVENTS } from "../../../shared/analytics";
+import { ReportPriceDialog } from "@/components/map/ReportPriceDialog";
 
 interface StoreMarker {
   id: number;
@@ -85,6 +86,7 @@ export default function MapPage() {
   const [showGooglePlaces, setShowGooglePlaces] = useState(true);
   const [activeChip, setActiveChip] = useState<string>("all");
   const [crowdednessDialogOpen, setCrowdednessDialogOpen] = useState(false);
+  const [reportPriceOpen, setReportPriceOpen] = useState(false);
   const [crowdednessLevel, setCrowdednessLevel] = useState([50]);
   const [waitTime, setWaitTime] = useState("");
   const [crowdednessComment, setCrowdednessComment] = useState("");
@@ -460,6 +462,7 @@ export default function MapPage() {
                 getCrowdednessColor={getCrowdednessColor}
                 onClose={() => setSelectedStore(null)}
                 onReportBusyness={() => setCrowdednessDialogOpen(true)}
+                onReportPrice={() => setReportPriceOpen(true)}
                 onSeePlan={() => navigate("/optimize")}
                 isAuthenticated={isAuthenticated}
               />
@@ -479,6 +482,17 @@ export default function MapPage() {
           </aside>
         </div>
       </main>
+
+      {/* Report Price Dialog */}
+      {selectedStore && (
+        <ReportPriceDialog
+          open={reportPriceOpen}
+          onOpenChange={setReportPriceOpen}
+          storeId={selectedStore.id}
+          storeName={selectedStore.name}
+          userLocation={userLocation}
+        />
+      )}
 
       {/* Crowdedness Report Dialog */}
       <Dialog open={crowdednessDialogOpen} onOpenChange={setCrowdednessDialogOpen}>
@@ -571,6 +585,7 @@ interface SelectedStoreCardProps {
   getCrowdednessColor: (level: number) => { bg: string; text: string; label: string };
   onClose: () => void;
   onReportBusyness: () => void;
+  onReportPrice?: () => void;
   onSeePlan: () => void;
   isAuthenticated: boolean;
 }
@@ -581,6 +596,7 @@ function SelectedStoreCard({
   getCrowdednessColor,
   onClose,
   onReportBusyness,
+  onReportPrice,
   onSeePlan,
   isAuthenticated,
 }: SelectedStoreCardProps) {
@@ -724,6 +740,16 @@ function SelectedStoreCard({
             >
               <Users className="w-4 h-4 mr-1" />
               Reportar qué tan lleno está
+            </Button>
+          )}
+          {isAuthenticated && onReportPrice && (
+            <Button
+              variant="outline"
+              onClick={onReportPrice}
+              className="rounded-full min-h-11 sm:col-span-2"
+            >
+              <MapPin className="w-4 h-4 mr-1" />
+              Reportar precio aquí
             </Button>
           )}
         </div>
