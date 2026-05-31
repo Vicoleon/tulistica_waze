@@ -1,9 +1,10 @@
 import { isMapsAvailable } from "../_core/map";
 import { searchNearbyGroceryStores } from "./externalApis";
-import { cacheGooglePlace, getNearbyGooglePlaces } from "../db";
+import { cacheGooglePlace, getNearbyGooglePlaces, upsertPhysicalStore } from "../db";
 import { matchChain, type KnownChainId } from "./chainMatch";
 
 export interface PhysicalStore {
+  id: number;
   placeId: string;
   name: string;
   address: string;
@@ -76,15 +77,28 @@ export async function discoverPhysicalStores(
     if (!chainId) continue;
     const distanceKm = haversineKm(lat, lng, p.latitude, p.longitude);
     if (distanceKm > radiusKm) continue;
-    result.push({
+    const address = p.address ?? "";
+    const avgRating = p.rating ?? null;
+    const id = await upsertPhysicalStore({
       placeId: p.placeId,
       name: p.name,
-      address: p.address ?? "",
+      chainId,
+      address,
+      latitude: p.latitude,
+      longitude: p.longitude,
+      avgRating,
+    });
+    if (id == null) continue; // no DB -> can't give a stable id; skip
+    result.push({
+      id,
+      placeId: p.placeId,
+      name: p.name,
+      address,
       latitude: p.latitude,
       longitude: p.longitude,
       chainId,
       distanceKm,
-      avgRating: p.rating ?? null,
+      avgRating,
     });
   }
   result.sort((a, b) => a.distanceKm - b.distanceKm);
