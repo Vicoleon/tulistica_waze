@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, float, boolean, json, index } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, float, boolean, json, index, uniqueIndex } from "drizzle-orm/mysql-core";
 
 // ============ USERS ============
 export const users = mysqlTable("users", {
@@ -75,12 +75,14 @@ export const stores = mysqlTable("stores", {
   totalRatings: int("totalRatings").default(0),
   isActive: boolean("isActive").default(true),
   brandId: int("brandId"),
+  placeId: varchar("placeId", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => [
   index("idx_stores_location").on(table.latitude, table.longitude),
   index("idx_stores_chain").on(table.chainId),
   index("idx_stores_brand").on(table.brandId),
+  uniqueIndex("idx_stores_placeId").on(table.placeId),
 ]);
 
 export type Store = typeof stores.$inferSelect;
