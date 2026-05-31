@@ -1,4 +1,4 @@
-import { getPriceMatrix, getProductsByIds, getOnlineStoreIdsByChain } from "../db";
+import { getProductsByIds, getBranchPriceMatrix } from "../db";
 import { discoverPhysicalStores } from "./storeDiscovery";
 
 interface OptimizationResult {
@@ -81,32 +81,9 @@ export class SmartCartEngine {
     const products = await getProductsByIds(productIds);
     const productMap = new Map(products.map((p) => [p.id, p]));
 
-    // 3. Online "base" prices, keyed by chain. Physical branches reuse the
-    //    price of their chain's online storefront until per-store prices exist.
-    const onlineByChain = await getOnlineStoreIdsByChain(); // chainId -> online storeId
-    const onlineIdToChain = new Map<number, string>();
-    Array.from(onlineByChain.entries()).forEach(([chain, id]) => onlineIdToChain.set(id, chain));
-    const onlineStoreIds = Array.from(new Set(Array.from(onlineByChain.values())));
-    const priceData = await getPriceMatrix(onlineStoreIds, productIds);
-
-    // chainId -> (productId -> { price, source }). source carries through to the
-    // UI's ESTIMADO badge: 'reported' = the chain's real online price,
-    // 'estimated' = derived from the Walmart baseline × chain margin.
-    type PricedEntry = { price: number; source: "reported" | "estimated" };
-    const chainPrices = new Map<string, Map<number, PricedEntry>>();
-    for (const entry of priceData) {
-      const chain = onlineIdToChain.get(entry.storeId);
-      if (!chain) continue;
-      if (!chainPrices.has(chain)) chainPrices.set(chain, new Map());
-      const cm = chainPrices.get(chain)!;
-      if (!cm.has(entry.productId)) {
-        cm.set(entry.productId, { price: entry.price, source: entry.source });
-      }
-    }
-
-    // 4. Candidate branches whose chain actually has base prices.
+    // 3. Candidate branches (all persisted physical branches matched to a chain).
     interface StoreCandidate {
-      id: number; // chain's online storeId (price source / itemBreakdown.storeId)
+      id: number; // real persisted store id of the branch
       placeId: string;
       name: string;
       address: string;
@@ -115,26 +92,37 @@ export class SmartCartEngine {
       longitude: number;
       distanceKm: number;
     }
-    const candidates: StoreCandidate[] = physical
-      .map((p) => ({
-        id: onlineByChain.get(p.chainId) ?? -1,
-        placeId: p.placeId,
-        name: p.name,
-        address: p.address,
-        chainId: p.chainId,
-        latitude: p.latitude,
-        longitude: p.longitude,
-        distanceKm: p.distanceKm,
-      }))
-      .filter((c) => c.id !== -1);
+    const candidates: StoreCandidate[] = physical.map((p) => ({
+      id: p.id,
+      placeId: p.placeId,
+      name: p.name,
+      address: p.address,
+      chainId: p.chainId,
+      latitude: p.latitude,
+      longitude: p.longitude,
+      distanceKm: p.distanceKm,
+    }));
     if (candidates.length === 0) {
       return [];
     }
 
-    // Price matrix keyed by placeId so two branches of the same chain stay distinct.
+    // 4. Resolve prices per (branch, product): branch's own > chain online > estimate.
+    type PricedEntry = { price: number; source: "reported" | "estimated" };
+    const branchPriceData = await getBranchPriceMatrix(
+      candidates.map((c) => ({ storeId: c.id, chainId: c.chainId })),
+      productIds,
+    );
+    const placeIdByStoreId = new Map(candidates.map((c) => [c.id, c.placeId]));
+    // Price matrix keyed by placeId so branches stay distinct.
     const priceMatrix = new Map<string, Map<number, PricedEntry>>();
-    for (const c of candidates) {
-      priceMatrix.set(c.placeId, chainPrices.get(c.chainId) ?? new Map());
+    for (const c of candidates) priceMatrix.set(c.placeId, new Map());
+    for (const entry of branchPriceData) {
+      const placeId = placeIdByStoreId.get(entry.storeId);
+      if (!placeId) continue;
+      const m = priceMatrix.get(placeId)!;
+      if (!m.has(entry.productId)) {
+        m.set(entry.productId, { price: entry.price, source: entry.source });
+      }
     }
 
     const results: OptimizationResult[] = [];
