@@ -354,6 +354,61 @@ export async function getOnlineStoreIdsByChain(): Promise<Map<string, number>> {
   return map;
 }
 
+export interface PhysicalStoreUpsert {
+  placeId: string;
+  name: string;
+  chainId: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  avgRating: number | null;
+}
+
+/**
+ * Insert-or-update a discovered physical branch by its Google Places id.
+ * Idempotent: the same placeId always maps to the same stores.id. Returns the
+ * store id, or null when there is no DB connection. Also links the
+ * googlePlacesCache row to the store when present.
+ */
+export async function upsertPhysicalStore(s: PhysicalStoreUpsert): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  await db.insert(stores).values({
+    placeId: s.placeId,
+    name: s.name,
+    chainId: s.chainId,
+    address: s.address,
+    latitude: s.latitude,
+    longitude: s.longitude,
+    avgRating: s.avgRating ?? 0,
+    isActive: true,
+  }).onDuplicateKeyUpdate({
+    set: {
+      name: s.name,
+      chainId: s.chainId,
+      address: s.address,
+      latitude: s.latitude,
+      longitude: s.longitude,
+      avgRating: s.avgRating ?? 0,
+      isActive: true,
+    },
+  });
+  const rows = await db
+    .select({ id: stores.id })
+    .from(stores)
+    .where(eq(stores.placeId, s.placeId))
+    .limit(1);
+  const storeId = rows[0]?.id ?? null;
+  if (storeId != null) {
+    // Best-effort link the cached place to the store row.
+    await db
+      .update(googlePlacesCache)
+      .set({ storeId })
+      .where(eq(googlePlacesCache.placeId, s.placeId));
+  }
+  return storeId;
+}
+
 // ============ PRODUCT HELPERS ============
 export async function createProduct(product: InsertProduct) {
   const db = await getDb();
