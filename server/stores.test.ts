@@ -6,6 +6,7 @@ import type { TrpcContext } from "./_core/context";
 vi.mock("./services/storeDiscovery", () => ({
   discoverPhysicalStores: vi.fn().mockResolvedValue([
     {
+      id: 42,
       placeId: "place-1",
       name: "Walmart Escazú",
       address: "Escazú, San José",
@@ -111,7 +112,7 @@ describe("stores router", () => {
 
     expect(result).toHaveLength(1);
     expect(result[0]).toMatchObject({
-      id: 0,
+      id: 42,
       placeId: "place-1",
       name: "Walmart Escazú",
       chainId: "walmart",
