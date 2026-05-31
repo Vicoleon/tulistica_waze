@@ -78,7 +78,7 @@ export function ReportPriceDialog({
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Producto</Label>
+            <Label htmlFor="product-search">Producto</Label>
             {selectedProduct ? (
               <div className="flex items-center justify-between rounded-xl border border-border bg-paper-deep px-3 py-2">
                 <span className="text-sm">{selectedProduct.name}</span>
@@ -93,6 +93,7 @@ export function ReportPriceDialog({
             ) : (
               <>
                 <Input
+                  id="product-search"
                   placeholder="Buscar producto…"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
