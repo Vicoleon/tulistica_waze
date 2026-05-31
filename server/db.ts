@@ -25,6 +25,7 @@ import {
   nextListId, nextListItemId,
 } from './_core/mockData';
 import { derivePrice, isDerivedChain, type PriceSource } from './services/pricingFallback';
+import { resolveBranchPrices, type BranchPrice } from "./services/branchPricing";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -783,6 +784,90 @@ export async function getPriceMatrix(storeIds: number[], productIds: number[]): 
   }
 
   return out;
+}
+
+/**
+ * Price each (physical branch, product) by precedence — see resolveBranchPrices:
+ * branch's own reported price > chain online base price > Walmart×margin estimate.
+ */
+export async function getBranchPriceMatrix(
+  branches: { storeId: number; chainId: string }[],
+  productIds: number[],
+): Promise<BranchPrice[]> {
+  const db = await getDb();
+  if (!db || branches.length === 0 || productIds.length === 0) return [];
+
+  const branchIds = branches.map((b) => b.storeId);
+
+  // 1. Per-branch user-reported prices (newest non-outlier wins).
+  const branchRows = await db.select({
+    storeId: priceEntries.storeId,
+    productId: priceEntries.productId,
+    price: priceEntries.price,
+  })
+    .from(priceEntries)
+    .where(and(
+      inArray(priceEntries.storeId, branchIds),
+      inArray(priceEntries.productId, productIds),
+      eq(priceEntries.isOutlier, false),
+    ))
+    .orderBy(desc(priceEntries.createdAt));
+  const branchPrices = new Map<string, number>();
+  for (const r of branchRows) {
+    const key = `${r.storeId}:${r.productId}`;
+    if (!branchPrices.has(key)) branchPrices.set(key, r.price);
+  }
+
+  // 2. Chain online base prices (from the "(en línea)" storefronts).
+  const onlineByChain = await getOnlineStoreIdsByChain(); // chainId -> online storeId
+  const onlineIdToChain = new Map<number, string>();
+  onlineByChain.forEach((id, chain) => onlineIdToChain.set(id, chain));
+  const onlineStoreIds = Array.from(new Set(onlineByChain.values()));
+  const onlineChainPrices = new Map<string, number>();
+  if (onlineStoreIds.length > 0) {
+    const onlineRows = await db.select({
+      storeId: priceEntries.storeId,
+      productId: priceEntries.productId,
+      price: priceEntries.price,
+    })
+      .from(priceEntries)
+      .where(and(
+        inArray(priceEntries.storeId, onlineStoreIds),
+        inArray(priceEntries.productId, productIds),
+        eq(priceEntries.isOutlier, false),
+      ))
+      .orderBy(desc(priceEntries.createdAt));
+    for (const r of onlineRows) {
+      const chain = onlineIdToChain.get(r.storeId);
+      if (!chain) continue;
+      const key = `${chain}:${r.productId}`;
+      if (!onlineChainPrices.has(key)) onlineChainPrices.set(key, r.price);
+    }
+  }
+
+  // 3. Walmart baseline (newest per product) for the estimate fallback.
+  const walmartStoreRows = await db.select({ id: stores.id }).from(stores)
+    .where(eq(stores.chainId, "walmart"));
+  const walmartStoreIds = walmartStoreRows.map((s) => s.id);
+  const walmartBaseline = new Map<number, number>();
+  if (walmartStoreIds.length > 0) {
+    const baseRows = await db.select({
+      productId: priceEntries.productId,
+      price: priceEntries.price,
+    })
+      .from(priceEntries)
+      .where(and(
+        inArray(priceEntries.storeId, walmartStoreIds),
+        inArray(priceEntries.productId, productIds),
+        eq(priceEntries.isOutlier, false),
+      ))
+      .orderBy(desc(priceEntries.createdAt));
+    for (const r of baseRows) {
+      if (!walmartBaseline.has(r.productId)) walmartBaseline.set(r.productId, r.price);
+    }
+  }
+
+  return resolveBranchPrices({ branches, productIds, branchPrices, onlineChainPrices, walmartBaseline });
 }
 
 export async function getPriceStats(storeId: number, productId: number) {
