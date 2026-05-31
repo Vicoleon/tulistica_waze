@@ -438,7 +438,7 @@ export const appRouter = router({
         // Shape compatible with the Stores/MapView client (store.id, name,
         // chainId, city, avgRating, latitude, longitude, distanceKm, address).
         return physical.map((s) => ({
-          id: 0, // physical branches have no DB row yet; identity is placeId
+          id: s.id, // real persisted store id (enables crowdedness/analytics/price submit)
           placeId: s.placeId,
           name: s.name,
           chainId: s.chainId,
