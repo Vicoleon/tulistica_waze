@@ -137,6 +137,7 @@ function buildStore(
     avgRating, totalRatings,
     isActive: true,
     brandId: null, // origin/main added vendor-claim support; not used in mocks
+    placeId: null, // physical-branch identity; mocks are not Places-backed
     createdAt: new Date(), updatedAt: new Date(),
   };
 }
