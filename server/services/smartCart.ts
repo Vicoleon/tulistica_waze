@@ -18,7 +18,7 @@ interface OptimizationResult {
   tripCost: number;
   grandTotal: number;
   savings?: number;
-  itemBreakdown: { productId: number; productName: string; storeId: number; storeName: string; price: number }[];
+  itemBreakdown: { productId: number; productName: string; storeId: number; storeName: string; price: number; source: "reported" | "estimated" }[];
   missingItems: number[];
   /** Total items requested by the user. */
   requestedItemCount: number;
@@ -89,14 +89,19 @@ export class SmartCartEngine {
     const onlineStoreIds = Array.from(new Set(Array.from(onlineByChain.values())));
     const priceData = await getPriceMatrix(onlineStoreIds, productIds);
 
-    // chainId -> (productId -> price)
-    const chainPrices = new Map<string, Map<number, number>>();
+    // chainId -> (productId -> { price, source }). source carries through to the
+    // UI's ESTIMADO badge: 'reported' = the chain's real online price,
+    // 'estimated' = derived from the Walmart baseline × chain margin.
+    type PricedEntry = { price: number; source: "reported" | "estimated" };
+    const chainPrices = new Map<string, Map<number, PricedEntry>>();
     for (const entry of priceData) {
       const chain = onlineIdToChain.get(entry.storeId);
       if (!chain) continue;
       if (!chainPrices.has(chain)) chainPrices.set(chain, new Map());
       const cm = chainPrices.get(chain)!;
-      if (!cm.has(entry.productId)) cm.set(entry.productId, entry.price);
+      if (!cm.has(entry.productId)) {
+        cm.set(entry.productId, { price: entry.price, source: entry.source });
+      }
     }
 
     // 4. Candidate branches whose chain actually has base prices.
@@ -127,7 +132,7 @@ export class SmartCartEngine {
     }
 
     // Price matrix keyed by placeId so two branches of the same chain stay distinct.
-    const priceMatrix = new Map<string, Map<number, number>>();
+    const priceMatrix = new Map<string, Map<number, PricedEntry>>();
     for (const c of candidates) {
       priceMatrix.set(c.placeId, chainPrices.get(c.chainId) ?? new Map());
     }
@@ -140,21 +145,22 @@ export class SmartCartEngine {
     const singleStoreResults: (OptimizationResult & { placeId: string })[] = [];
 
     for (const store of candidates) {
-      const storePrices = priceMatrix.get(store.placeId) || new Map<number, number>();
+      const storePrices = priceMatrix.get(store.placeId) || new Map<number, PricedEntry>();
       let realCartTotal = 0;
       const itemBreakdown: OptimizationResult["itemBreakdown"] = [];
       const missingItems: number[] = [];
 
       for (const productId of productIds) {
-        const price = storePrices.get(productId);
-        if (price !== undefined) {
-          realCartTotal += price;
+        const entry = storePrices.get(productId);
+        if (entry !== undefined) {
+          realCartTotal += entry.price;
           itemBreakdown.push({
             productId,
             productName: productMap.get(productId)?.name || "Unknown",
             storeId: store.id,
             storeName: store.name,
-            price,
+            price: entry.price,
+            source: entry.source,
           });
         } else {
           missingItems.push(productId);
@@ -210,8 +216,8 @@ export class SmartCartEngine {
         const storeA = candidates.find((c) => c.placeId === topCandidates[i].placeId)!;
         const storeB = candidates.find((c) => c.placeId === topCandidates[j].placeId)!;
 
-        const pricesA = priceMatrix.get(storeA.placeId) || new Map<number, number>();
-        const pricesB = priceMatrix.get(storeB.placeId) || new Map<number, number>();
+        const pricesA = priceMatrix.get(storeA.placeId) || new Map<number, PricedEntry>();
+        const pricesB = priceMatrix.get(storeB.placeId) || new Map<number, PricedEntry>();
 
         let hybridTotal = 0;
         const itemBreakdown: OptimizationResult["itemBreakdown"] = [];
@@ -220,37 +226,40 @@ export class SmartCartEngine {
         const storeBItems: number[] = [];
 
         for (const productId of productIds) {
-          const priceA = pricesA.get(productId);
-          const priceB = pricesB.get(productId);
+          const entryA = pricesA.get(productId);
+          const entryB = pricesB.get(productId);
 
-          if (priceA === undefined && priceB === undefined) {
+          if (entryA === undefined && entryB === undefined) {
             missingItems.push(productId);
             continue;
           }
 
-          const aHas = priceA !== undefined;
-          const bHas = priceB !== undefined;
-          const pickA = aHas && (!bHas || priceA! <= priceB!);
+          // Pick the cheaper price. If only one store has it, that store wins.
+          const aHas = entryA !== undefined;
+          const bHas = entryB !== undefined;
+          const pickA = aHas && (!bHas || entryA!.price <= entryB!.price);
 
           if (pickA) {
-            hybridTotal += priceA!;
+            hybridTotal += entryA!.price;
             storeAItems.push(productId);
             itemBreakdown.push({
               productId,
               productName: productMap.get(productId)?.name || "Unknown",
               storeId: storeA.id,
               storeName: storeA.name,
-              price: priceA!,
+              price: entryA!.price,
+              source: entryA!.source,
             });
           } else {
-            hybridTotal += priceB!;
+            hybridTotal += entryB!.price;
             storeBItems.push(productId);
             itemBreakdown.push({
               productId,
               productName: productMap.get(productId)?.name || "Unknown",
               storeId: storeB.id,
               storeName: storeB.name,
-              price: priceB!,
+              price: entryB!.price,
+              source: entryB!.source,
             });
           }
         }

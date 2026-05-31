@@ -19,6 +19,12 @@ import type { User, Brand, UserToken, InsertUserToken, BrandMember, InsertBrandM
 import type { AnalyticsProperties } from "../shared/analytics";
 import { ENV } from './_core/env';
 import { isOnlineStoreName } from "./services/chainMatch";
+import {
+  mockStores, mockProducts, mockPriceEntries,
+  mockShoppingLists, mockListItems, haversineKm,
+  nextListId, nextListItemId,
+} from './_core/mockData';
+import { derivePrice, isDerivedChain, type PriceSource } from './services/pricingFallback';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -234,14 +240,87 @@ export async function createStore(store: InsertStore) {
 
 export async function getStoreById(id: number) {
   const db = await getDb();
-  if (!db) return undefined;
+  if (!db) return mockStores.find((s) => s.id === id);
   const result = await db.select().from(stores).where(eq(stores.id, id)).limit(1);
   return result[0];
 }
 
+export async function getNearbyStores(lat: number, lng: number, radiusKm: number) {
+  const db = await getDb();
+  if (!db) {
+    return mockStores
+      .filter((s) => !isOnlineStore(s.name, s.address))
+      .map((s) => ({
+        id: s.id,
+        name: s.name,
+        chainId: s.chainId,
+        address: s.address,
+        city: s.city,
+        latitude: s.latitude,
+        longitude: s.longitude,
+        imageUrl: s.imageUrl,
+        avgRating: s.avgRating,
+        hours: s.hours,
+        distanceKm: haversineKm(lat, lng, s.latitude, s.longitude),
+      }))
+      .filter((s) => s.distanceKm <= radiusKm)
+      .sort((a, b) => a.distanceKm - b.distanceKm);
+  }
+  // Haversine formula for distance calculation.
+  // Exclude online/delivery-only stores — they have placeholder coordinates
+  // (often equal to the user's home) and shouldn't show as physical destinations
+  // for Smart Cart routing.
+  const result = await db.select({
+    id: stores.id,
+    name: stores.name,
+    chainId: stores.chainId,
+    address: stores.address,
+    city: stores.city,
+    latitude: stores.latitude,
+    longitude: stores.longitude,
+    imageUrl: stores.imageUrl,
+    avgRating: stores.avgRating,
+    hours: stores.hours,
+    distanceKm: sql<number>`(
+      6371 * acos(
+        cos(radians(${lat})) * cos(radians(${stores.latitude})) *
+        cos(radians(${stores.longitude}) - radians(${lng})) +
+        sin(radians(${lat})) * sin(radians(${stores.latitude}))
+      )
+    )`.as('distanceKm'),
+  })
+    .from(stores)
+    .where(and(
+      eq(stores.isActive, true),
+      sql`${stores.name} NOT LIKE '%(en línea)%'`,
+      sql`${stores.name} NOT LIKE '%(online)%'`,
+      sql`${stores.address} IS NULL OR ${stores.address} NOT LIKE 'Sitio web%'`,
+    ))
+    .having(sql`distanceKm <= ${radiusKm}`)
+    .orderBy(sql`distanceKm`);
+  return result;
+}
+
+/** Online/delivery-only stores aren't physical destinations — skip them
+ *  for distance-based queries. */
+function isOnlineStore(name: string | null, address: string | null): boolean {
+  const n = (name ?? "").toLowerCase();
+  const a = (address ?? "").toLowerCase();
+  return n.includes("(en línea)") || n.includes("(online)") || a.startsWith("sitio web");
+}
+
 export async function searchStores(query: string, limit = 20) {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    const q = query.toLowerCase();
+    return mockStores
+      .filter((s) =>
+        s.name.toLowerCase().includes(q) ||
+        (s.chainId ?? "").toLowerCase().includes(q) ||
+        (s.city ?? "").toLowerCase().includes(q)
+      )
+      .slice(0, limit);
+  }
   return db.select().from(stores)
     .where(and(
       eq(stores.isActive, true),
@@ -285,21 +364,31 @@ export async function createProduct(product: InsertProduct) {
 
 export async function getProductById(id: number) {
   const db = await getDb();
-  if (!db) return undefined;
+  if (!db) return mockProducts.find((p) => p.id === id);
   const result = await db.select().from(products).where(eq(products.id, id)).limit(1);
   return result[0];
 }
 
 export async function getProductByBarcode(barcode: string) {
   const db = await getDb();
-  if (!db) return undefined;
+  if (!db) return mockProducts.find((p) => p.barcode === barcode);
   const result = await db.select().from(products).where(eq(products.barcode, barcode)).limit(1);
   return result[0];
 }
 
 export async function searchProducts(query: string, limit = 30) {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    if (!query) return mockProducts.slice(0, limit);
+    const q = query.toLowerCase();
+    return mockProducts
+      .filter((p) =>
+        p.name.toLowerCase().includes(q) ||
+        (p.brand ?? "").toLowerCase().includes(q) ||
+        (p.category ?? "").toLowerCase().includes(q)
+      )
+      .slice(0, limit);
+  }
   return db.select().from(products)
     .where(or(
       like(products.name, `%${query}%`),
@@ -312,7 +401,7 @@ export async function searchProducts(query: string, limit = 30) {
 
 export async function getProductsByCategory(category: string, limit = 50) {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) return mockProducts.filter((p) => p.category === category).slice(0, limit);
   return db.select().from(products)
     .where(eq(products.category, category))
     .limit(limit);
@@ -320,7 +409,8 @@ export async function getProductsByCategory(category: string, limit = 50) {
 
 export async function getProductsByIds(ids: number[]) {
   const db = await getDb();
-  if (!db || ids.length === 0) return [];
+  if (!db) return mockProducts.filter((p) => ids.includes(p.id));
+  if (ids.length === 0) return [];
   return db.select().from(products).where(inArray(products.id, ids));
 }
 
@@ -340,23 +430,83 @@ export async function createPriceEntry(entry: InsertPriceEntry) {
 
 export async function getLatestPrice(storeId: number, productId: number) {
   const db = await getDb();
-  if (!db) return undefined;
-  const result = await db.select().from(priceEntries)
+  if (!db) {
+    return mockPriceEntries.find(
+      (p) => p.storeId === storeId && p.productId === productId
+    );
+  }
+  // Look up the store's chain first — non-Walmart chains derive from Walmart.
+  const storeRow = await db.select({ chainId: stores.chainId })
+    .from(stores).where(eq(stores.id, storeId)).limit(1);
+  const chain = storeRow[0]?.chainId ?? null;
+  const isWalmart = (chain ?? "").toLowerCase() === "walmart";
+
+  if (isWalmart) {
+    const result = await db.select().from(priceEntries)
+      .where(and(
+        eq(priceEntries.storeId, storeId),
+        eq(priceEntries.productId, productId),
+        eq(priceEntries.isOutlier, false)
+      ))
+      .orderBy(desc(priceEntries.createdAt))
+      .limit(1);
+    return result[0] ? { ...result[0], source: "reported" as PriceSource } : undefined;
+  }
+
+  // Non-Walmart: derive from any Walmart store's price for this product.
+  const walmartRow = await db.select({ price: priceEntries.price })
+    .from(priceEntries)
+    .innerJoin(stores, eq(priceEntries.storeId, stores.id))
     .where(and(
-      eq(priceEntries.storeId, storeId),
+      eq(stores.chainId, "walmart"),
       eq(priceEntries.productId, productId),
-      eq(priceEntries.isOutlier, false)
+      eq(priceEntries.isOutlier, false),
     ))
     .orderBy(desc(priceEntries.createdAt))
     .limit(1);
-  return result[0];
+
+  if (walmartRow[0]) {
+    return {
+      storeId,
+      productId,
+      price: derivePrice(walmartRow[0].price, chain),
+      source: "estimated" as PriceSource,
+    };
+  }
+  return undefined;
 }
 
-export async function getPricesForProduct(productId: number) {
+export async function getPricesForProduct(productId: number): Promise<{
+  storeId: number;
+  storeName: string | null;
+  chainId: string | null;
+  price: number;
+  isVerified: boolean | null;
+  updatedAt: Date | null;
+  voteCount: number | null;
+  source: PriceSource;
+}[]> {
   const db = await getDb();
-  if (!db) return [];
-  // Get latest price per store
-  return db.select({
+  if (!db) {
+    return mockPriceEntries
+      .filter((p) => p.productId === productId)
+      .map((p) => {
+        const store = mockStores.find((s) => s.id === p.storeId);
+        return {
+          storeId: p.storeId,
+          storeName: store?.name ?? null,
+          chainId: store?.chainId ?? null,
+          price: p.price,
+          isVerified: p.isVerified,
+          updatedAt: p.updatedAt,
+          voteCount: p.voteCount,
+          source: "reported" as const,
+        };
+      });
+  }
+
+  // Real entries, joined to store metadata.
+  const realRows = await db.select({
     storeId: priceEntries.storeId,
     storeName: stores.name,
     chainId: stores.chainId,
@@ -372,12 +522,130 @@ export async function getPricesForProduct(productId: number) {
       eq(priceEntries.isOutlier, false)
     ))
     .orderBy(desc(priceEntries.createdAt));
+
+  // Latest real entry per store.
+  const realByStore = new Map<number, typeof realRows[number]>();
+  for (const r of realRows) {
+    if (!realByStore.has(r.storeId)) realByStore.set(r.storeId, r);
+  }
+
+  // Walmart baseline for derivation (pick the freshest Walmart entry).
+  const walmartBaseline = realRows.find(
+    (r) => (r.chainId ?? "").toLowerCase() === "walmart"
+  );
+
+  // Every active store should show a price — derive when no real entry exists,
+  // or when the store is non-Walmart (so the user sees consistent margin-based
+  // estimates rather than stale scraped numbers).
+  const allStores = await db.select({
+    id: stores.id,
+    name: stores.name,
+    chainId: stores.chainId,
+  }).from(stores).where(eq(stores.isActive, true));
+
+  const out: Awaited<ReturnType<typeof getPricesForProduct>> = [];
+  for (const store of allStores) {
+    const isWalmart = (store.chainId ?? "").toLowerCase() === "walmart";
+    const real = realByStore.get(store.id);
+
+    if (isWalmart && real) {
+      out.push({ ...real, source: "reported" });
+      continue;
+    }
+    if (isWalmart && walmartBaseline) {
+      // Another Walmart store with no entry of its own — same chain's data,
+      // not an estimate (chain consistency assumption).
+      out.push({
+        storeId: store.id,
+        storeName: store.name,
+        chainId: store.chainId,
+        price: walmartBaseline.price,
+        isVerified: false,
+        updatedAt: walmartBaseline.updatedAt,
+        voteCount: 0,
+        source: "reported",
+      });
+      continue;
+    }
+    // Non-Walmart: prefer the chain's own real (scraped online) price; only
+    // derive from the Walmart baseline × margin when the chain has no price.
+    if (real) {
+      out.push({ ...real, source: "reported" });
+    } else if (walmartBaseline) {
+      out.push({
+        storeId: store.id,
+        storeName: store.name,
+        chainId: store.chainId,
+        price: derivePrice(walmartBaseline.price, store.chainId),
+        isVerified: false,
+        updatedAt: walmartBaseline.updatedAt,
+        voteCount: 0,
+        source: "estimated",
+      });
+    }
+    // else: no Walmart baseline, no real entry → don't list (we have no signal)
+  }
+
+  // Sort cheapest first so the UI's default ordering is "best price".
+  return out.sort((a, b) => a.price - b.price);
 }
 
-export async function getPriceMatrix(storeIds: number[], productIds: number[]) {
+export async function getPriceMatrix(storeIds: number[], productIds: number[]): Promise<{
+  storeId: number;
+  productId: number;
+  price: number;
+  isVerified: boolean | null;
+  source: PriceSource;
+}[]> {
+  if (storeIds.length === 0 || productIds.length === 0) return [];
   const db = await getDb();
-  if (!db || storeIds.length === 0 || productIds.length === 0) return [];
-  return db.select({
+  if (!db) {
+    return mockPriceEntries
+      .filter((p) => storeIds.includes(p.storeId) && productIds.includes(p.productId))
+      .map((p) => ({
+        storeId: p.storeId,
+        productId: p.productId,
+        price: p.price,
+        isVerified: p.isVerified,
+        source: "reported" as const,
+      }));
+  }
+
+  // Step 1: pull all real entries for the requested store × product window,
+  // plus all Walmart-chain entries for the same products (for derivation).
+  const storeChains = await db.select({
+    id: stores.id,
+    chainId: stores.chainId,
+  }).from(stores).where(inArray(stores.id, storeIds));
+  const chainById = new Map<number, string | null>(
+    storeChains.map((s) => [s.id, s.chainId])
+  );
+
+  const walmartStoreRows = await db.select({ id: stores.id }).from(stores)
+    .where(eq(stores.chainId, "walmart"));
+  const walmartStoreIds = walmartStoreRows.map((s) => s.id);
+
+  // Walmart baseline prices by productId — used as the source of truth.
+  const walmartBase = new Map<number, number>();
+  if (walmartStoreIds.length > 0) {
+    const baseRows = await db.select({
+      productId: priceEntries.productId,
+      price: priceEntries.price,
+    })
+      .from(priceEntries)
+      .where(and(
+        inArray(priceEntries.storeId, walmartStoreIds),
+        inArray(priceEntries.productId, productIds),
+        eq(priceEntries.isOutlier, false),
+      ))
+      .orderBy(desc(priceEntries.createdAt));
+    for (const row of baseRows) {
+      if (!walmartBase.has(row.productId)) walmartBase.set(row.productId, row.price);
+    }
+  }
+
+  // Real entries inside the requested matrix.
+  const realRows = await db.select({
     storeId: priceEntries.storeId,
     productId: priceEntries.productId,
     price: priceEntries.price,
@@ -387,9 +655,79 @@ export async function getPriceMatrix(storeIds: number[], productIds: number[]) {
     .where(and(
       inArray(priceEntries.storeId, storeIds),
       inArray(priceEntries.productId, productIds),
-      eq(priceEntries.isOutlier, false)
+      eq(priceEntries.isOutlier, false),
     ))
     .orderBy(desc(priceEntries.createdAt));
+
+  // Build a "best real entry per (storeId, productId)" view — newest wins.
+  const realBySP = new Map<string, typeof realRows[number]>();
+  for (const row of realRows) {
+    const key = `${row.storeId}:${row.productId}`;
+    if (!realBySP.has(key)) realBySP.set(key, row);
+  }
+
+  // Step 2: for every (storeId, productId) in the requested window, decide:
+  // - walmart chain → use real entry as-is
+  // - other chains → derive from walmart baseline (overrides any scraped entry
+  //   from this first data batch). When a verified user report lands later,
+  //   we'll switch this to prefer it.
+  const out: {
+    storeId: number;
+    productId: number;
+    price: number;
+    isVerified: boolean | null;
+    source: PriceSource;
+  }[] = [];
+
+  for (const storeId of storeIds) {
+    const chain = chainById.get(storeId);
+    const isWalmart = (chain ?? "").toLowerCase() === "walmart";
+    for (const productId of productIds) {
+      const real = realBySP.get(`${storeId}:${productId}`);
+      const base = walmartBase.get(productId);
+
+      if (isWalmart) {
+        if (real) {
+          out.push({
+            storeId, productId,
+            price: real.price,
+            isVerified: real.isVerified,
+            source: "reported",
+          });
+        } else if (base !== undefined) {
+          // Another Walmart store — same chain, use the baseline as "reported".
+          out.push({
+            storeId, productId,
+            price: base,
+            isVerified: false,
+            source: "reported",
+          });
+        }
+        continue;
+      }
+      // Non-Walmart: prefer the chain's own real (scraped online) price as the
+      // base. Only derive from the Walmart baseline × chain margin when this
+      // chain has no price for the product — flagged 'estimated' for the UI.
+      if (real) {
+        out.push({
+          storeId, productId,
+          price: real.price,
+          isVerified: real.isVerified,
+          source: "reported",
+        });
+      } else if (base !== undefined) {
+        out.push({
+          storeId, productId,
+          price: derivePrice(base, chain),
+          isVerified: false,
+          source: "estimated",
+        });
+      }
+      // else: product unavailable at this store; skip — Smart Cart sees it as missing.
+    }
+  }
+
+  return out;
 }
 
 export async function getPriceStats(storeId: number, productId: number) {
@@ -451,28 +789,46 @@ export async function incrementPriceVote(priceId: number) {
 // ============ SHOPPING LIST HELPERS ============
 export async function createShoppingList(list: InsertShoppingList) {
   const db = await getDb();
-  if (!db) return null;
+  if (!db) {
+    const id = nextListId();
+    mockShoppingLists.set(id, {
+      id,
+      name: list.name,
+      ownerId: list.ownerId,
+      isShared: list.isShared ?? false,
+      shareCode: list.shareCode ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    mockListItems.set(id, []);
+    return id;
+  }
   const result = await db.insert(shoppingLists).values(list);
   return result[0].insertId;
 }
 
 export async function getShoppingListById(id: number) {
   const db = await getDb();
-  if (!db) return undefined;
+  if (!db) return mockShoppingLists.get(id);
   const result = await db.select().from(shoppingLists).where(eq(shoppingLists.id, id)).limit(1);
   return result[0];
 }
 
 export async function getShoppingListByShareCode(code: string) {
   const db = await getDb();
-  if (!db) return undefined;
+  if (!db) {
+    const lists = Array.from(mockShoppingLists.values());
+    return lists.find((l) => l.shareCode === code);
+  }
   const result = await db.select().from(shoppingLists).where(eq(shoppingLists.shareCode, code)).limit(1);
   return result[0];
 }
 
 export async function getUserShoppingLists(userId: number) {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    return Array.from(mockShoppingLists.values()).filter((l) => l.ownerId === userId);
+  }
   // Get owned lists and shared lists
   const owned = await db.select().from(shoppingLists).where(eq(shoppingLists.ownerId, userId));
   const memberOf = await db.select({ listId: listMembers.listId })
@@ -501,14 +857,56 @@ export async function deleteShoppingList(id: number) {
 // ============ LIST ITEM HELPERS ============
 export async function addListItem(item: InsertListItem) {
   const db = await getDb();
-  if (!db) return null;
+  if (!db) {
+    const id = nextListItemId();
+    const items = mockListItems.get(item.listId) ?? [];
+    items.push({
+      id,
+      listId: item.listId,
+      productId: item.productId ?? null,
+      customName: item.customName ?? null,
+      quantity: item.quantity ?? 1,
+      unit: item.unit ?? null,
+      isChecked: false,
+      checkedByUserId: null,
+      checkedAt: null,
+      addedByUserId: item.addedByUserId ?? null,
+      notes: item.notes ?? null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    mockListItems.set(item.listId, items);
+    return id;
+  }
   const result = await db.insert(listItems).values(item);
   return result[0].insertId;
 }
 
 export async function getListItems(listId: number) {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    const items = mockListItems.get(listId) ?? [];
+    return items.map((it) => {
+      const product = it.productId != null
+        ? mockProducts.find((p) => p.id === it.productId)
+        : undefined;
+      return {
+        id: it.id,
+        listId: it.listId,
+        productId: it.productId,
+        customName: it.customName,
+        quantity: it.quantity,
+        unit: it.unit,
+        isChecked: it.isChecked,
+        checkedByUserId: it.checkedByUserId,
+        checkedAt: it.checkedAt,
+        notes: it.notes,
+        productName: product?.name ?? null,
+        productBarcode: product?.barcode ?? null,
+        productCategory: product?.category ?? null,
+      };
+    });
+  }
   return db.select({
     id: listItems.id,
     listId: listItems.listId,
@@ -532,13 +930,28 @@ export async function getListItems(listId: number) {
 
 export async function updateListItem(id: number, data: Partial<InsertListItem>) {
   const db = await getDb();
-  if (!db) return;
+  if (!db) {
+    const allItems = Array.from(mockListItems.values()).flat();
+    const item = allItems.find((it) => it.id === id);
+    if (item) Object.assign(item, data, { updatedAt: new Date() });
+    return;
+  }
   await db.update(listItems).set(data).where(eq(listItems.id, id));
 }
 
 export async function checkListItem(id: number, userId: number, isChecked: boolean) {
   const db = await getDb();
-  if (!db) return;
+  if (!db) {
+    const allItems = Array.from(mockListItems.values()).flat();
+    const item = allItems.find((it) => it.id === id);
+    if (item) {
+      item.isChecked = isChecked;
+      item.checkedByUserId = isChecked ? userId : null;
+      item.checkedAt = isChecked ? new Date() : null;
+      item.updatedAt = new Date();
+    }
+    return;
+  }
   await db.update(listItems).set({
     isChecked,
     checkedByUserId: isChecked ? userId : null,
@@ -548,7 +961,18 @@ export async function checkListItem(id: number, userId: number, isChecked: boole
 
 export async function deleteListItem(id: number) {
   const db = await getDb();
-  if (!db) return;
+  if (!db) {
+    const entries = Array.from(mockListItems.entries());
+    for (const [listId, items] of entries) {
+      const idx = items.findIndex((it) => it.id === id);
+      if (idx !== -1) {
+        items.splice(idx, 1);
+        mockListItems.set(listId, items);
+        return;
+      }
+    }
+    return;
+  }
   await db.delete(listItems).where(eq(listItems.id, id));
 }
 
