@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +19,12 @@ interface ReportPriceDialogProps {
   storeId: number;
   storeName: string;
   userLocation: { lat: number; lng: number } | null;
+  /**
+   * When provided, the dialog opens with this product already selected and the
+   * product search is skipped. Used by the in-store shopping flow so reporting a
+   * price for the row you're standing in front of is one tap.
+   */
+  presetProduct?: { id: number; name: string } | null;
 }
 
 export function ReportPriceDialog({
@@ -27,6 +33,7 @@ export function ReportPriceDialog({
   storeId,
   storeName,
   userLocation,
+  presetProduct = null,
 }: ReportPriceDialogProps) {
   const [query, setQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<{
@@ -35,9 +42,18 @@ export function ReportPriceDialog({
   } | null>(null);
   const [price, setPrice] = useState("");
 
+  // Preselect the product when the dialog is opened with a preset (in-store
+  // flow). Reset the search query so the picker doesn't flash stale results.
+  useEffect(() => {
+    if (open && presetProduct) {
+      setSelectedProduct(presetProduct);
+      setQuery("");
+    }
+  }, [open, presetProduct]);
+
   const { data: products } = trpc.products.search.useQuery(
     { query, limit: 6 },
-    { enabled: query.length > 2 },
+    { enabled: query.length > 2 && !presetProduct },
   );
 
   const submitPrice = trpc.prices.submit.useMutation({
@@ -80,8 +96,20 @@ export function ReportPriceDialog({
     });
   };
 
+  // Clear transient state whenever the dialog closes so reopening (possibly for
+  // a different preset product) always starts fresh. A preset is reapplied by
+  // the open effect above.
+  const handleOpenChange = (next: boolean) => {
+    if (!next) {
+      setQuery("");
+      setSelectedProduct(null);
+      setPrice("");
+    }
+    onOpenChange(next);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="rounded-3xl">
         <DialogHeader>
           <DialogTitle className="font-serif text-2xl">
@@ -96,13 +124,15 @@ export function ReportPriceDialog({
             {selectedProduct ? (
               <div className="flex items-center justify-between rounded-xl border border-border bg-paper-deep px-3 py-2">
                 <span className="text-sm">{selectedProduct.name}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedProduct(null)}
-                >
-                  Cambiar
-                </Button>
+                {!presetProduct && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedProduct(null)}
+                  >
+                    Cambiar
+                  </Button>
+                )}
               </div>
             ) : (
               <>
@@ -149,7 +179,7 @@ export function ReportPriceDialog({
         </div>
 
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)}>
             Cancelar
           </Button>
           <Button

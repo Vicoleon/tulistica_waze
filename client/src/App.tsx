@@ -21,6 +21,7 @@ import Stores from "./pages/Stores";
 import Products from "./pages/Products";
 import ShoppingLists from "./pages/ShoppingLists";
 import ListDetail from "./pages/ListDetail";
+import ShoppingMode from "./pages/ShoppingMode";
 import Scanner from "./pages/Scanner";
 import Optimize from "./pages/Optimize";
 import Pantry from "./pages/Pantry";
@@ -93,6 +94,11 @@ function Router() {
         <DashboardLayout>
           <ShoppingLists />
         </DashboardLayout>
+      </Route>
+      {/* In-store shopping mode — full-screen, intentionally NOT wrapped in
+          DashboardLayout. Declared before /lists/:id so it wins for /shop. */}
+      <Route path="/lists/:id/shop">
+        <ShoppingMode />
       </Route>
       <Route path="/lists/:id">
         <DashboardLayout>

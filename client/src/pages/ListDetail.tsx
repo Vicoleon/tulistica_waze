@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { trpc } from "@/lib/trpc";
 import {
   ArrowLeft, Check, ChevronRight, Clock, Copy, Edit2, MapPin, Package,
-  Plus, Search, Share2, ShoppingBasket, Sparkles, Store, Trash2,
+  Plus, Search, Share2, ShoppingBasket, ShoppingCart, Sparkles, Store, Trash2,
 } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { toast } from "sonner";
@@ -705,6 +705,20 @@ export default function ListDetail() {
                   </Button>
                 </Link>
 
+                {bestChain && (
+                  <Link
+                    href={`/lists/${listId}/shop?chain=${bestChain.chainId}`}
+                    className="mt-2 block"
+                  >
+                    <Button
+                      variant="outline"
+                      className="h-12 w-full gap-2 rounded-full border-primary/40 text-primary hover:bg-peach-soft"
+                    >
+                      <ShoppingCart className="h-4 w-4" /> Comprar ahora
+                    </Button>
+                  </Link>
+                )}
+
                 {list.isShared ? (
                   <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
                     <DialogTrigger asChild>
@@ -797,13 +811,30 @@ export default function ListDetail() {
       </main>
 
       {/* Sticky mobile bottom bar */}
-      <div className="sticky bottom-0 left-0 right-0 z-30 border-t border-border bg-card/95 px-4 py-3 shadow-paper-lg backdrop-blur lg:hidden">
-        <Link href={`/optimize?list=${listId}`} className="block">
-          <Button className="h-12 w-full justify-between gap-2 rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90">
-            <span>Ver plan de compra</span>
-            {bestChain && (
+      <div className="sticky bottom-0 left-0 right-0 z-30 space-y-2 border-t border-border bg-card/95 px-4 py-3 shadow-paper-lg backdrop-blur lg:hidden">
+        {bestChain && (
+          <Link href={`/lists/${listId}/shop?chain=${bestChain.chainId}`} className="block">
+            <Button className="h-12 w-full justify-between gap-2 rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90">
+              <span className="inline-flex items-center gap-2">
+                <ShoppingCart className="h-4 w-4" /> Comprar ahora
+              </span>
               <span className="font-mono">{formatColones(bestChain.total)}</span>
-            )}
+            </Button>
+          </Link>
+        )}
+        <Link href={`/optimize?list=${listId}`} className="block">
+          <Button
+            variant={bestChain ? "outline" : "default"}
+            className={`h-12 w-full justify-between gap-2 rounded-full px-5 ${
+              bestChain
+                ? "border-border"
+                : "bg-primary text-primary-foreground hover:bg-primary/90"
+            }`}
+          >
+            <span>Ver plan de compra</span>
+            {bestChain ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : null}
           </Button>
         </Link>
       </div>

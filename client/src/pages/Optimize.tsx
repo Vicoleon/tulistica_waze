@@ -480,8 +480,14 @@ export default function Optimize() {
           <Button
             className="h-12 w-full justify-between gap-2 rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90"
             onClick={() => {
-              // TODO: wire to start-trip mutation
-              toast.info("Marcado como en curso");
+              // Enter in-store shopping mode for this list. If we somehow don't
+              // have a concrete list id (Optimize opened without ?list=), fall
+              // back to the lists index so the user isn't stranded.
+              if (listId) {
+                setLocation(`/lists/${listId}/shop`);
+              } else {
+                setLocation("/lists");
+              }
             }}
           >
             <span className="inline-flex items-center gap-2">
