@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import type { MapMarker } from "@/components/Map";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -71,6 +71,14 @@ export default function MapPage() {
   const [selectedStore, setSelectedStore] = useState<StoreMarker | null>(null);
   const [selectedGooglePlace, setSelectedGooglePlace] = useState<GooglePlace | null>(null);
   const { track } = useAnalytics();
+
+  // Fire `map_viewed` once when the page first mounts.
+  const mapViewedRef = useRef(false);
+  useEffect(() => {
+    if (mapViewedRef.current) return;
+    mapViewedRef.current = true;
+    track(ANALYTICS_EVENTS.MAP_VIEWED);
+  }, [track]);
 
   // Fire `store_viewed` once per selection (any selection method — pin click,
   // highlight from URL, side panel). Skips re-fires when the same store is

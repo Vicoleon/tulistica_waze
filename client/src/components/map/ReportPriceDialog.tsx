@@ -67,6 +67,9 @@ export function ReportPriceDialog({
       if (res.isFirstForProduct) {
         rewardParts.push("¡+10 por estrenar este producto!");
       }
+      if (res.streak >= 7) {
+        rewardParts.push(`racha de ${res.streak} días ×1.5`);
+      }
       if (res.weeklyRank != null) {
         rewardParts.push(`vas #${res.weeklyRank} esta semana`);
       }

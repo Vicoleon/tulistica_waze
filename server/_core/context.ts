@@ -72,6 +72,8 @@ export async function createContext(
           timeValuePerHour: 3000, // ₡3,000/hr CRC
           priceReportsCount: 0,
           verifiedReportsCount: 0,
+          lastPriceReportAt: null,
+          currentStreak: 0,
           defaultRadiusKm: 10,
           preferences: mockPrefs,
           updatedAt: new Date(),

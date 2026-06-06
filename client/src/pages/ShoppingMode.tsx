@@ -288,7 +288,15 @@ export default function ShoppingMode() {
                   {/* Big check / scratch toggle */}
                   <button
                     type="button"
-                    onClick={() => checkItem.mutate({ id: item.id, isChecked: !checked })}
+                    onClick={() =>
+                      checkItem.mutate({
+                        id: item.id,
+                        isChecked: !checked,
+                        // Snapshot the price/chain shopped against (P10).
+                        priceAtChecked: !checked ? priced?.price : undefined,
+                        priceChainId: !checked ? selectedChain?.chainId : undefined,
+                      })
+                    }
                     aria-label={
                       checked
                         ? `Devolver ${displayName} a la lista`

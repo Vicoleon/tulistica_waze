@@ -156,6 +156,15 @@ export async function updateUserPoints(userId: number, points: number) {
     .where(eq(users.id, userId));
 }
 
+/** Persist the user's new streak + stamp the last-report time (P12). */
+export async function updateUserStreak(userId: number, streak: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users)
+    .set({ currentStreak: streak, lastPriceReportAt: new Date() })
+    .where(eq(users.id, userId));
+}
+
 export async function updateUserLocation(userId: number, lat: number, lng: number) {
   const db = await getDb();
   if (!db) return;
@@ -1149,6 +1158,8 @@ export async function addListItem(item: InsertListItem) {
       isChecked: false,
       checkedByUserId: null,
       checkedAt: null,
+      priceAtChecked: null,
+      priceChainId: null,
       addedByUserId: item.addedByUserId ?? null,
       notes: item.notes ?? null,
       createdAt: new Date(),
@@ -1218,7 +1229,15 @@ export async function updateListItem(id: number, data: Partial<InsertListItem>) 
   await db.update(listItems).set(data).where(eq(listItems.id, id));
 }
 
-export async function checkListItem(id: number, userId: number, isChecked: boolean) {
+export async function checkListItem(
+  id: number,
+  userId: number,
+  isChecked: boolean,
+  snapshot?: { priceAtChecked?: number | null; priceChainId?: string | null },
+) {
+  // On check: record the price/chain shopped against (P10). On uncheck: clear it.
+  const priceAtChecked = isChecked ? snapshot?.priceAtChecked ?? null : null;
+  const priceChainId = isChecked ? snapshot?.priceChainId ?? null : null;
   const db = await getDb();
   if (!db) {
     const allItems = Array.from(mockListItems.values()).flat();
@@ -1227,6 +1246,8 @@ export async function checkListItem(id: number, userId: number, isChecked: boole
       item.isChecked = isChecked;
       item.checkedByUserId = isChecked ? userId : null;
       item.checkedAt = isChecked ? new Date() : null;
+      item.priceAtChecked = priceAtChecked;
+      item.priceChainId = priceChainId;
       item.updatedAt = new Date();
     }
     return;
@@ -1235,6 +1256,8 @@ export async function checkListItem(id: number, userId: number, isChecked: boole
     isChecked,
     checkedByUserId: isChecked ? userId : null,
     checkedAt: isChecked ? new Date() : null,
+    priceAtChecked,
+    priceChainId,
   }).where(eq(listItems.id, id));
 }
 

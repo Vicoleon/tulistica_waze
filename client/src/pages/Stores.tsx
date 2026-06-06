@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
+import { useAnalytics } from "@/hooks/useAnalytics";
+import { ANALYTICS_EVENTS } from "../../../shared/analytics";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,6 +35,7 @@ function initialOf(name: string): string {
 
 export default function Stores() {
   const { user } = useAuth();
+  const { track } = useAnalytics();
   const [searchQuery, setSearchQuery] = useState("");
   const [radius, setRadius] = useState([10]);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -225,7 +228,14 @@ export default function Stores() {
                     </Link>
                     <Button
                       // TODO: route to store detail when /stores/:id exists.
-                      onClick={() => toast("Pronto vas a ver el detalle de esta tienda")}
+                      onClick={() => {
+                        track(ANALYTICS_EVENTS.STORE_VIEWED, {
+                          storeId: store.id,
+                          chainId: store.chainId ?? undefined,
+                          source: "stores",
+                        });
+                        toast("Pronto vas a ver el detalle de esta tienda");
+                      }}
                       className="flex-1 rounded-full min-h-11 bg-primary text-primary-foreground hover:bg-primary/90"
                     >
                       Ver tienda

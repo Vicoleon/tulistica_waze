@@ -167,6 +167,8 @@ function buildListItem(
     isChecked: false,
     checkedByUserId: null,
     checkedAt: null,
+    priceAtChecked: null,
+    priceChainId: null,
     addedByUserId: 1,
     notes: null,
     createdAt: new Date(), updatedAt: new Date(),

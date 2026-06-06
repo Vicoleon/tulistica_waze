@@ -17,6 +17,10 @@ export const users = mysqlTable("users", {
   totalPoints: int("totalPoints").default(0).notNull(),
   priceReportsCount: int("priceReportsCount").default(0).notNull(),
   verifiedReportsCount: int("verifiedReportsCount").default(0).notNull(),
+  // Streak: consecutive days with at least one price report (drives the
+  // daily-return habit + a points multiplier).
+  lastPriceReportAt: timestamp("lastPriceReportAt"),
+  currentStreak: int("currentStreak").default(0).notNull(),
   // Location preferences
   homeLatitude: float("homeLatitude"),
   homeLongitude: float("homeLongitude"),
@@ -143,6 +147,8 @@ export const priceEntries = mysqlTable("price_entries", {
   index("idx_price_store_product").on(table.storeId, table.productId),
   index("idx_price_product").on(table.productId),
   index("idx_price_created").on(table.createdAt),
+  // Fast per-user recency lookups (rate limiting + dedupe cooldown).
+  index("idx_price_user_created").on(table.userId, table.createdAt),
 ]);
 
 export type PriceEntry = typeof priceEntries.$inferSelect;
@@ -200,6 +206,11 @@ export const listItems = mysqlTable("list_items", {
   isChecked: boolean("isChecked").default(false),
   checkedByUserId: int("checkedByUserId"),
   checkedAt: timestamp("checkedAt"),
+  // Snapshot of the price (and chain) the item was checked off against in
+  // shopping mode — lets us show purchase history and reconcile the shelf price
+  // for mismatch rewards later.
+  priceAtChecked: float("priceAtChecked"),
+  priceChainId: varchar("priceChainId", { length: 64 }),
   addedByUserId: int("addedByUserId"),
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

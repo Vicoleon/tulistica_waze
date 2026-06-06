@@ -277,6 +277,8 @@ export default function Onboarding() {
   const handleContinue = (e?: FormEvent) => {
     e?.preventDefault();
     if (!isStepValid) return;
+    // The current step was just completed — log it before advancing/submitting.
+    track(ANALYTICS_EVENTS.ONBOARDING_STEP_COMPLETED, { step: stepKey });
     if (!isLast) {
       setStepIndex((s) => s + 1);
       return;

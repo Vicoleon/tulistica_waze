@@ -139,8 +139,8 @@ export default function Products() {
         ) : products && products.length > 0 ? (
           <div className="grid gap-4 sm:gap-5">
             <SponsoredSearchSlot query={searchQuery} />
-            {products.map((product: any) => (
-              <ProductResultCard key={product.id} product={product} />
+            {products.map((product: any, index: number) => (
+              <ProductResultCard key={product.id} product={product} position={index} />
             ))}
           </div>
         ) : (
@@ -156,7 +156,13 @@ export default function Products() {
 
 // ---------- Cards ----------
 
-function ProductResultCard({ product }: { product: any }) {
+function ProductResultCard({
+  product,
+  position,
+}: {
+  product: any;
+  position: number;
+}) {
   const stores = mockedStoresFor(product.id);
   const bestId = stores[0]?.id;
   const { track } = useAnalytics();
@@ -164,6 +170,7 @@ function ProductResultCard({ product }: { product: any }) {
   const handleAddToList = () => {
     track(ANALYTICS_EVENTS.PRODUCT_CLICKED, {
       productId: product.id,
+      position,
       isSponsored: Boolean(product.isSponsored),
       source: "search",
     });

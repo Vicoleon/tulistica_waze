@@ -22,6 +22,13 @@
       "when": 1780783612462,
       "tag": "0002_unusual_rockslide",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1780784916025,
+      "tag": "0003_freezing_calypso",
+      "breakpoints": true
     }
   ]
 }

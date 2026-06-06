@@ -47,6 +47,7 @@ import {
   NEW_PRODUCT_BONUS_WINDOW_MS,
   isWithinReportCooldown,
 } from "./services/rateLimit";
+import { computeStreak, streakMultiplier } from "./services/streak";
 import { predictSeasonalDealsForUser, predictForProduct, rankPredictions } from "./services/seasonalDeals";
 import { notifyOwner, isNotificationAvailable } from "./_core/notification";
 import { isMapsAvailable } from "./_core/map";
@@ -679,14 +680,21 @@ export const appRouter = router({
         });
         const priceEntryId = typeof id === "number" ? id : null;
 
-        // Award points: base report + (optional) new-product bonus. Both flow
-        // through the ledger so they surface on the leaderboard immediately.
-        const basePoints = calculatePointsForPriceReport(isVerified, ctx.user.trustScore);
+        // Streak (P12): consecutive-day reports apply a points multiplier.
+        const newStreak = computeStreak(ctx.user.lastPriceReportAt, ctx.user.currentStreak);
+        const streakMult = streakMultiplier(newStreak);
+
+        // Award points: base report (× streak) + (optional) new-product bonus.
+        // Both flow through the ledger so they surface on the leaderboard.
+        const basePoints = Math.round(
+          calculatePointsForPriceReport(isVerified, ctx.user.trustScore) * streakMult,
+        );
         const newProductBonus = isFirstForProduct ? 10 : 0;
         const pointsEarned = basePoints + newProductBonus;
 
         await db.updateUserPoints(ctx.user.id, pointsEarned);
         await db.incrementUserReportCounts(ctx.user.id, { verified: isVerified });
+        await db.updateUserStreak(ctx.user.id, newStreak);
         await db.recordPointsLedger({
           userId: ctx.user.id,
           points: basePoints,
@@ -742,6 +750,7 @@ export const appRouter = router({
           requiresConfirmation,
           newAchievements,
           weeklyRank: weeklyRank?.rank ?? null,
+          streak: newStreak,
         };
       }),
 
@@ -946,9 +955,15 @@ export const appRouter = router({
       .input(z.object({
         id: z.number(),
         isChecked: z.boolean(),
+        // Optional price snapshot from in-store shopping mode (P10).
+        priceAtChecked: z.number().optional(),
+        priceChainId: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        await db.checkListItem(input.id, ctx.user.id, input.isChecked);
+        await db.checkListItem(input.id, ctx.user.id, input.isChecked, {
+          priceAtChecked: input.priceAtChecked,
+          priceChainId: input.priceChainId,
+        });
         return { success: true };
       }),
 

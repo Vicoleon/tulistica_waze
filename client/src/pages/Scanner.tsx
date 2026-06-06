@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import { useAnalytics } from "@/hooks/useAnalytics";
+import { ANALYTICS_EVENTS } from "../../../shared/analytics";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +17,7 @@ import Quagga from "@ericblade/quagga2";
 
 export default function Scanner() {
   const { user, isAuthenticated } = useAuth();
+  const { track } = useAnalytics();
   const [scanning, setScanning] = useState(false);
   const [scannedBarcode, setScannedBarcode] = useState<string | null>(null);
   const [manualBarcode, setManualBarcode] = useState("");
@@ -27,6 +30,19 @@ export default function Scanner() {
     { barcode: scannedBarcode || "" },
     { enabled: !!scannedBarcode }
   );
+
+  // Fire `scanner_used` once per resolved barcode — wait until the DB lookup
+  // settles so `foundInDb` reflects whether the product is in our own catalog.
+  const lastTrackedBarcode = useRef<string | null>(null);
+  useEffect(() => {
+    if (!scannedBarcode || loadingLocal) return;
+    if (lastTrackedBarcode.current === scannedBarcode) return;
+    lastTrackedBarcode.current = scannedBarcode;
+    track(ANALYTICS_EVENTS.SCANNER_USED, {
+      barcode: scannedBarcode,
+      foundInDb: Boolean(localProduct),
+    });
+  }, [scannedBarcode, loadingLocal, localProduct, track]);
 
   const { data: externalLookup, isLoading: loadingExternal } = trpc.productLookup.byBarcode.useQuery(
     { barcode: scannedBarcode || "" },
