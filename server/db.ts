@@ -14,6 +14,7 @@ import {
   analyticsEvents, InsertAnalyticsEvent,
   integrationCredentials, InsertIntegrationCredential, appSettings,
   userTokens, brandMembers,
+  pointsLedger, InsertPointsLedgerEntry,
 } from "../drizzle/schema";
 import type { User, Brand, UserToken, InsertUserToken, BrandMember, InsertBrandMember } from "../drizzle/schema";
 import type { AnalyticsProperties } from "../shared/analytics";
@@ -1651,31 +1652,138 @@ export async function getCampaignPerformance() {
 }
 
 // ============ GAMIFICATION HELPERS ============
+/**
+ * Rolling-window start for a leaderboard period. weekly = last 7 days,
+ * monthly = last 30 days, alltime = no lower bound. Returns null for alltime.
+ */
+function leaderboardWindowStart(period: "weekly" | "monthly" | "alltime"): Date | null {
+  if (period === "alltime") return null;
+  const days = period === "weekly" ? 7 : 30;
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+}
+
+/**
+ * Live leaderboard, aggregated from the points ledger over a rolling window.
+ * No rank column to maintain — rank is the row position in the points-desc sort.
+ */
 export async function getLeaderboard(period: "weekly" | "monthly" | "alltime", limit = 20) {
   const db = await getDb();
   if (!db) return [];
-  return db.select({
-    userId: leaderboard.userId,
-    points: leaderboard.points,
-    rank: leaderboard.rank,
-    priceReports: leaderboard.priceReports,
+  const since = leaderboardWindowStart(period);
+  const windowFilter = since ? gte(pointsLedger.createdAt, since) : sql`1=1`;
+  const rows = await db.select({
+    userId: pointsLedger.userId,
+    points: sql<number>`SUM(${pointsLedger.points})`,
+    priceReports: sql<number>`SUM(CASE WHEN ${pointsLedger.reason} = 'price_report' THEN 1 ELSE 0 END)`,
     userName: users.name,
     trustScore: users.trustScore,
   })
-    .from(leaderboard)
-    .innerJoin(users, eq(leaderboard.userId, users.id))
-    .where(eq(leaderboard.period, period))
-    .orderBy(asc(leaderboard.rank))
+    .from(pointsLedger)
+    .innerJoin(users, eq(pointsLedger.userId, users.id))
+    .where(windowFilter)
+    .groupBy(pointsLedger.userId, users.name, users.trustScore)
+    .orderBy(desc(sql`SUM(${pointsLedger.points})`))
     .limit(limit);
+  return rows.map((r, i) => ({
+    userId: r.userId,
+    points: Number(r.points) || 0,
+    rank: i + 1,
+    priceReports: Number(r.priceReports) || 0,
+    userName: r.userName,
+    trustScore: r.trustScore,
+  }));
 }
 
 export async function getUserRank(userId: number, period: "weekly" | "monthly" | "alltime") {
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select().from(leaderboard)
-    .where(and(eq(leaderboard.userId, userId), eq(leaderboard.period, period)))
+  const since = leaderboardWindowStart(period);
+  const windowFilter = since ? gte(pointsLedger.createdAt, since) : sql`1=1`;
+
+  const meRows = await db.select({
+    points: sql<number>`SUM(${pointsLedger.points})`,
+    priceReports: sql<number>`SUM(CASE WHEN ${pointsLedger.reason} = 'price_report' THEN 1 ELSE 0 END)`,
+  })
+    .from(pointsLedger)
+    .where(and(eq(pointsLedger.userId, userId), windowFilter))
+    .groupBy(pointsLedger.userId);
+  const myPoints = Number(meRows[0]?.points) || 0;
+  const myReports = Number(meRows[0]?.priceReports) || 0;
+  if (myPoints === 0 && myReports === 0) {
+    return { userId, points: 0, rank: null, priceReports: 0, period };
+  }
+
+  // Rank = 1 + (# of users whose windowed point sum is strictly greater).
+  const higher = await db.select({ uid: pointsLedger.userId })
+    .from(pointsLedger)
+    .where(windowFilter)
+    .groupBy(pointsLedger.userId)
+    .having(sql`SUM(${pointsLedger.points}) > ${myPoints}`);
+  return { userId, points: myPoints, rank: higher.length + 1, priceReports: myReports, period };
+}
+
+// ============ POINTS LEDGER ============
+/** Append a points award to the ledger (source of truth for the leaderboard). */
+export async function recordPointsLedger(entry: InsertPointsLedgerEntry) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(pointsLedger).values(entry);
+}
+
+/** True if this user already received the new-product bonus for this product. */
+export async function hasNewProductBonus(userId: number, productId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const rows = await db.select({ id: pointsLedger.id })
+    .from(pointsLedger)
+    .where(and(
+      eq(pointsLedger.userId, userId),
+      eq(pointsLedger.reason, "new_product"),
+      eq(pointsLedger.refType, "product"),
+      eq(pointsLedger.refId, productId),
+    ))
     .limit(1);
-  return result[0];
+  return rows.length > 0;
+}
+
+/** Bump a user's lifetime report counters (drives achievements + profile stats). */
+export async function incrementUserReportCounts(userId: number, opts: { verified: boolean }) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users)
+    .set({
+      priceReportsCount: sql`${users.priceReportsCount} + 1`,
+      ...(opts.verified
+        ? { verifiedReportsCount: sql`${users.verifiedReportsCount} + 1` }
+        : {}),
+    })
+    .where(eq(users.id, userId));
+}
+
+/** How many price reports a user has submitted since `since` (rate limiting). */
+export async function countUserPriceSubmissionsSince(userId: number, since: Date): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const rows = await db.select({ c: sql<number>`COUNT(*)` })
+    .from(priceEntries)
+    .where(and(eq(priceEntries.userId, userId), gte(priceEntries.createdAt, since)));
+  return Number(rows[0]?.c) || 0;
+}
+
+/** The user's most recent submission for a (store, product), for the dedupe cooldown. */
+export async function getLastUserPriceSubmission(userId: number, storeId: number, productId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select({ createdAt: priceEntries.createdAt })
+    .from(priceEntries)
+    .where(and(
+      eq(priceEntries.userId, userId),
+      eq(priceEntries.storeId, storeId),
+      eq(priceEntries.productId, productId),
+    ))
+    .orderBy(desc(priceEntries.createdAt))
+    .limit(1);
+  return rows[0];
 }
 
 export async function getAchievements() {

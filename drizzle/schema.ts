@@ -105,11 +105,15 @@ export const products = mysqlTable("products", {
   sponsoredBid: float("sponsoredBid").default(0),
   // Search optimization
   searchKeywords: text("searchKeywords"),
+  // Crowdsourcing: who first added this product (drives the "new product" reward
+  // bonus). Null for seed/scraped products.
+  createdByUserId: int("createdByUserId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => [
   index("idx_products_barcode").on(table.barcode),
   index("idx_products_category").on(table.category),
+  index("idx_products_creator").on(table.createdByUserId),
 ]);
 
 export type Product = typeof products.$inferSelect;
@@ -484,9 +488,40 @@ export const priceVotes = mysqlTable("price_votes", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => [
   index("idx_votes_entry").on(table.priceEntryId),
+  // One vote per (entry, user) — enforces the dedupe the app checks for, even
+  // under a concurrent double-submit race.
+  uniqueIndex("idx_votes_entry_user").on(table.priceEntryId, table.userId),
 ]);
 
 export type PriceVote = typeof priceVotes.$inferSelect;
+
+// ============ POINTS LEDGER ============
+// Append-only audit of every points award. Source of truth for the leaderboard
+// (getLeaderboard/getUserRank aggregate this over rolling windows) so we never
+// have to maintain a rank column on the write path.
+export const pointsLedger = mysqlTable("points_ledger", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  points: int("points").notNull(),
+  reason: mysqlEnum("reason", [
+    "price_report",
+    "price_vote",
+    "new_product",
+    "achievement",
+    "streak_bonus",
+    "other",
+  ]).notNull(),
+  refType: varchar("refType", { length: 32 }),
+  refId: int("refId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => [
+  index("idx_points_ledger_user").on(table.userId),
+  index("idx_points_ledger_user_created").on(table.userId, table.createdAt),
+  index("idx_points_ledger_created").on(table.createdAt),
+]);
+
+export type PointsLedgerEntry = typeof pointsLedger.$inferSelect;
+export type InsertPointsLedgerEntry = typeof pointsLedger.$inferInsert;
 
 // ============ SAVED RECIPES ============
 export const savedRecipes = mysqlTable("saved_recipes", {

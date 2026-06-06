@@ -41,6 +41,12 @@ import {
 import { computeBudgetInsights } from "./services/budget";
 import { discoverPhysicalStores } from "./services/storeDiscovery";
 import { isOnlineStoreName } from "./services/chainMatch";
+import {
+  PRICE_REPORT_RATE_WINDOW_MS,
+  PRICE_REPORT_MAX_PER_WINDOW,
+  NEW_PRODUCT_BONUS_WINDOW_MS,
+  isWithinReportCooldown,
+} from "./services/rateLimit";
 import { predictSeasonalDealsForUser, predictForProduct, rankPredictions } from "./services/seasonalDeals";
 import { notifyOwner, isNotificationAvailable } from "./_core/notification";
 import { isMapsAvailable } from "./_core/map";
@@ -538,8 +544,9 @@ export const appRouter = router({
         unit: z.string().optional(),
         unitSize: z.number().optional(),
       }))
-      .mutation(async ({ input }) => {
-        const id = await db.createProduct(input);
+      .mutation(async ({ ctx, input }) => {
+        // Stamp the creator so the "new product" reward bonus can fire later.
+        const id = await db.createProduct({ ...input, createdByUserId: ctx.user.id });
         return { id };
       }),
   }),
@@ -598,7 +605,28 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         // Get store for geofence validation
         const store = await db.getStoreById(input.storeId);
-        if (!store) throw new Error("Store not found");
+        if (!store) throw new TRPCError({ code: "NOT_FOUND", message: "Tienda no encontrada" });
+
+        // Anti-abuse 1: per-(user, store, product) dedupe cooldown.
+        const last = await db.getLastUserPriceSubmission(
+          ctx.user.id, input.storeId, input.productId,
+        );
+        if (isWithinReportCooldown(last?.createdAt)) {
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message: "Ya reportaste este precio hace poco. Probá de nuevo más tarde.",
+          });
+        }
+        // Anti-abuse 2: global per-user rate cap over a rolling window.
+        const recentCount = await db.countUserPriceSubmissionsSince(
+          ctx.user.id, new Date(Date.now() - PRICE_REPORT_RATE_WINDOW_MS),
+        );
+        if (recentCount >= PRICE_REPORT_MAX_PER_WINDOW) {
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message: "Demasiados reportes en poco tiempo. Tomate un respiro y volvé en un rato.",
+          });
+        }
 
         // Geofence validation
         let withinGeofence = false;
@@ -624,6 +652,18 @@ export const appRouter = router({
         const requiresConfirmation = shouldRequireConfirmation(ctx.user.trustScore);
         const isVerified = !isOutlier && withinGeofence && !requiresConfirmation;
 
+        // "New product" bonus: only for recently-added products, and only ONCE
+        // per (user, product) — so a user can't farm +10 across many stores or
+        // forever on a product they created.
+        const product = await db.getProductById(input.productId);
+        const productCreatedMs = product?.createdAt ? new Date(product.createdAt).getTime() : 0;
+        const productIsRecent =
+          productCreatedMs > 0 && Date.now() - productCreatedMs < NEW_PRODUCT_BONUS_WINDOW_MS;
+        const alreadyBonused = productIsRecent
+          ? await db.hasNewProductBonus(ctx.user.id, input.productId)
+          : false;
+        const isFirstForProduct = !!product && productIsRecent && !alreadyBonused;
+
         // Create price entry
         const id = await db.createPriceEntry({
           storeId: input.storeId,
@@ -637,10 +677,32 @@ export const appRouter = router({
           isVerified,
           zScore,
         });
+        const priceEntryId = typeof id === "number" ? id : null;
 
-        // Award points
-        const points = calculatePointsForPriceReport(isVerified, false, ctx.user.trustScore);
-        await db.updateUserPoints(ctx.user.id, points);
+        // Award points: base report + (optional) new-product bonus. Both flow
+        // through the ledger so they surface on the leaderboard immediately.
+        const basePoints = calculatePointsForPriceReport(isVerified, ctx.user.trustScore);
+        const newProductBonus = isFirstForProduct ? 10 : 0;
+        const pointsEarned = basePoints + newProductBonus;
+
+        await db.updateUserPoints(ctx.user.id, pointsEarned);
+        await db.incrementUserReportCounts(ctx.user.id, { verified: isVerified });
+        await db.recordPointsLedger({
+          userId: ctx.user.id,
+          points: basePoints,
+          reason: "price_report",
+          refType: "price_entry",
+          refId: priceEntryId,
+        });
+        if (newProductBonus > 0) {
+          await db.recordPointsLedger({
+            userId: ctx.user.id,
+            points: newProductBonus,
+            reason: "new_product",
+            refType: "product",
+            refId: input.productId,
+          });
+        }
 
         // Update trust score if verified
         if (isVerified) {
@@ -657,7 +719,8 @@ export const appRouter = router({
             isVerified,
             isOutlier,
             withinGeofence,
-            pointsEarned: points,
+            isFirstForProduct,
+            pointsEarned,
             chainId: store.chainId,
           },
         });
@@ -667,7 +730,8 @@ export const appRouter = router({
           isVerified,
           isOutlier,
           withinGeofence,
-          pointsEarned: points,
+          isFirstForProduct,
+          pointsEarned,
           requiresConfirmation,
         };
       }),
@@ -681,13 +745,20 @@ export const appRouter = router({
         // Check if user already voted
         const existingVote = await db.getUserVoteForPrice(input.priceEntryId, ctx.user.id);
         if (existingVote) {
-          throw new Error("You have already voted on this price");
+          throw new TRPCError({ code: "CONFLICT", message: "Ya votaste este precio." });
         }
 
         await db.addPriceVote(input.priceEntryId, ctx.user.id, input.voteType);
 
-        // Award points for voting
+        // Award points for voting (recorded to the ledger so it counts on the board)
         await db.updateUserPoints(ctx.user.id, 2);
+        await db.recordPointsLedger({
+          userId: ctx.user.id,
+          points: 2,
+          reason: "price_vote",
+          refType: "price_entry",
+          refId: input.priceEntryId,
+        });
 
         return { success: true };
       }),
@@ -1381,7 +1452,7 @@ Only return valid JSON, no other text.`,
             .regex(/^data:image\/(png|jpeg|jpg|webp);base64,/, "Formato de imagen no soportado"),
         })
       )
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         if (!(await isLlmAvailable())) {
           throw new TRPCError({
             code: "PRECONDITION_FAILED",
@@ -1474,6 +1545,7 @@ Only return valid JSON, no other text.`,
             name: parsed.name.trim(),
             brand: parsed.brand?.trim() || undefined,
             category: parsed.category?.trim() || undefined,
+            createdByUserId: ctx.user.id,
           });
         }
         const product =

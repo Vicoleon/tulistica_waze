@@ -358,15 +358,14 @@ export function shouldRequireConfirmation(trustScore: number): boolean {
   return trustScore < 30;
 }
 
-// Points calculation for gamification
+// Base points for a price report. The "new product" bonus is applied by the
+// caller via the points ledger (deduped per user+product) — do NOT add it here.
 export function calculatePointsForPriceReport(
   isVerified: boolean,
-  isFirstForProduct: boolean,
   userTrustScore: number
 ): number {
   let points = 10; // Base points
   if (isVerified) points += 5;
-  if (isFirstForProduct) points += 10;
   // Bonus for high-trust users
   if (userTrustScore >= 80) points += 5;
   return points;

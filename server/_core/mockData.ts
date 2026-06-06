@@ -153,6 +153,7 @@ function buildProduct(
     unit, unitSize,
     isSponsored: false, sponsoredBid: 0,
     searchKeywords: null,
+    createdByUserId: null, // seed products have no human creator
     createdAt: new Date(), updatedAt: new Date(),
   };
 }

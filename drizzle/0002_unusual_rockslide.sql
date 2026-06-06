@@ -1,0 +1,1 @@
+ALTER TABLE `price_votes` ADD CONSTRAINT `idx_votes_entry_user` UNIQUE(`priceEntryId`,`userId`);
