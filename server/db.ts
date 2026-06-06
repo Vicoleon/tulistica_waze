@@ -665,6 +665,10 @@ export interface ListChainComparison {
   total: number;
   itemsPriced: number;
   itemsTotal: number;
+  /** How many of the priced items are real "reported" prices (vs estimated). */
+  reportedCount: number;
+  /** Trust in this total: high = mostly real prices, low = mostly estimated. */
+  confidence: "high" | "medium" | "low";
   items: ListChainPriceItem[];
 }
 
@@ -733,12 +737,15 @@ export async function getListPriceComparison(
           total: 0,
           itemsPriced: 0,
           itemsTotal: productIds.length,
+          reportedCount: 0,
+          confidence: "low",
           items: [],
         };
         chains.set(chainId, acc);
       }
       acc.total += entry.price * qty;
       acc.itemsPriced += 1;
+      if (entry.source === "reported") acc.reportedCount += 1;
       acc.items.push({
         productId,
         price: entry.price,
@@ -763,6 +770,10 @@ export async function getListPriceComparison(
       }
     }
     acc.representativeStoreId = bestStore ?? null;
+
+    // Confidence = share of the chain's prices that are real reports.
+    const share = acc.itemsPriced > 0 ? acc.reportedCount / acc.itemsPriced : 0;
+    acc.confidence = share >= 0.66 ? "high" : share >= 0.33 ? "medium" : "low";
   }
 
   // Most coverage first, then cheapest total → result[0] is the best option.
@@ -1792,6 +1803,35 @@ export async function getAchievements() {
   return db.select().from(achievements).orderBy(asc(achievements.pointsRequired));
 }
 
+/** The default badge ladder. Insert-by-name (idempotent) so re-running is safe. */
+export const DEFAULT_ACHIEVEMENTS: {
+  name: string; description: string;
+  pointsRequired: number; reportsRequired: number;
+  badgeType: "bronze" | "silver" | "gold" | "platinum";
+}[] = [
+  { name: "Primer reporte", description: "Reportaste tu primer precio.", reportsRequired: 1, pointsRequired: 0, badgeType: "bronze" },
+  { name: "Reportero del barrio", description: "10 precios reportados.", reportsRequired: 10, pointsRequired: 0, badgeType: "bronze" },
+  { name: "Cazador de precios", description: "50 precios reportados.", reportsRequired: 50, pointsRequired: 0, badgeType: "silver" },
+  { name: "Guardián de precios", description: "200 precios reportados.", reportsRequired: 200, pointsRequired: 0, badgeType: "gold" },
+  { name: "Leyenda Tulistica", description: "1000 precios reportados.", reportsRequired: 1000, pointsRequired: 0, badgeType: "platinum" },
+  { name: "Cien puntos", description: "Ganaste 100 puntos.", reportsRequired: 0, pointsRequired: 100, badgeType: "bronze" },
+  { name: "Quinientos puntos", description: "Ganaste 500 puntos.", reportsRequired: 0, pointsRequired: 500, badgeType: "silver" },
+  { name: "Mil puntos", description: "Ganaste 1000 puntos.", reportsRequired: 0, pointsRequired: 1000, badgeType: "gold" },
+];
+
+/** Seed the default achievements if missing. Idempotent (matches on name). */
+export async function ensureDefaultAchievements(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const existing = await db.select({ name: achievements.name }).from(achievements);
+  const have = new Set(existing.map((e) => e.name));
+  const missing = DEFAULT_ACHIEVEMENTS.filter((a) => !have.has(a.name));
+  if (missing.length > 0) {
+    await db.insert(achievements).values(missing);
+  }
+  return missing.length;
+}
+
 export async function getUserAchievements(userId: number) {
   const db = await getDb();
   if (!db) return [];
@@ -1814,6 +1854,37 @@ export async function awardAchievement(userId: number, achievementId: number) {
   await db.insert(userAchievements).values({ userId, achievementId }).onDuplicateKeyUpdate({
     set: { earnedAt: new Date() }
   });
+}
+
+/**
+ * Award any achievements the user has newly crossed the threshold for, given
+ * their up-to-date points/reports. Returns the newly-earned ones so the caller
+ * can celebrate them in the UI (instant Waze-style feedback).
+ */
+export async function checkAndAwardAchievements(
+  userId: number,
+  stats: { totalPoints: number; priceReportsCount: number },
+): Promise<{ id: number; name: string; badgeType: string | null }[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const all = await db.select().from(achievements);
+  if (all.length === 0) return [];
+  const earnedRows = await db.select({ achievementId: userAchievements.achievementId })
+    .from(userAchievements)
+    .where(eq(userAchievements.userId, userId));
+  const earnedIds = new Set(earnedRows.map((e) => e.achievementId));
+
+  const newly: { id: number; name: string; badgeType: string | null }[] = [];
+  for (const a of all) {
+    if (earnedIds.has(a.id)) continue;
+    const pointsOk = (a.pointsRequired ?? 0) > 0 && stats.totalPoints >= (a.pointsRequired ?? 0);
+    const reportsOk = (a.reportsRequired ?? 0) > 0 && stats.priceReportsCount >= (a.reportsRequired ?? 0);
+    if (pointsOk || reportsOk) {
+      await awardAchievement(userId, a.id);
+      newly.push({ id: a.id, name: a.name, badgeType: a.badgeType });
+    }
+  }
+  return newly;
 }
 
 // ============ PRICE VOTE HELPERS ============

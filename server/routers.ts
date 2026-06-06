@@ -709,6 +709,13 @@ export const appRouter = router({
           await db.updateUserTrustScore(ctx.user.id, 1);
         }
 
+        // Instant feedback: newly-earned achievements + current weekly rank.
+        const newAchievements = await db.checkAndAwardAchievements(ctx.user.id, {
+          totalPoints: ctx.user.totalPoints + pointsEarned,
+          priceReportsCount: ctx.user.priceReportsCount + 1,
+        });
+        const weeklyRank = await db.getUserRank(ctx.user.id, "weekly");
+
         await db.recordAnalyticsEvent({
           eventName: ANALYTICS_EVENTS.PRICE_REPORTED,
           user: ctx.user,
@@ -733,6 +740,8 @@ export const appRouter = router({
           isFirstForProduct,
           pointsEarned,
           requiresConfirmation,
+          newAchievements,
+          weeklyRank: weeklyRank?.rank ?? null,
         };
       }),
 

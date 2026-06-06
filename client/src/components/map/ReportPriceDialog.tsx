@@ -42,11 +42,25 @@ export function ReportPriceDialog({
 
   const submitPrice = trpc.prices.submit.useMutation({
     onSuccess: (res) => {
-      toast.success(
-        res.isVerified
-          ? "¡Precio confirmado, gracias!"
-          : "Precio enviado para revisión.",
-      );
+      // Base message: keep the verified-vs-pending distinction.
+      const base = res.isVerified
+        ? "¡Precio confirmado, gracias!"
+        : "Precio enviado para revisión.";
+      // Reward feedback: points earned + (optional) new-product bonus + weekly rank.
+      const rewardParts = [`+${res.pointsEarned} pts`];
+      if (res.isFirstForProduct) {
+        rewardParts.push("¡+10 por estrenar este producto!");
+      }
+      if (res.weeklyRank != null) {
+        rewardParts.push(`vas #${res.weeklyRank} esta semana`);
+      }
+      toast.success(base, { description: rewardParts.join(" · ") });
+
+      // Surface each newly-unlocked achievement on its own.
+      res.newAchievements.forEach((a) => {
+        toast.success(`★ ¡Logro desbloqueado: ${a.name}!`);
+      });
+
       onOpenChange(false);
       setQuery("");
       setSelectedProduct(null);

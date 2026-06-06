@@ -668,6 +668,11 @@ export default function ListDetail() {
                     ? `Total en ${chainDisplayName(selectedChain.chainId)}`
                     : "Total estimado"}
                 </p>
+                {selectedChain?.confidence === "low" && (
+                  <p className="mt-1 font-mono text-xs text-muted-foreground">
+                    precios mayormente estimados
+                  </p>
+                )}
 
                 {bestChain ? (
                   <div className="mt-5 flex items-start gap-2 rounded-2xl bg-secondary px-3 py-2.5 text-secondary-foreground">
