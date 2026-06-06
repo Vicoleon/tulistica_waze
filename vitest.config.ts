@@ -19,10 +19,6 @@ export default defineConfig({
       "@assets": path.resolve(templateRoot, "attached_assets"),
     },
   },
-  // Skip ancestor postcss.config.js lookup — server-only tests don't need CSS pipeline.
-  css: {
-    postcss: { plugins: [] },
-  },
   test: {
     environment: "node",
     include: ["server/**/*.test.ts", "server/**/*.spec.ts"],

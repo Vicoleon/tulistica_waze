@@ -81,10 +81,15 @@ function makeBrand(kind: "vendor" | "advertiser" = "vendor"): Brand {
 }
 
 describe("verifiedProcedure", () => {
-  it("blocks unverified user with FORBIDDEN", async () => {
+  // Email-verification gating is intentionally disabled until an SMTP/email
+  // service is wired up (see the note in server/_core/trpc.ts). While disabled,
+  // an authenticated-but-unverified user is allowed through. When email delivery
+  // is restored, re-add the `!ctx.user.emailVerified` check and flip this test
+  // back to asserting `rejects` with code "FORBIDDEN".
+  it("currently allows unverified user (email gating disabled until SMTP exists)", async () => {
     const r = router({ x: verifiedProcedure.query(() => "ok") });
     const caller = r.createCaller(makeCtx(makeUser({ emailVerified: false })));
-    await expect(caller.x()).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.x()).resolves.toBe("ok");
   });
 
   it("allows verified user", async () => {

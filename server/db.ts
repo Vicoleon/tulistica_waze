@@ -18,7 +18,7 @@ import {
 import type { User, Brand, UserToken, InsertUserToken, BrandMember, InsertBrandMember } from "../drizzle/schema";
 import type { AnalyticsProperties } from "../shared/analytics";
 import { ENV } from './_core/env';
-import { isOnlineStoreName } from "./services/chainMatch";
+import { isOnlineStoreName, canonicalChainId, isRecognizedChain } from "./services/chainMatch";
 import {
   mockStores, mockProducts, mockPriceEntries,
   mockShoppingLists, mockListItems, haversineKm,
@@ -644,6 +644,133 @@ export async function getPricesForProduct(productId: number): Promise<{
 
   // Sort cheapest first so the UI's default ordering is "best price".
   return out.sort((a, b) => a.price - b.price);
+}
+
+export interface ListChainPriceItem {
+  productId: number;
+  price: number;
+  source: PriceSource;
+  isVerified: boolean | null;
+  updatedAt: Date | null;
+  storeId: number;
+}
+
+export interface ListChainComparison {
+  chainId: string;
+  /** A real store of this chain that priced the most items — used for the
+   *  "report price here" and in-store shopping flows. */
+  representativeStoreId: number | null;
+  /** Sum of unitPrice × quantity over the items this chain can price. */
+  total: number;
+  itemsPriced: number;
+  itemsTotal: number;
+  items: ListChainPriceItem[];
+}
+
+/**
+ * "Compare this list by supermarket." For each chain that can price at least
+ * one of the list's products, returns the per-item latest (or chain-derived)
+ * price and the total for the whole list. Sorted so the chain that prices the
+ * most items, cheapest, comes first — i.e. result[0] is the best option.
+ *
+ * Reuses getPricesForProduct so the Walmart-baseline derivation, outlier
+ * filtering and mock fallback all stay in one place.
+ */
+export async function getListPriceComparison(
+  items: { productId: number; quantity: number }[],
+): Promise<ListChainComparison[]> {
+  const productIds = Array.from(new Set(items.map((i) => i.productId)));
+  if (productIds.length === 0) return [];
+
+  const qtyByProduct = new Map<number, number>();
+  for (const it of items) {
+    qtyByProduct.set(
+      it.productId,
+      (qtyByProduct.get(it.productId) ?? 0) + Math.max(1, it.quantity ?? 1),
+    );
+  }
+
+  const chains = new Map<string, ListChainComparison>();
+
+  // Fetch every product's prices in parallel (independent reads — avoid an
+  // N-round-trip waterfall as lists grow).
+  const pricesByProduct = await Promise.all(
+    productIds.map((id) => getPricesForProduct(id)),
+  );
+
+  productIds.forEach((productId, idx) => {
+    const prices = pricesByProduct[idx];
+    // Cheapest *physical* entry per chain for this product. Online "(en línea)"
+    // storefronts are excluded: we recommend physical branches (priced from the
+    // chain's online base), never the virtual online store.
+    const cheapestByChain = new Map<string, (typeof prices)[number]>();
+    for (const p of prices) {
+      if (p.storeName && isOnlineStoreName(p.storeName)) continue;
+      const chain = canonicalChainId(p.chainId, p.storeName);
+      // Only compare real supermarket chains, not the long tail of independents.
+      if (!isRecognizedChain(chain)) continue;
+      const cur = cheapestByChain.get(chain);
+      // Prefer the cheaper price; on a near-tie (≤ ₡1) prefer a real "reported"
+      // price over a derived "estimated" one so a stale estimate can't win.
+      if (
+        !cur ||
+        p.price < cur.price - 1 ||
+        (Math.abs(p.price - cur.price) <= 1 &&
+          p.source === "reported" &&
+          cur.source === "estimated")
+      ) {
+        cheapestByChain.set(chain, p);
+      }
+    }
+    const qty = qtyByProduct.get(productId) ?? 1;
+    for (const [chainId, entry] of Array.from(cheapestByChain.entries())) {
+      let acc = chains.get(chainId);
+      if (!acc) {
+        acc = {
+          chainId,
+          representativeStoreId: entry.storeId ?? null,
+          total: 0,
+          itemsPriced: 0,
+          itemsTotal: productIds.length,
+          items: [],
+        };
+        chains.set(chainId, acc);
+      }
+      acc.total += entry.price * qty;
+      acc.itemsPriced += 1;
+      acc.items.push({
+        productId,
+        price: entry.price,
+        source: entry.source,
+        isVerified: entry.isVerified,
+        updatedAt: entry.updatedAt ?? null,
+        storeId: entry.storeId,
+      });
+    }
+  });
+
+  // Pick the representative store per chain = the one that priced the most items.
+  for (const acc of Array.from(chains.values())) {
+    const freq = new Map<number, number>();
+    for (const it of acc.items) freq.set(it.storeId, (freq.get(it.storeId) ?? 0) + 1);
+    let bestStore = acc.representativeStoreId;
+    let bestCount = -1;
+    for (const [sid, n] of Array.from(freq.entries())) {
+      if (n > bestCount) {
+        bestStore = sid;
+        bestCount = n;
+      }
+    }
+    acc.representativeStoreId = bestStore ?? null;
+  }
+
+  // Most coverage first, then cheapest total → result[0] is the best option.
+  // chainId is the final, deterministic tiebreak.
+  return Array.from(chains.values()).sort((a, b) => {
+    if (b.itemsPriced !== a.itemsPriced) return b.itemsPriced - a.itemsPriced;
+    if (a.total !== b.total) return a.total - b.total;
+    return a.chainId.localeCompare(b.chainId);
+  });
 }
 
 export async function getPriceMatrix(storeIds: number[], productIds: number[]): Promise<{

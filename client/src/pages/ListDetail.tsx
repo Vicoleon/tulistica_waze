@@ -5,19 +5,34 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
 import {
-  ArrowLeft, Check, ChevronRight, Copy, Edit2, MapPin, Package,
-  Plus, Search, Share2, ShoppingBasket, Sparkles, Trash2,
+  ArrowLeft, Check, ChevronRight, Clock, Copy, Edit2, MapPin, Package,
+  Plus, Search, Share2, ShoppingBasket, Sparkles, Store, Trash2,
 } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { toast } from "sonner";
 import { io, Socket } from "socket.io-client";
-
-// TODO: hook to real estimated total + cheapest store breakdown
-const ESTIMATED_TOTAL_PLACEHOLDER = 12400;
-const CHEAPEST_STORE_PLACEHOLDER = { name: "PriceSmart", total: 11840 };
+import { chainDisplayName } from "@shared/chains";
 
 function formatColones(amount: number): string {
   return `₡ ${new Intl.NumberFormat("es-CR").format(Math.round(amount))}`;
+}
+
+/** Short "how fresh is this price" label, Costa-Rican Spanish. */
+function relativeTime(value: Date | string | null | undefined): string {
+  if (!value) return "";
+  const date = value instanceof Date ? value : new Date(value);
+  const ms = Date.now() - date.getTime();
+  if (!Number.isFinite(ms) || ms < 0) return "";
+  const mins = Math.floor(ms / 60000);
+  if (mins < 60) return mins <= 1 ? "ahora" : `hace ${mins} min`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `hace ${hours} h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `hace ${days} d`;
+  const weeks = Math.floor(days / 7);
+  if (weeks < 5) return `hace ${weeks} sem`;
+  const months = Math.floor(days / 30);
+  return `hace ${months} mes${months > 1 ? "es" : ""}`;
 }
 
 function formatDate(value: string | Date | null | undefined): string {
@@ -49,6 +64,7 @@ export default function ListDetail() {
   const [selectedProduct, setSelectedProduct] = useState<{ id: number; name: string } | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [draftName, setDraftName] = useState("");
+  const [selectedChainId, setSelectedChainId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -62,6 +78,12 @@ export default function ListDetail() {
   const { data: searchResults } = trpc.products.search.useQuery(
     { query: newItemName, limit: 5 },
     { enabled: newItemName.length >= 2 && !selectedProduct }
+  );
+
+  // "Compare by supermarket" — per-chain totals + per-item latest prices.
+  const { data: comparison } = trpc.lists.getPriceComparison.useQuery(
+    { id: listId },
+    { enabled: listId > 0 }
   );
 
   const addItem = trpc.lists.addItem.useMutation({
@@ -165,6 +187,14 @@ export default function ListDetail() {
     }
   }, [isEditingName]);
 
+  // Default the selected supermarket to the best option once prices load.
+  useEffect(() => {
+    const chains = comparison?.chains ?? [];
+    if (!selectedChainId && chains.length > 0) {
+      setSelectedChainId(chains[0].chainId);
+    }
+  }, [comparison, selectedChainId]);
+
   const copyShareCode = () => {
     if (list?.shareCode) {
       navigator.clipboard.writeText(list.shareCode);
@@ -231,6 +261,23 @@ export default function ListDetail() {
   const checkedItems = list.items.filter((item) => item.isChecked);
   const hasProducts = searchResults && searchResults.length > 0;
   const totalItems = list.items.length;
+
+  // Price comparison derived state.
+  const chains = comparison?.chains ?? [];
+  const bestChain = chains[0] ?? null;
+  const selectedChain =
+    chains.find((c) => c.chainId === selectedChainId) ?? bestChain;
+  const priceByProduct = new Map<number, (typeof chains)[number]["items"][number]>();
+  if (selectedChain) {
+    selectedChain.items.forEach((it) => priceByProduct.set(it.productId, it));
+  }
+  const selectedTotal = selectedChain?.total ?? 0;
+  const hasPrices = chains.length > 0;
+  // Savings vs the most expensive comparable chain (full-list coverage only).
+  const fullCoverage = chains.filter((c) => c.itemsPriced === c.itemsTotal && c.itemsTotal > 0);
+  const priciestFull = fullCoverage.length > 0 ? Math.max(...fullCoverage.map((c) => c.total)) : 0;
+  const savingsVsPriciest =
+    bestChain && priciestFull > bestChain.total ? priciestFull - bestChain.total : 0;
   const editors = [
     { name: user?.name || "Tú", isMe: true },
     ...list.members.map((m) => ({ name: m.userName ?? null, isMe: false })),
@@ -298,11 +345,75 @@ export default function ListDetail() {
             </div>
           )}
           <p className="mt-3 font-mono text-sm text-muted-foreground">
-            {totalItems} {totalItems === 1 ? "producto" : "productos"} · estimado{" "}
-            <span className="text-foreground">{formatColones(ESTIMATED_TOTAL_PLACEHOLDER)}</span>{" "}
+            {totalItems} {totalItems === 1 ? "producto" : "productos"}
+            {selectedChain ? (
+              <>
+                {" "}· en {chainDisplayName(selectedChain.chainId)}{" "}
+                <span className="text-foreground">{formatColones(selectedTotal)}</span>
+              </>
+            ) : null}{" "}
             · creada el {formatDate(list.createdAt)}
           </p>
         </header>
+
+        {/* Compare by supermarket — scrollable chip row (mobile-first) */}
+        {hasPrices && (
+          <section className="mb-8" aria-label="Comparar por supermercado">
+            <div className="mb-2 flex items-center gap-2 px-1">
+              <Store className="h-3.5 w-3.5 text-muted-foreground" />
+              <p className="font-serif italic text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                Comparar en
+              </p>
+            </div>
+            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+              {chains.map((chain) => {
+                const isSelected = chain.chainId === selectedChain?.chainId;
+                const isBest = bestChain?.chainId === chain.chainId;
+                const partial = chain.itemsPriced < chain.itemsTotal;
+                return (
+                  <button
+                    key={chain.chainId}
+                    type="button"
+                    onClick={() => setSelectedChainId(chain.chainId)}
+                    aria-pressed={isSelected}
+                    className={`flex shrink-0 flex-col items-start gap-0.5 rounded-2xl border px-4 py-2.5 text-left transition-colors duration-200 ${
+                      isSelected
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card text-foreground hover:bg-paper-deep"
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5 text-sm font-medium">
+                      {chainDisplayName(chain.chainId)}
+                      {isBest && (
+                        <span
+                          className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] ${
+                            isSelected
+                              ? "bg-primary-foreground/20 text-primary-foreground"
+                              : "bg-butter text-butter-foreground"
+                          }`}
+                        >
+                          Más barato
+                        </span>
+                      )}
+                    </span>
+                    <span className="font-mono text-sm font-semibold">
+                      {formatColones(chain.total)}
+                    </span>
+                    {partial && (
+                      <span
+                        className={`font-mono text-[10px] ${
+                          isSelected ? "text-primary-foreground/70" : "text-muted-foreground"
+                        }`}
+                      >
+                        {chain.itemsPriced}/{chain.itemsTotal} con precio
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Two-column on lg */}
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -449,14 +560,42 @@ export default function ListDetail() {
                                 </span>
                               )}
                             </div>
-                            <span className="hidden font-mono text-sm text-muted-foreground sm:inline">
-                              {/* TODO: hook per-item unit price */}
-                              ₡ —
-                            </span>
+                            {(() => {
+                              if (!item.productId) {
+                                return (
+                                  <span className="shrink-0 font-mono text-xs text-muted-foreground/50">—</span>
+                                );
+                              }
+                              const priced = priceByProduct.get(item.productId);
+                              if (!priced) {
+                                return (
+                                  <span className="shrink-0 font-mono text-[11px] text-muted-foreground/70">
+                                    sin precio
+                                  </span>
+                                );
+                              }
+                              const fresh =
+                                priced.source === "estimated"
+                                  ? "estimado"
+                                  : relativeTime(priced.updatedAt);
+                              return (
+                                <span className="flex shrink-0 flex-col items-end">
+                                  <span className="font-mono text-sm font-medium text-foreground">
+                                    {formatColones(priced.price)}
+                                  </span>
+                                  {fresh && (
+                                    <span className="flex items-center gap-1 font-mono text-[10px] text-muted-foreground">
+                                      <Clock className="h-2.5 w-2.5" />
+                                      {fresh}
+                                    </span>
+                                  )}
+                                </span>
+                              );
+                            })()}
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-9 w-9 rounded-full text-muted-foreground opacity-0 transition-opacity duration-200 hover:bg-rose-soft hover:text-destructive group-hover:opacity-100"
+                              className="h-9 w-9 shrink-0 rounded-full text-muted-foreground opacity-0 transition-opacity duration-200 hover:bg-rose-soft hover:text-destructive group-hover:opacity-100"
                               onClick={() => removeItem.mutate({ id: item.id })}
                               aria-label={`Eliminar ${displayName}`}
                             >
@@ -522,19 +661,37 @@ export default function ListDetail() {
                   Resumen
                 </p>
                 <p className="mt-3 font-serif text-4xl font-semibold tracking-tight text-foreground">
-                  {formatColones(ESTIMATED_TOTAL_PLACEHOLDER)}
+                  {hasPrices ? formatColones(selectedTotal) : "₡ —"}
                 </p>
                 <p className="mt-1 font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                  Estimado total
+                  {selectedChain
+                    ? `Total en ${chainDisplayName(selectedChain.chainId)}`
+                    : "Total estimado"}
                 </p>
 
-                <div className="mt-5 flex items-start gap-2 rounded-2xl bg-secondary px-3 py-2.5 text-secondary-foreground">
-                  <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
-                  <p className="text-sm">
-                    Mejor: <span className="font-semibold">{CHEAPEST_STORE_PLACEHOLDER.name}</span>{" "}
-                    · <span className="font-mono">{formatColones(CHEAPEST_STORE_PLACEHOLDER.total)}</span>
-                  </p>
-                </div>
+                {bestChain ? (
+                  <div className="mt-5 flex items-start gap-2 rounded-2xl bg-secondary px-3 py-2.5 text-secondary-foreground">
+                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
+                    <div className="text-sm">
+                      <p>
+                        Mejor opción:{" "}
+                        <span className="font-semibold">{chainDisplayName(bestChain.chainId)}</span>{" "}
+                        · <span className="font-mono">{formatColones(bestChain.total)}</span>
+                      </p>
+                      {savingsVsPriciest > 0 && (
+                        <p className="mt-1 font-mono text-xs text-secondary-foreground/80">
+                          Ahorrás {formatColones(savingsVsPriciest)} vs. la más cara
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-5 rounded-2xl bg-paper-deep px-3 py-2.5">
+                    <p className="font-serif italic text-sm text-muted-foreground">
+                      Agregá productos del buscador para comparar precios entre supermercados.
+                    </p>
+                  </div>
+                )}
 
                 <Link href={`/optimize?list=${listId}`} className="mt-5 block">
                   <Button className="h-12 w-full justify-between gap-2 rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90">
@@ -639,7 +796,9 @@ export default function ListDetail() {
         <Link href={`/optimize?list=${listId}`} className="block">
           <Button className="h-12 w-full justify-between gap-2 rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90">
             <span>Ver plan de compra</span>
-            <span className="font-mono">{formatColones(CHEAPEST_STORE_PLACEHOLDER.total)}</span>
+            {bestChain && (
+              <span className="font-mono">{formatColones(bestChain.total)}</span>
+            )}
           </Button>
         </Link>
       </div>

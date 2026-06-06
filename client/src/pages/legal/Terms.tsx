@@ -25,13 +25,13 @@ export default function Terms() {
 
         <h2>1. Aceptación de los términos</h2>
         <p>
-          Al acceder o usar Grocery Waze (&ldquo;el Servicio&rdquo;) aceptás estos
+          Al acceder o usar Tulistica (&ldquo;el Servicio&rdquo;) aceptás estos
           Términos de Servicio. Si no estás de acuerdo, no uses el Servicio.
         </p>
 
         <h2>2. Descripción del Servicio</h2>
         <p>
-          Grocery Waze es una plataforma comunitaria de comparación de precios de
+          Tulistica es una plataforma comunitaria de comparación de precios de
           supermercados en Costa Rica. Los precios mostrados son reportados por
           usuarios, complementados con datos de APIs públicas y pueden no estar
           siempre actualizados.
@@ -45,7 +45,7 @@ export default function Terms() {
         </ul>
 
         <h2>4. Conducta del usuario</h2>
-        <p>Al usar Grocery Waze te comprometés a:</p>
+        <p>Al usar Tulistica te comprometés a:</p>
         <ul>
           <li>Reportar precios reales y verificables.</li>
           <li>No manipular el sistema de puntos, reportes o votos.</li>
@@ -62,7 +62,7 @@ export default function Terms() {
 
         <h2>6. Limitación de responsabilidad</h2>
         <p>
-          Grocery Waze se ofrece &ldquo;tal cual&rdquo;. No garantizamos la
+          Tulistica se ofrece &ldquo;tal cual&rdquo;. No garantizamos la
           exactitud de los precios, disponibilidad de productos ni características
           de las tiendas listadas. No somos responsables por pérdidas derivadas del
           uso del Servicio.
@@ -90,7 +90,7 @@ export default function Terms() {
         <h2>10. Contacto</h2>
         <p>
           Para consultas sobre estos términos, escribinos a&nbsp;
-          <a href="mailto:soporte@grocerywaze.cr">soporte@grocerywaze.cr</a>.
+          <a href="mailto:soporte@tulistica.com">soporte@tulistica.com</a>.
         </p>
       </main>
     </div>

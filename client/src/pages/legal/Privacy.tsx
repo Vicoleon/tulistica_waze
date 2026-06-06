@@ -26,7 +26,7 @@ export default function Privacy() {
         <p>
           En cumplimiento de la Ley 8968 de Protección de la Persona frente al
           Tratamiento de sus Datos Personales (Costa Rica), esta política describe
-          cómo Grocery Waze recolecta, usa y protege tu información.
+          cómo Tulistica recolecta, usa y protege tu información.
         </p>
 
         <h2>1. Datos que recolectamos</h2>
@@ -85,7 +85,7 @@ export default function Privacy() {
           Bajo la Ley 8968 podés ejercer en cualquier momento los derechos de
           acceso, rectificación, cancelación y oposición (derechos ARCO) escribiendo
           a&nbsp;
-          <a href="mailto:privacidad@grocerywaze.cr">privacidad@grocerywaze.cr</a>.
+          <a href="mailto:privacidad@tulistica.com">privacidad@tulistica.com</a>.
         </p>
 
         <h2>6. Retención y eliminación</h2>
@@ -122,8 +122,8 @@ export default function Privacy() {
 
         <h2>11. Contacto</h2>
         <p>
-          Responsable: Grocery Waze. Correo:&nbsp;
-          <a href="mailto:privacidad@grocerywaze.cr">privacidad@grocerywaze.cr</a>.
+          Responsable: Tulistica. Correo:&nbsp;
+          <a href="mailto:privacidad@tulistica.com">privacidad@tulistica.com</a>.
         </p>
       </main>
     </div>

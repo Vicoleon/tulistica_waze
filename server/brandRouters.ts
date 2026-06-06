@@ -93,7 +93,7 @@ export const brandAuthRouter = router({
       const verifyUrl = buildBrandActionUrl(ENV.appBaseUrl, "verify-email", token);
       await sendBrandEmail({
         to: input.email,
-        subject: "Verify your Grocery Waze brand account",
+        subject: "Verify your Tulistica brand account",
         body: `Welcome ${input.companyName}!\n\nConfirm your email by opening:\n${verifyUrl}`,
       });
 
@@ -146,7 +146,7 @@ export const brandAuthRouter = router({
     const verifyUrl = buildBrandActionUrl(ENV.appBaseUrl, "verify-email", token);
     await sendBrandEmail({
       to: ctx.brand.email,
-      subject: "Verify your Grocery Waze brand account",
+      subject: "Verify your Tulistica brand account",
       body: `Open this link to confirm your email:\n${verifyUrl}`,
     });
     return { sent: true, verifyUrl };
@@ -188,7 +188,7 @@ export const brandAuthRouter = router({
       const resetUrl = buildBrandActionUrl(ENV.appBaseUrl, "reset-password", token);
       await sendBrandEmail({
         to: brand.email,
-        subject: "Reset your Grocery Waze brand password",
+        subject: "Reset your Tulistica brand password",
         body: `Open this link to reset your password (valid for 1 hour):\n${resetUrl}`,
       });
       return { sent: true };

@@ -745,6 +745,24 @@ export const appRouter = router({
         return { ...list, items, members };
       }),
 
+    // "Compare this list by supermarket": per-chain totals + per-item latest
+    // prices, sorted so chains[0] is the best option (most coverage, cheapest).
+    // Powers ListDetail live prices, the Best-Option summary, and shopping mode.
+    getPriceComparison: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const items = await db.getListItems(input.id);
+        const priceable = items
+          .filter((it): it is typeof it & { productId: number } => it.productId != null)
+          .map((it) => ({ productId: it.productId, quantity: it.quantity ?? 1 }));
+        const chains = await db.getListPriceComparison(priceable);
+        return {
+          chains,
+          itemsWithProduct: priceable.length,
+          itemsTotal: items.length,
+        };
+      }),
+
     create: verifiedProcedure
       .input(z.object({ name: z.string() }))
       .mutation(async ({ ctx, input }) => {

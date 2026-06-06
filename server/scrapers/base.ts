@@ -49,7 +49,7 @@ export interface ScrapeOptions {
 }
 
 const DEFAULT_USER_AGENT =
-  "GroceryWazeBot/1.0 (+https://grocerywaze.cr/bot; community price comparison)";
+  "TulisticaBot/1.0 (+https://tulistica.com/bot; community price comparison)";
 
 /**
  * Polite fetcher with retries, jitter and a single in-flight queue.

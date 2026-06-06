@@ -1,6 +1,6 @@
 # Scraping & daily refresh
 
-Grocery Waze populates its catalog by scraping VTEX-powered Costa Rica grocery
+Tulistica populates its catalog by scraping VTEX-powered Costa Rica grocery
 chains. The current production chains are **Walmart Costa Rica**, **MaxiPalí**
 and **Más x Menos**, all of which expose a public catalog API and don't need
 authentication.

@@ -76,7 +76,7 @@ export function BrandLayout({ children, requireVerified = false }: BrandLayoutPr
             <ShoppingCart className="w-5 h-5 text-primary-foreground" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-bold">Grocery Waze</span>
+            <span className="text-sm font-bold">Tulistica</span>
             <span className="text-xs text-muted-foreground">Brand portal</span>
           </div>
         </Link>

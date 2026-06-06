@@ -1,8 +1,8 @@
-# Grocery Waze
+# Tulistica
 
 > Comparador colaborativo de precios de supermercados para Costa Rica.
 
-Grocery Waze ayuda a las personas a pagar menos en cada compra del super:
+Tulistica ayuda a las personas a pagar menos en cada compra del super:
 compara precios entre Walmart, Auto Mercado, Más x Menos, Palí y más,
 optimiza la ruta de compra (una tienda o varias) y construye una base de datos
 comunitaria de precios verificada con geofence y detección de outliers.
