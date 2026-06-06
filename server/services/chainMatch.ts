@@ -37,21 +37,27 @@ export function matchChain(placeName: string): KnownChainId | null {
 
 // Additional CR chains we don't have a derive-base price for, but that have
 // real reported entries and shouldn't fragment in the comparison. Checked only
-// after the base-price chains above.
+// after the base-price chains above. Patterns run against an ACCENT-STRIPPED,
+// space-preserving haystack (see canonicalChainId), so they can stay ASCII and
+// `\b` word boundaries work even for names like "Palí Heredia".
 const EXTRA_CHAIN_PATTERNS: { chainId: string; pattern: RegExp }[] = [
-  { chainId: "pali", pattern: /\bpal[íi]\b/i },
-  { chainId: "perimercados", pattern: /perimercado/i },
-  { chainId: "ampm", pattern: /\bam\s*\/?\s*pm\b/i },
-  { chainId: "freshmarket", pattern: /fresh\s*market/i },
+  { chainId: "pali", pattern: /\bpali\b/ },
+  { chainId: "perimercados", pattern: /perimercado/ },
+  { chainId: "ampm", pattern: /\bam\s*\/?\s*pm\b/ },
+  { chainId: "freshmarket", pattern: /fresh\s*market/ },
 ];
 
-/** lowercase, strip accents, drop non-alphanumerics → stable slug. */
-function normalizeChainSlug(value: string): string {
+/** lowercase + strip accents, keep spaces. For word-boundary chain matching. */
+function stripAccentsLower(value: string): string {
   return value
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9]/g, "");
+    .replace(/[̀-ͯ]/g, "");
+}
+
+/** lowercase, strip accents, drop non-alphanumerics → stable slug. */
+function normalizeChainSlug(value: string): string {
+  return stripAccentsLower(value).replace(/[^a-z0-9]/g, "");
 }
 
 /**
@@ -72,7 +78,7 @@ export function canonicalChainId(
     (rawChainId ? matchChain(rawChainId) : null);
   if (known) return known;
 
-  const haystack = `${storeName ?? ""} ${rawChainId ?? ""}`;
+  const haystack = stripAccentsLower(`${storeName ?? ""} ${rawChainId ?? ""}`);
   for (const { chainId, pattern } of EXTRA_CHAIN_PATTERNS) {
     if (pattern.test(haystack)) return chainId;
   }
