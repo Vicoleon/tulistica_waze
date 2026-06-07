@@ -6,11 +6,22 @@ Decisiones de producto que afectan diseño y arquitectura. Vive aparte del spec 
 
 ## 1 · El "killer moment" — vive en mobile, no en web
 
-**Para iOS / Android nativo. No invertir tiempo en replicarlo en la web.**
+**La app nativa de Android es imperativa y va YA. iOS queda para después.**
+
+> **Decisión de plataforma (actualizada):** la web NO va a despegar sola. Nadie
+> hace el mandado con la laptop metida en el carrito. La web es el panel de
+> planificación y el comparador, pero la **adopción, la recurrencia y la captura
+> de precios reales** viven en el celular en la tienda — y en Costa Rica eso
+> significa **Android primero**. Sin app de Android, Tulistica se queda como una
+> herramienta de "una vez de vez en cuando" en lugar del hábito semanal que
+> queremos, y la red de precios colaborativa nunca alcanza masa crítica.
+> Por eso Android pasa de "futuro" a **track prioritario en paralelo con la web**.
+> iOS se construye después, reutilizando el mismo backend/tRPC. El flujo en
+> tienda descrito abajo es la especificación para esa app de Android.
 
 El uso primario de Tulistica no es planear la lista en la casa. Es **estar parada en el pasillo del super con el carrito**. Ahí la app tiene que sentirse como una extensión de la mano.
 
-### Flujo en tienda (iOS)
+### Flujo en tienda (Android primero; iOS reutiliza el mismo flujo)
 
 1. Usuario llega al super. Abre Tulistica.
 2. Tulistica detecta la tienda automáticamente (geofence + bluetooth/beacons opcional) o le pregunta "¿Estás en PriceSmart Tres Ríos?"
@@ -270,8 +281,12 @@ Cada evento incluye `tier` automáticamente (lo derivamos del user al loggear). 
 
 ## 5 · Notas que NO son para hacer ahora
 
-- **iOS app** — solo cuando la web tenga tracción real. Lo de §1 vive acá para que cuando llegue el momento no inventemos el flujo desde cero.
-- **Geofence / beacons en tienda** — depende de iOS, no toca.
-- **Aprendizaje del orden de pasillos** — depende de muchos checkmarks reales. Ni siquiera arrancamos a recolectar esos datos hasta que el iOS esté afuera. Para entonces, podemos seedear con orden estándar (frutas → panadería → lácteos…) por cadena.
+- **iOS app** — DESPUÉS de Android. (Android ya no está en esta lista: es track prioritario, ver §1.) Cuando llegue iOS, reutiliza el backend/tRPC y el flujo en tienda ya especificado en §1; no se reinventa nada.
+- **Geofence / beacons en tienda** — parte de la app nativa de Android (no de la web). Geofence en el primer release de Android; beacons/bluetooth, opcional y más adelante.
 - **Recetas escaladas por tamaño de hogar** — depende del perfil. Después de onboarding.
 - **Self-serve brand portal** — solo cuando tengamos 5-10 campañas hardcoded y validemos que el modelo funciona.
+
+### Movido a track prioritario (ya NO es "para después")
+
+- **App nativa de Android** — imperativa, en paralelo con la web. Es el vehículo de adopción/recurrencia y la fuente principal de captura de precios. Ver §1.
+- **Aprendizaje del orden de pasillos** — se empieza a recolectar en cuanto Android esté afuera (cada checkmark con timestamp + ubicación reconstruye el mapa de pasillos). Hasta entonces, seedear con orden estándar (frutas → panadería → lácteos…) por cadena.
