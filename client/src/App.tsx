@@ -13,6 +13,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import Onboarding from "./pages/Onboarding";
+import Terms from "./pages/legal/Terms";
+import Privacy from "./pages/legal/Privacy";
 
 // Authenticated app pages
 import Dashboard from "./pages/Dashboard";
@@ -56,6 +58,8 @@ function Router() {
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/verify-email" component={VerifyEmail} />
       <Route path="/login"><Redirect to="/sign-in" /></Route>
+      <Route path="/legal/terms" component={Terms} />
+      <Route path="/legal/privacy" component={Privacy} />
 
       {/* Onboarding — authenticated but lives outside the dashboard shell. */}
       <Route path="/onboarding" component={Onboarding} />
@@ -74,95 +78,40 @@ function Router() {
       <Route path="/brand/billing" component={BrandBilling} />
       <Route path="/brand/settings" component={BrandSettings} />
 
-      {/* Authenticated app routes — wrapped in DashboardLayout. */}
-      <Route path="/dashboard">
-        <DashboardLayout>
-          <Dashboard />
-        </DashboardLayout>
-      </Route>
-      <Route path="/stores">
-        <DashboardLayout>
-          <Stores />
-        </DashboardLayout>
-      </Route>
-      <Route path="/products">
-        <DashboardLayout>
-          <Products />
-        </DashboardLayout>
-      </Route>
-      <Route path="/lists">
-        <DashboardLayout>
-          <ShoppingLists />
-        </DashboardLayout>
-      </Route>
       {/* In-store shopping mode — full-screen, intentionally NOT wrapped in
-          DashboardLayout. Declared before /lists/:id so it wins for /shop. */}
+          DashboardLayout. Declared before the app shell so it wins for /shop. */}
       <Route path="/lists/:id/shop">
         <ShoppingMode />
       </Route>
-      <Route path="/lists/:id">
-        <DashboardLayout>
-          <ListDetail />
-        </DashboardLayout>
-      </Route>
-      <Route path="/scanner">
-        <DashboardLayout>
-          <Scanner />
-        </DashboardLayout>
-      </Route>
-      <Route path="/optimize">
-        <DashboardLayout>
-          <Optimize />
-        </DashboardLayout>
-      </Route>
-      <Route path="/pantry">
-        <DashboardLayout>
-          <Pantry />
-        </DashboardLayout>
-      </Route>
-      <Route path="/recipes">
-        <DashboardLayout>
-          <Recipes />
-        </DashboardLayout>
-      </Route>
-      <Route path="/leaderboard">
-        <DashboardLayout>
-          <Leaderboard />
-        </DashboardLayout>
-      </Route>
-      <Route path="/profile">
-        <DashboardLayout>
-          <Profile />
-        </DashboardLayout>
-      </Route>
-      <Route path="/map">
-        <DashboardLayout>
-          <MapView />
-        </DashboardLayout>
-      </Route>
-      <Route path="/alerts">
-        <DashboardLayout>
-          <PriceAlerts />
-        </DashboardLayout>
-      </Route>
-      <Route path="/budget">
-        <DashboardLayout>
-          <Budget />
-        </DashboardLayout>
-      </Route>
-      <Route path="/seasonal">
-        <DashboardLayout>
-          <SeasonalDeals />
-        </DashboardLayout>
-      </Route>
-      <Route path="/admin">
-        <DashboardLayout>
-          <Admin />
-        </DashboardLayout>
-      </Route>
 
       <Route path="/404" component={NotFound} />
-      <Route component={NotFound} />
+
+      {/* Authenticated app — ONE persistent DashboardLayout around a nested
+          Switch. The shell (sidebar state, header, scroll, bottom nav) no
+          longer remounts on every navigation. */}
+      <Route>
+        <DashboardLayout>
+          <Switch>
+            <Route path="/dashboard" component={Dashboard} />
+            <Route path="/stores" component={Stores} />
+            <Route path="/products" component={Products} />
+            <Route path="/lists" component={ShoppingLists} />
+            <Route path="/lists/:id" component={ListDetail} />
+            <Route path="/scanner" component={Scanner} />
+            <Route path="/optimize" component={Optimize} />
+            <Route path="/pantry" component={Pantry} />
+            <Route path="/recipes" component={Recipes} />
+            <Route path="/leaderboard" component={Leaderboard} />
+            <Route path="/profile" component={Profile} />
+            <Route path="/map" component={MapView} />
+            <Route path="/alerts" component={PriceAlerts} />
+            <Route path="/budget" component={Budget} />
+            <Route path="/seasonal" component={SeasonalDeals} />
+            <Route path="/admin" component={Admin} />
+            <Route component={NotFound} />
+          </Switch>
+        </DashboardLayout>
+      </Route>
     </Switch>
   );
 }

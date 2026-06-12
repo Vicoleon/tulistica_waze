@@ -314,6 +314,18 @@ export const appRouter = router({
         });
         return { success: true, shopperProfile };
       }),
+
+    /**
+     * "Saltear por ahora" — persists the skip so the dashboard gate stops
+     * bouncing the user back into onboarding. Completing onboarding later
+     * still works (shopperProfile.onboardedAt wins over the skip mark).
+     */
+    skip: protectedProcedure.mutation(async ({ ctx }) => {
+      await db.updateUserPreferencesJson(ctx.user.id, {
+        onboardingSkippedAt: new Date().toISOString(),
+      });
+      return { success: true };
+    }),
   }),
 
   // ============ ANALYTICS ============
