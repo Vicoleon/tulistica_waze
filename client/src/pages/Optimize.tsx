@@ -103,7 +103,9 @@ export default function Optimize() {
     } catch {
       // localStorage may be unavailable (private mode); fall through to navigation
     }
-    toast.success(`Strategy applied — ${result.stores.length} store${result.stores.length > 1 ? "s" : ""}`);
+    toast.success(
+      `Ruta aplicada — ${result.stores.length} ${result.stores.length === 1 ? "tienda" : "tiendas"}`
+    );
     const storeIds = result.stores.map((s) => s.id).join(",");
     setLocation(`/map?stores=${storeIds}`);
   };
@@ -218,11 +220,11 @@ export default function Optimize() {
             <div className="flex flex-wrap items-center gap-4 sm:gap-6">
               <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
                 <Fuel className="h-4 w-4" />
-                <span>Combustible ${user.fuelCostPerKm?.toFixed(2) || "0.15"}/km</span>
+                <span>Combustible ₡{user.fuelCostPerKm?.toFixed(2) || "0.15"}/km</span>
               </div>
               <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
                 <Clock className="h-4 w-4" />
-                <span>Tiempo ${user.timeValuePerHour?.toFixed(0) || "15"}/h</span>
+                <span>Tiempo ₡{user.timeValuePerHour?.toFixed(0) || "15"}/h</span>
               </div>
               <Button
                 onClick={handleOptimize}

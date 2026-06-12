@@ -12,15 +12,12 @@ import {
 } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Download, Receipt, RefreshCcw, CreditCard } from "lucide-react";
-
-const STATUS_BADGE: Record<string, string> = {
-  draft: "bg-muted text-foreground",
-  open: "bg-amber-100 text-amber-800",
-  paid: "bg-green-100 text-green-800",
-  uncollectible: "bg-red-100 text-red-800",
-  void: "bg-gray-200 text-gray-700",
-};
+import { Download, Receipt, RefreshCcw, CreditCard, Loader2 } from "lucide-react";
+import {
+  INVOICE_STATUS_BADGE,
+  invoiceStatusLabel,
+  formatPeriodMonth,
+} from "./labels";
 
 function currentPeriod(): string {
   const d = new Date();
@@ -42,70 +39,75 @@ export default function BrandBilling() {
   const utils = trpc.useUtils();
   const { data: invoices, isLoading } = trpc.brandBilling.listInvoices.useQuery();
   const [selectedPeriod, setSelectedPeriod] = useState<string>(currentPeriod());
+  const [exportingPeriod, setExportingPeriod] = useState<string | null>(null);
   const periods = useMemo(() => lastNPeriods(12), []);
 
-  const exportQuery = trpc.brandBilling.exportMonthlyCsv.useQuery(
-    { periodMonth: selectedPeriod },
-    { enabled: false }
-  );
-
   const generateMutation = trpc.brandBilling.generateForPeriod.useMutation({
-    onSuccess: () => utils.brandBilling.listInvoices.invalidate(),
+    onSuccess: () => {
+      toast.success("Factura generada");
+      utils.brandBilling.listInvoices.invalidate();
+    },
+    onError: err => toast.error(err.message || "No se pudo generar la factura"),
   });
 
   const payMutation = trpc.brandBilling.createPaymentIntent.useMutation({
     onSuccess: result => {
       if ("autoPaid" in result && result.autoPaid) {
-        toast.success("Invoice marked as paid (dev stub)");
+        toast.success("Factura marcada como pagada (modo de prueba)");
         utils.brandBilling.listInvoices.invalidate();
       } else if ("clientSecret" in result) {
-        toast.success(`Payment intent created (${result.providerId})`);
+        toast.success(`Intento de pago creado (${result.providerId})`);
       }
     },
     onError: err => toast.error(err.message),
   });
 
-  const downloadCsv = async () => {
+  const downloadCsv = async (periodMonth: string) => {
+    setExportingPeriod(periodMonth);
     try {
-      const data = await exportQuery.refetch();
-      if (!data.data) throw new Error("No data returned");
-      const blob = new Blob([data.data.csv], { type: data.data.contentType });
+      const data = await utils.brandBilling.exportMonthlyCsv.fetch({ periodMonth });
+      if (!data) throw new Error("No se recibieron datos");
+      const blob = new Blob([data.csv], { type: data.contentType });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = data.data.filename;
+      a.download = data.filename;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Export failed");
+      toast.error(err instanceof Error ? err.message : "No se pudo exportar");
+    } finally {
+      setExportingPeriod(null);
     }
   };
+
+  const payingInvoiceId = payMutation.isPending ? payMutation.variables?.invoiceId : undefined;
 
   return (
     <BrandLayout requireVerified>
       <div className="space-y-6 max-w-5xl">
         <div>
-          <h1 className="text-2xl font-bold">Billing</h1>
+          <h1 className="text-2xl font-bold">Facturación</h1>
           <p className="text-sm text-muted-foreground">
-            Invoices, CSV exports, and payment.
+            Facturas, exportaciones CSV y pagos.
           </p>
         </div>
 
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Receipt className="w-4 h-4" /> Monthly CSV export
+              <Receipt className="w-4 h-4" /> Exportación CSV mensual
             </CardTitle>
             <CardDescription>
-              Detailed spend per campaign for the selected period.
+              Gasto detallado por campaña para el período seleccionado.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
               <div className="flex-1 space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Period</label>
+                <label className="text-xs font-medium text-muted-foreground">Período</label>
                 <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
                   <SelectTrigger>
                     <SelectValue />
@@ -113,7 +115,7 @@ export default function BrandBilling() {
                   <SelectContent>
                     {periods.map(p => (
                       <SelectItem key={p} value={p}>
-                        {p}
+                        {formatPeriodMonth(p)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -125,11 +127,14 @@ export default function BrandBilling() {
                 variant="outline"
               >
                 <RefreshCcw className="w-4 h-4 mr-2" />
-                {generateMutation.isPending ? "Generating…" : "Regenerate invoice"}
+                {generateMutation.isPending ? "Generando…" : "Regenerar factura"}
               </Button>
-              <Button onClick={downloadCsv} disabled={exportQuery.isFetching}>
+              <Button
+                onClick={() => downloadCsv(selectedPeriod)}
+                disabled={exportingPeriod !== null}
+              >
                 <Download className="w-4 h-4 mr-2" />
-                {exportQuery.isFetching ? "Preparing…" : "Download CSV"}
+                {exportingPeriod === selectedPeriod ? "Preparando…" : "Descargar CSV"}
               </Button>
             </div>
           </CardContent>
@@ -137,21 +142,21 @@ export default function BrandBilling() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Invoices</CardTitle>
-            <CardDescription>Issued monthly. Pay or export anytime.</CardDescription>
+            <CardTitle>Facturas</CardTitle>
+            <CardDescription>Se emiten mensualmente. Pagá o exportá cuando quieras.</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            {isLoading && <p className="p-6 text-sm text-muted-foreground">Loading…</p>}
+            {isLoading && <p className="p-6 text-sm text-muted-foreground">Cargando…</p>}
             {!isLoading && (!invoices || invoices.length === 0) && (
               <div className="p-12 text-center space-y-2">
                 <Receipt className="w-10 h-10 mx-auto text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">No invoices yet.</p>
+                <p className="text-sm text-muted-foreground">Aún no hay facturas.</p>
                 <Button
                   variant="outline"
                   onClick={() => generateMutation.mutate({ periodMonth: currentPeriod() })}
                   disabled={generateMutation.isPending}
                 >
-                  Generate current period
+                  Generar período actual
                 </Button>
               </div>
             )}
@@ -160,26 +165,28 @@ export default function BrandBilling() {
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50 text-left text-xs uppercase text-muted-foreground">
                     <tr>
-                      <th className="px-4 py-3">Period</th>
-                      <th className="px-4 py-3">Status</th>
-                      <th className="px-4 py-3">Issued</th>
-                      <th className="px-4 py-3">Due</th>
+                      <th className="px-4 py-3">Período</th>
+                      <th className="px-4 py-3">Estado</th>
+                      <th className="px-4 py-3">Emitida</th>
+                      <th className="px-4 py-3">Vence</th>
                       <th className="px-4 py-3 text-right">Total</th>
-                      <th className="px-4 py-3 text-right">Actions</th>
+                      <th className="px-4 py-3 text-right">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
                     {invoices.map(inv => (
                       <tr key={inv.id} className="border-t">
-                        <td className="px-4 py-3 font-medium">{inv.periodMonth}</td>
+                        <td className="px-4 py-3 font-medium">{formatPeriodMonth(inv.periodMonth)}</td>
                         <td className="px-4 py-3">
-                          <Badge className={STATUS_BADGE[inv.status] ?? ""}>{inv.status}</Badge>
+                          <Badge className={INVOICE_STATUS_BADGE[inv.status] ?? ""}>
+                            {invoiceStatusLabel(inv.status)}
+                          </Badge>
                         </td>
                         <td className="px-4 py-3 text-xs">
-                          {inv.issuedAt ? new Date(inv.issuedAt).toLocaleDateString() : "—"}
+                          {inv.issuedAt ? new Date(inv.issuedAt).toLocaleDateString("es-CR") : "—"}
                         </td>
                         <td className="px-4 py-3 text-xs">
-                          {inv.dueAt ? new Date(inv.dueAt).toLocaleDateString() : "—"}
+                          {inv.dueAt ? new Date(inv.dueAt).toLocaleDateString("es-CR") : "—"}
                         </td>
                         <td className="px-4 py-3 text-right tabular-nums">{inv.totalFormatted}</td>
                         <td className="px-4 py-3 text-right">
@@ -187,20 +194,28 @@ export default function BrandBilling() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => {
-                                setSelectedPeriod(inv.periodMonth);
-                                downloadCsv();
-                              }}
+                              onClick={() => downloadCsv(inv.periodMonth)}
+                              disabled={exportingPeriod === inv.periodMonth}
                             >
-                              <Download className="w-3.5 h-3.5 mr-1" /> CSV
+                              {exportingPeriod === inv.periodMonth ? (
+                                <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                              ) : (
+                                <Download className="w-3.5 h-3.5 mr-1" />
+                              )}
+                              CSV
                             </Button>
                             {inv.status === "open" && (
                               <Button
                                 size="sm"
                                 onClick={() => payMutation.mutate({ invoiceId: inv.id })}
-                                disabled={payMutation.isPending}
+                                disabled={payingInvoiceId === inv.id}
                               >
-                                <CreditCard className="w-3.5 h-3.5 mr-1" /> Pay
+                                {payingInvoiceId === inv.id ? (
+                                  <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                                ) : (
+                                  <CreditCard className="w-3.5 h-3.5 mr-1" />
+                                )}
+                                Pagar
                               </Button>
                             )}
                           </div>

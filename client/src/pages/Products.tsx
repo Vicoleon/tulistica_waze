@@ -86,9 +86,7 @@ export default function Products() {
       <main className="container py-6 sm:py-8 space-y-6">
         {/* Page heading */}
         <header className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground font-serif italic">
-            Saber el precio
-          </p>
+          <p className="page-eyebrow">Ahorrar</p>
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <h1 className="font-serif text-3xl sm:text-4xl text-foreground">
               Buscar productos

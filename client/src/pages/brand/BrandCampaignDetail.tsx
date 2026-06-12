@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { Link, useParams, useLocation } from "wouter";
 import { BrandLayout } from "@/components/BrandLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -46,6 +47,12 @@ import {
   Bar,
 } from "recharts";
 import { ArrowLeft, ImagePlus, Trash2, Loader2 } from "lucide-react";
+import {
+  CAMPAIGN_STATUS_LABELS,
+  CAMPAIGN_TYPE_LABELS,
+  campaignStatusLabel,
+  campaignTypeLabel,
+} from "./labels";
 
 type CampaignType = "sponsored_search" | "banner" | "cart_suggestion";
 type CampaignStatus = "draft" | "active" | "paused" | "ended";
@@ -53,11 +60,11 @@ type CampaignStatus = "draft" | "active" | "paused" | "ended";
 function readFileAsBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.onerror = () => reject(new Error("No se pudo leer el archivo"));
     reader.onload = () => {
       const result = reader.result;
       if (typeof result !== "string") {
-        reject(new Error("Invalid file content"));
+        reject(new Error("Contenido de archivo inválido"));
         return;
       }
       const commaIdx = result.indexOf(",");
@@ -92,27 +99,29 @@ export default function BrandCampaignDetail() {
     onSuccess: async () => {
       await utils.brandCampaigns.get.invalidate({ id: campaignId });
       await utils.brandCampaigns.list.invalidate();
-      toast.success("Campaign saved");
+      toast.success("Campaña guardada");
     },
     onError: err => toast.error(err.message),
   });
 
   const setStatus = trpc.brandCampaigns.setStatus.useMutation({
     onSuccess: () => utils.brandCampaigns.get.invalidate({ id: campaignId }),
+    onError: err => toast.error(err.message || "No se pudo cambiar el estado"),
   });
 
   const deleteMutation = trpc.brandCampaigns.delete.useMutation({
     onSuccess: async () => {
       await utils.brandCampaigns.list.invalidate();
-      toast.success("Campaign deleted");
+      toast.success("Campaña eliminada");
       navigate("/brand/campaigns");
     },
+    onError: err => toast.error(err.message || "No se pudo eliminar la campaña"),
   });
 
   const uploadMutation = trpc.brandCampaigns.uploadCreative.useMutation({
     onSuccess: async () => {
       await utils.brandCampaigns.get.invalidate({ id: campaignId });
-      toast.success("Creative uploaded");
+      toast.success("Creatividad subida");
     },
     onError: err => toast.error(err.message),
   });
@@ -130,8 +139,13 @@ export default function BrandCampaignDetail() {
   const [categories, setCategories] = useState("");
   const [cities, setCities] = useState("");
 
+  // Seed the form only when a different campaign loads — refetches of the
+  // same campaign must not wipe in-progress edits.
+  const lastSeededId = useRef<number | null>(null);
   useEffect(() => {
     if (!campaign) return;
+    if (lastSeededId.current === campaign.id) return;
+    lastSeededId.current = campaign.id;
     setName(campaign.name ?? "");
     setType((campaign.type as CampaignType) ?? "sponsored_search");
     setStatusLocal((campaign.status as CampaignStatus) ?? "draft");
@@ -167,7 +181,7 @@ export default function BrandCampaignDetail() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be 5 MB or smaller");
+      toast.error("La imagen debe pesar 5 MB o menos");
       return;
     }
     try {
@@ -179,7 +193,7 @@ export default function BrandCampaignDetail() {
         base64Data,
       });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Upload failed");
+      toast.error(err instanceof Error ? err.message : "No se pudo subir la imagen");
     } finally {
       e.target.value = "";
     }
@@ -191,7 +205,46 @@ export default function BrandCampaignDetail() {
   if (!Number.isFinite(campaignId)) {
     return (
       <BrandLayout requireVerified>
-        <p className="text-sm">Invalid campaign id.</p>
+        <p className="text-sm">ID de campaña inválido.</p>
+      </BrandLayout>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <BrandLayout requireVerified>
+        <div className="max-w-6xl space-y-6">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-5 w-32" />
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[0, 1, 2, 3].map(i => (
+              <Skeleton key={i} className="h-24" />
+            ))}
+          </div>
+          <Skeleton className="h-72" />
+        </div>
+      </BrandLayout>
+    );
+  }
+
+  if (!campaign) {
+    return (
+      <BrandLayout requireVerified>
+        <div className="max-w-6xl py-16 text-center space-y-3">
+          <h1 className="text-xl font-semibold">Campaña no encontrada</h1>
+          <p className="text-sm text-muted-foreground">
+            La campaña no existe o ya fue eliminada.
+          </p>
+          <Link
+            href="/brand/campaigns"
+            className="text-primary hover:underline inline-flex items-center gap-1 text-sm"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> Volver a campañas
+          </Link>
+        </div>
       </BrandLayout>
     );
   }
@@ -205,18 +258,20 @@ export default function BrandCampaignDetail() {
               href="/brand/campaigns"
               className="text-sm text-muted-foreground hover:underline inline-flex items-center gap-1"
             >
-              <ArrowLeft className="w-3.5 h-3.5" /> Back to campaigns
+              <ArrowLeft className="w-3.5 h-3.5" /> Volver a campañas
             </Link>
             <h1 className="text-2xl font-bold mt-2">
-              {campaign?.name ?? `Campaign #${campaignId}`}
+              {campaign.name ?? `Campaña #${campaignId}`}
             </h1>
             <div className="flex items-center gap-2 mt-1">
-              <Badge>{campaign?.status ?? "—"}</Badge>
-              <span className="text-xs text-muted-foreground">{campaign?.type}</span>
+              <Badge>{campaignStatusLabel(campaign.status)}</Badge>
+              <span className="text-xs text-muted-foreground">
+                {campaign.type ? campaignTypeLabel(campaign.type) : null}
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {(campaign?.status === "active" || campaign?.status === "paused") && (
+            {(campaign.status === "active" || campaign.status === "paused") && (
               <Button
                 variant="outline"
                 onClick={() =>
@@ -227,28 +282,28 @@ export default function BrandCampaignDetail() {
                 }
                 disabled={setStatus.isPending}
               >
-                {campaign.status === "paused" ? "Resume" : "Pause"}
+                {campaign.status === "paused" ? "Reanudar" : "Pausar"}
               </Button>
             )}
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive">
-                  <Trash2 className="w-4 h-4 mr-2" /> Delete
+                  <Trash2 className="w-4 h-4 mr-2" /> Eliminar
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Delete this campaign?</AlertDialogTitle>
+                  <AlertDialogTitle>¿Eliminar esta campaña?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will permanently remove the campaign and stop serving it.
+                    Se eliminará la campaña de forma permanente y dejará de mostrarse.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={() => deleteMutation.mutate({ id: campaignId })}
                   >
-                    Delete
+                    Eliminar
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -258,22 +313,22 @@ export default function BrandCampaignDetail() {
 
         <Tabs defaultValue="performance">
           <TabsList>
-            <TabsTrigger value="performance">Performance</TabsTrigger>
-            <TabsTrigger value="creative">Creative</TabsTrigger>
-            <TabsTrigger value="edit">Edit</TabsTrigger>
+            <TabsTrigger value="performance">Rendimiento</TabsTrigger>
+            <TabsTrigger value="creative">Creatividad</TabsTrigger>
+            <TabsTrigger value="edit">Editar</TabsTrigger>
           </TabsList>
 
           <TabsContent value="performance" className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Card>
                 <CardHeader className="pb-2">
-                  <CardDescription>Impressions</CardDescription>
+                  <CardDescription>Impresiones</CardDescription>
                   <CardTitle className="text-2xl">{totals.impressions.toLocaleString()}</CardTitle>
                 </CardHeader>
               </Card>
               <Card>
                 <CardHeader className="pb-2">
-                  <CardDescription>Clicks</CardDescription>
+                  <CardDescription>Clics</CardDescription>
                   <CardTitle className="text-2xl">{totals.clicks.toLocaleString()}</CardTitle>
                 </CardHeader>
               </Card>
@@ -285,7 +340,7 @@ export default function BrandCampaignDetail() {
               </Card>
               <Card>
                 <CardHeader className="pb-2">
-                  <CardDescription>Spend</CardDescription>
+                  <CardDescription>Gasto</CardDescription>
                   <CardTitle className="text-2xl">{formatCents(totals.spendCents)}</CardTitle>
                 </CardHeader>
               </Card>
@@ -294,20 +349,20 @@ export default function BrandCampaignDetail() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>Daily performance</CardTitle>
+                  <CardTitle>Rendimiento diario</CardTitle>
                   <CardDescription>
-                    Impressions, clicks and spend over time
+                    Impresiones, clics y gasto en el tiempo
                   </CardDescription>
                 </div>
                 <Select value={String(rangeDays)} onValueChange={v => setRangeDays(Number(v))}>
-                  <SelectTrigger className="w-36">
+                  <SelectTrigger className="w-40">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="7">Last 7 days</SelectItem>
-                    <SelectItem value="14">Last 14 days</SelectItem>
-                    <SelectItem value="30">Last 30 days</SelectItem>
-                    <SelectItem value="90">Last 90 days</SelectItem>
+                    <SelectItem value="7">Últimos 7 días</SelectItem>
+                    <SelectItem value="14">Últimos 14 días</SelectItem>
+                    <SelectItem value="30">Últimos 30 días</SelectItem>
+                    <SelectItem value="90">Últimos 90 días</SelectItem>
                   </SelectContent>
                 </Select>
               </CardHeader>
@@ -333,7 +388,7 @@ export default function BrandCampaignDetail() {
                           stroke="#0d9488"
                           strokeWidth={2}
                           dot={false}
-                          name="Impressions"
+                          name="Impresiones"
                         />
                         <Line
                           yAxisId="right"
@@ -342,7 +397,7 @@ export default function BrandCampaignDetail() {
                           stroke="#f59e0b"
                           strokeWidth={2}
                           dot={false}
-                          name="Clicks"
+                          name="Clics"
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -353,8 +408,8 @@ export default function BrandCampaignDetail() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Daily spend</CardTitle>
-                <CardDescription>USD per day</CardDescription>
+                <CardTitle>Gasto diario</CardTitle>
+                <CardDescription>USD por día</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-56">
@@ -366,7 +421,7 @@ export default function BrandCampaignDetail() {
                       <XAxis dataKey="day" tick={{ fontSize: 12 }} />
                       <YAxis tick={{ fontSize: 12 }} />
                       <Tooltip formatter={(v: number) => `$${v.toFixed(2)}`} />
-                      <Bar dataKey="spend" fill="#0d9488" name="Spend (USD)" />
+                      <Bar dataKey="spend" fill="#0d9488" name="Gasto (USD)" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -377,30 +432,30 @@ export default function BrandCampaignDetail() {
           <TabsContent value="creative" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Creative image</CardTitle>
-                <CardDescription>PNG, JPG, WEBP up to 5 MB.</CardDescription>
+                <CardTitle>Imagen creativa</CardTitle>
+                <CardDescription>PNG, JPG o WEBP de hasta 5 MB.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {campaign?.imageUrl ? (
+                {campaign.imageUrl ? (
                   <img
                     src={campaign.imageUrl}
-                    alt="Campaign creative"
+                    alt="Creatividad de la campaña"
                     className="max-w-md w-full rounded-md border"
                   />
                 ) : (
                   <div className="border border-dashed rounded-md p-10 text-center text-sm text-muted-foreground">
-                    No creative uploaded yet.
+                    Aún no subiste una creatividad.
                   </div>
                 )}
                 <div>
                   <Label htmlFor="creative-upload" className="inline-flex items-center gap-2 cursor-pointer rounded-md border bg-card px-3 py-2 text-sm hover:bg-muted">
                     {uploadMutation.isPending ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin" /> Uploading…
+                        <Loader2 className="w-4 h-4 animate-spin" /> Subiendo…
                       </>
                     ) : (
                       <>
-                        <ImagePlus className="w-4 h-4" /> Upload new creative
+                        <ImagePlus className="w-4 h-4" /> Subir nueva creatividad
                       </>
                     )}
                   </Label>
@@ -420,144 +475,144 @@ export default function BrandCampaignDetail() {
           <TabsContent value="edit">
             <Card>
               <CardHeader>
-                <CardTitle>Edit campaign</CardTitle>
+                <CardTitle>Editar campaña</CardTitle>
                 <CardDescription>
-                  Change targeting, schedule, budget, status, and copy.
+                  Modificá segmentación, presupuesto, estado y textos.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading…</p>
-                ) : (
-                  <form onSubmit={onSave} className="space-y-4">
+                <form onSubmit={onSave} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="name">Nombre interno</Label>
+                    <Input
+                      id="name"
+                      required
+                      value={name}
+                      onChange={e => setName(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label htmlFor="name">Internal name</Label>
+                      <Label htmlFor="type">Tipo</Label>
+                      <Select value={type} onValueChange={v => setType(v as CampaignType)}>
+                        <SelectTrigger id="type">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="sponsored_search">
+                            {CAMPAIGN_TYPE_LABELS.sponsored_search}
+                          </SelectItem>
+                          <SelectItem value="banner">{CAMPAIGN_TYPE_LABELS.banner}</SelectItem>
+                          <SelectItem value="cart_suggestion">
+                            {CAMPAIGN_TYPE_LABELS.cart_suggestion}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="status">Estado</Label>
+                      <Select value={status} onValueChange={v => setStatusLocal(v as CampaignStatus)}>
+                        <SelectTrigger id="status">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="draft">{CAMPAIGN_STATUS_LABELS.draft}</SelectItem>
+                          <SelectItem value="active">{CAMPAIGN_STATUS_LABELS.active}</SelectItem>
+                          <SelectItem value="paused">{CAMPAIGN_STATUS_LABELS.paused}</SelectItem>
+                          <SelectItem value="ended">{CAMPAIGN_STATUS_LABELS.ended}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="title">Título de la creatividad</Label>
+                    <Input
+                      id="title"
+                      value={title}
+                      onChange={e => setTitle(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="description">Descripción</Label>
+                    <Textarea
+                      id="description"
+                      rows={3}
+                      value={description}
+                      onChange={e => setDescription(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="targetUrl">URL de destino</Label>
+                    <Input
+                      id="targetUrl"
+                      type="url"
+                      value={targetUrl}
+                      onChange={e => setTargetUrl(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="bid">Puja CPC (USD)</Label>
                       <Input
-                        id="name"
-                        required
-                        value={name}
-                        onChange={e => setName(e.target.value)}
+                        id="bid"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={bidCpc}
+                        onChange={e => setBidCpc(e.target.value)}
                       />
                     </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="type">Type</Label>
-                        <Select value={type} onValueChange={v => setType(v as CampaignType)}>
-                          <SelectTrigger id="type">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="sponsored_search">Sponsored search</SelectItem>
-                            <SelectItem value="banner">Banner</SelectItem>
-                            <SelectItem value="cart_suggestion">Cart suggestion</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="status">Status</Label>
-                        <Select value={status} onValueChange={v => setStatusLocal(v as CampaignStatus)}>
-                          <SelectTrigger id="status">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="draft">Draft</SelectItem>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="paused">Paused</SelectItem>
-                            <SelectItem value="ended">Ended</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
                     <div className="space-y-1.5">
-                      <Label htmlFor="title">Creative title</Label>
+                      <Label htmlFor="daily">Presupuesto diario (USD)</Label>
                       <Input
-                        id="title"
-                        value={title}
-                        onChange={e => setTitle(e.target.value)}
+                        id="daily"
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={dailyBudget}
+                        onChange={e => setDailyBudget(e.target.value)}
                       />
                     </div>
+                  </div>
 
-                    <div className="space-y-1.5">
-                      <Label htmlFor="description">Description</Label>
-                      <Textarea
-                        id="description"
-                        rows={3}
-                        value={description}
-                        onChange={e => setDescription(e.target.value)}
-                      />
-                    </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="keywords">Palabras clave (separadas por comas)</Label>
+                    <Input
+                      id="keywords"
+                      value={keywords}
+                      onChange={e => setKeywords(e.target.value)}
+                    />
+                  </div>
 
-                    <div className="space-y-1.5">
-                      <Label htmlFor="targetUrl">Target URL</Label>
-                      <Input
-                        id="targetUrl"
-                        type="url"
-                        value={targetUrl}
-                        onChange={e => setTargetUrl(e.target.value)}
-                      />
-                    </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="categories">Categorías (separadas por comas)</Label>
+                    <Input
+                      id="categories"
+                      value={categories}
+                      onChange={e => setCategories(e.target.value)}
+                    />
+                  </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="bid">Bid CPC (USD)</Label>
-                        <Input
-                          id="bid"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={bidCpc}
-                          onChange={e => setBidCpc(e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="daily">Daily budget (USD)</Label>
-                        <Input
-                          id="daily"
-                          type="number"
-                          min="0"
-                          step="1"
-                          value={dailyBudget}
-                          onChange={e => setDailyBudget(e.target.value)}
-                        />
-                      </div>
-                    </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="cities">Ciudades objetivo (separadas por comas)</Label>
+                    <Input
+                      id="cities"
+                      value={cities}
+                      onChange={e => setCities(e.target.value)}
+                    />
+                  </div>
 
-                    <div className="space-y-1.5">
-                      <Label htmlFor="keywords">Keywords (comma separated)</Label>
-                      <Input
-                        id="keywords"
-                        value={keywords}
-                        onChange={e => setKeywords(e.target.value)}
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label htmlFor="categories">Categories (comma separated)</Label>
-                      <Input
-                        id="categories"
-                        value={categories}
-                        onChange={e => setCategories(e.target.value)}
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label htmlFor="cities">Target cities (comma separated)</Label>
-                      <Input
-                        id="cities"
-                        value={cities}
-                        onChange={e => setCities(e.target.value)}
-                      />
-                    </div>
-
-                    <div className="flex justify-end gap-2">
-                      <Button type="submit" disabled={updateMutation.isPending}>
-                        {updateMutation.isPending ? "Saving…" : "Save changes"}
-                      </Button>
-                    </div>
-                  </form>
-                )}
+                  <div className="flex justify-end gap-2">
+                    <Button type="submit" disabled={updateMutation.isPending}>
+                      {updateMutation.isPending ? "Guardando…" : "Guardar cambios"}
+                    </Button>
+                  </div>
+                </form>
               </CardContent>
             </Card>
           </TabsContent>

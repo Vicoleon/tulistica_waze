@@ -66,6 +66,20 @@ export default function MapPage() {
     ? highlightStoreIdsParam.split(",").map((id) => parseInt(id)).filter((n) => !isNaN(n))
     : [];
 
+  // List context for "Ver plan completo" — only exists if the user applied a
+  // shopping strategy from Optimize (persisted alongside it in localStorage).
+  // Without a list there is no plan to show, so the CTA hides itself.
+  const activeListId = useMemo<number | null>(() => {
+    try {
+      const raw = localStorage.getItem("tulistica.activeStrategy");
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { listId?: number | null };
+      return typeof parsed.listId === "number" && parsed.listId > 0 ? parsed.listId : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [radius, setRadius] = useState([10]);
   const [selectedStore, setSelectedStore] = useState<StoreMarker | null>(null);
@@ -322,11 +336,9 @@ export default function MapPage() {
       <main className="container py-6 sm:py-8 space-y-5">
         {/* Page heading */}
         <header className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground font-serif italic">
-            Saber el precio
-          </p>
+          <p className="page-eyebrow">Ahorrar</p>
           <h1 className="font-serif text-3xl sm:text-4xl text-foreground">
-            Mapa de tiendas
+            Mapa de precios
           </h1>
           <p className="text-muted-foreground max-w-2xl">
             Las tiendas cerca de tu casa, con precios reales de hoy.
@@ -471,7 +483,11 @@ export default function MapPage() {
                 onClose={() => setSelectedStore(null)}
                 onReportBusyness={() => setCrowdednessDialogOpen(true)}
                 onReportPrice={() => setReportPriceOpen(true)}
-                onSeePlan={() => navigate("/optimize")}
+                onSeePlan={
+                  activeListId != null
+                    ? () => navigate(`/optimize?list=${activeListId}`)
+                    : undefined
+                }
                 isAuthenticated={isAuthenticated}
               />
             ) : selectedGooglePlace ? (
@@ -594,7 +610,8 @@ interface SelectedStoreCardProps {
   onClose: () => void;
   onReportBusyness: () => void;
   onReportPrice?: () => void;
-  onSeePlan: () => void;
+  /** Absent when there's no active list — the CTA hides instead of dead-ending. */
+  onSeePlan?: () => void;
   isAuthenticated: boolean;
 }
 
@@ -723,19 +740,21 @@ function SelectedStoreCard({
 
         {/* Actions */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-          <Button
-            onClick={onSeePlan}
-            className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 min-h-11"
-          >
-            Ver plan completo
-          </Button>
+          {onSeePlan && (
+            <Button
+              onClick={onSeePlan}
+              className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 min-h-11"
+            >
+              Ver plan completo
+            </Button>
+          )}
           <Button
             variant="outline"
             onClick={() => {
               const url = `https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}`;
               window.open(url, "_blank");
             }}
-            className="rounded-full min-h-11"
+            className={`rounded-full min-h-11 ${onSeePlan ? "" : "sm:col-span-2"}`}
           >
             <Navigation className="w-4 h-4 mr-1" />
             Cómo llegar
@@ -890,8 +909,8 @@ function EmptySidePanel() {
           Tocá un pin
         </h3>
         <p className="text-sm text-muted-foreground">
-          Mirá tu lista priced en cada tienda. El pin terracota ya está en
-          Tulistica; el pin sage es de Google y se puede agregar.
+          Mirá cuánto cuesta tu lista en cada tienda. El pin terracota ya está en
+          Tulistica; el pin verde es de Google y se puede agregar.
         </p>
       </CardContent>
     </Card>

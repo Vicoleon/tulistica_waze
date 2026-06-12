@@ -32,22 +32,26 @@ export function VerifyEmailBanner({ emailVerified }: VerifyEmailBannerProps) {
 
   return (
     <div className="border-b bg-amber-50 dark:bg-amber-950/30">
-      <div className="container flex items-center gap-3 py-3 text-sm">
-        <Mail className="w-4 h-4 shrink-0 text-amber-700 dark:text-amber-300" />
-        <span className="flex-1">
-          Verificá tu correo para reportar precios y compartir listas.
-        </span>
-        <Button size="sm" variant="outline" onClick={handleResend} disabled={sending}>
-          {sending ? "Enviando..." : "Reenviar correo"}
-        </Button>
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={() => setDismissed(true)}
-          aria-label="Cerrar aviso"
-        >
-          <X className="w-4 h-4" />
-        </Button>
+      <div className="container flex flex-col gap-2 py-3 text-sm sm:flex-row sm:items-center sm:gap-3">
+        <div className="flex items-center gap-3 sm:flex-1">
+          <Mail className="w-4 h-4 shrink-0 text-amber-700 dark:text-amber-300" />
+          <span className="flex-1">
+            Verificá tu correo para reportar precios y compartir listas.
+          </span>
+        </div>
+        <div className="flex items-center justify-end gap-2">
+          <Button size="sm" variant="outline" onClick={handleResend} disabled={sending}>
+            {sending ? "Enviando..." : "Reenviar correo"}
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => setDismissed(true)}
+            aria-label="Cerrar aviso"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -129,9 +129,7 @@ export default function PriceAlerts() {
         {/* Page heading */}
         <header className="space-y-2 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground font-serif italic">
-              Saber el precio
-            </p>
+            <p className="page-eyebrow">Seguir el precio</p>
             <h1 className="font-serif text-3xl sm:text-4xl text-foreground">
               Alertas de precio
             </h1>

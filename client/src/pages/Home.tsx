@@ -1,12 +1,20 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { BrandMark } from "@/components/BrandMark";
 import { Button } from "@/components/ui/button";
-import { getLoginUrl } from "@/const";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import {
   ArrowRight,
   Bell,
   Check,
   ChefHat,
   MapPin,
+  Menu,
   Package,
   ScanLine,
   Scale,
@@ -14,6 +22,7 @@ import {
   Store,
   Users,
 } from "lucide-react";
+import { useState } from "react";
 import { Link } from "wouter";
 
 interface FeatureTile {
@@ -98,6 +107,48 @@ const FEATURES: FeatureTile[] = [
   },
 ];
 
+interface FooterLink {
+  label: string;
+  href: string;
+}
+
+interface FooterColumn {
+  title: string;
+  links: FooterLink[];
+}
+
+const FOOTER_COLUMNS: FooterColumn[] = [
+  {
+    title: "Producto",
+    links: [
+      { label: "Cómo funciona", href: "#asi-funciona" },
+      { label: "Mapa de tiendas", href: "/map" },
+      { label: "Crear cuenta", href: "/sign-in?mode=signup" },
+    ],
+  },
+  {
+    title: "Cuenta",
+    links: [
+      { label: "Entrar", href: "/sign-in" },
+      { label: "Recuperar contraseña", href: "/forgot-password" },
+    ],
+  },
+  {
+    title: "Legal",
+    links: [
+      { label: "Términos", href: "/legal/terms" },
+      { label: "Privacidad", href: "/legal/privacy" },
+    ],
+  },
+  {
+    title: "Empresas",
+    links: [
+      { label: "Para marcas", href: "/brand" },
+      { label: "Portal de marcas", href: "/brand/register" },
+    ],
+  },
+];
+
 const STEPS = [
   {
     n: "1",
@@ -123,59 +174,115 @@ const STEPS = [
 ];
 
 export default function Home() {
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const primaryHref = isAuthenticated ? "/dashboard" : getLoginUrl();
+  const closeMenu = () => setIsMenuOpen(false);
+
+  const primaryHref = isAuthenticated ? "/dashboard" : "/sign-in?mode=signup";
   const primaryLabel = isAuthenticated ? "Ir a mi lista" : "Crear mi lista — gratis";
+
+  const menuLinkClass =
+    "rounded-xl px-3 py-2.5 text-base font-medium text-foreground transition-colors duration-200 hover:bg-paper-deep";
+  const quietMenuLinkClass =
+    "px-3 py-1.5 text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground";
 
   return (
     <div className="min-h-screen bg-background">
       {/* Top navigation */}
       <nav className="sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur-md">
         <div className="container flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="font-serif text-2xl font-semibold tracking-tight text-foreground">
-              tulistica
-            </span>
-            <span className="-ml-1.5 h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+          <Link href="/" aria-label="Tulistica — inicio">
+            <BrandMark />
           </Link>
-          <div className="flex items-center gap-2 sm:gap-3">
+
+          {/* Desktop nav */}
+          <div className="hidden items-center gap-6 md:flex">
             <a
               href="#asi-funciona"
-              className="hidden sm:inline-flex text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground"
+              className="text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground"
             >
               Cómo funciona
             </a>
             <Link
               href="/map"
-              className="hidden md:inline-flex text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground"
+              className="text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground"
             >
               Ver mapa de tiendas
             </Link>
             {isAuthenticated ? (
-              <Link href="/dashboard">
-                <Button className="rounded-full">{user?.name?.split(" ")[0] ?? "Mi lista"}</Button>
-              </Link>
+              <Button asChild className="rounded-full">
+                <Link href="/dashboard">Mi lista</Link>
+              </Button>
             ) : (
-              <a href={getLoginUrl()}>
-                <Button className="rounded-full">Entrar</Button>
-              </a>
+              <Button asChild className="rounded-full">
+                <Link href="/sign-in">Entrar</Link>
+              </Button>
             )}
           </div>
+
+          {/* Mobile menu */}
+          <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                aria-label="Abrir menú"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-72">
+              <SheetHeader className="pb-0">
+                <SheetTitle className="sr-only">Menú de navegación</SheetTitle>
+                <BrandMark />
+              </SheetHeader>
+              <nav className="flex flex-col gap-1 px-2" aria-label="Menú móvil">
+                <a href="#asi-funciona" onClick={closeMenu} className={menuLinkClass}>
+                  Cómo funciona
+                </a>
+                <Link href="/map" onClick={closeMenu} className={menuLinkClass}>
+                  Ver mapa de tiendas
+                </Link>
+                {isAuthenticated ? (
+                  <Link href="/dashboard" onClick={closeMenu} className={menuLinkClass}>
+                    Ir a mi lista
+                  </Link>
+                ) : (
+                  <>
+                    <Link href="/sign-in" onClick={closeMenu} className={menuLinkClass}>
+                      Entrar
+                    </Link>
+                    <Link
+                      href="/sign-in?mode=signup"
+                      onClick={closeMenu}
+                      className={menuLinkClass}
+                    >
+                      Crear cuenta
+                    </Link>
+                  </>
+                )}
+              </nav>
+              <div className="mt-auto flex flex-col gap-1 border-t border-border px-2 pb-6 pt-4">
+                <Link href="/legal/terms" onClick={closeMenu} className={quietMenuLinkClass}>
+                  Términos
+                </Link>
+                <Link href="/legal/privacy" onClick={closeMenu} className={quietMenuLinkClass}>
+                  Privacidad
+                </Link>
+                <Link href="/brand" onClick={closeMenu} className={quietMenuLinkClass}>
+                  Para marcas
+                </Link>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div
-          className="pointer-events-none absolute inset-0 -z-0"
-          aria-hidden="true"
-          style={{
-            background:
-              "radial-gradient(60% 40% at 8% 0%, oklch(0.94 0.05 52 / 0.6) 0%, transparent 60%), radial-gradient(50% 35% at 92% 100%, oklch(0.94 0.04 130 / 0.55) 0%, transparent 60%)",
-          }}
-        />
-        <div className="container relative grid gap-12 py-16 md:py-24 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-16">
+      {/* Hero — flat porcelain, no decoration */}
+      <section>
+        <div className="container grid gap-12 py-16 md:py-24 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-16">
           {/* Left — message */}
           <div>
             <span className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/70 px-3 py-1 font-serif text-xs italic tracking-[0.04em] text-muted-foreground shadow-paper">
@@ -192,12 +299,16 @@ export default function Home() {
               <em className="font-serif not-italic text-foreground/85">vuelto</em>.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <a href={primaryHref}>
-                <Button size="lg" className="h-12 gap-2 rounded-full px-6 text-base shadow-paper">
+              <Button
+                asChild
+                size="lg"
+                className="h-12 gap-2 rounded-full px-6 text-base shadow-paper"
+              >
+                <Link href={primaryHref}>
                   {primaryLabel}
                   <ArrowRight className="h-4 w-4" />
-                </Button>
-              </a>
+                </Link>
+              </Button>
               <a
                 href="#asi-funciona"
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-border bg-card px-6 text-base font-medium text-foreground transition-colors duration-200 hover:border-primary/40 hover:text-primary"
@@ -617,73 +728,86 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Closing CTA */}
+      {/* Closing CTA — flat porcelain band */}
       <section className="py-20 md:py-28">
         <div className="container">
-          <div
-            className="relative overflow-hidden rounded-[2rem] px-8 py-16 text-center shadow-paper-lg md:px-16 md:py-20"
-            style={{
-              background:
-                "linear-gradient(135deg, oklch(0.62 0.14 38) 0%, oklch(0.7 0.13 52) 100%)",
-            }}
-          >
-            <div
-              className="pointer-events-none absolute inset-0"
-              aria-hidden="true"
-              style={{
-                backgroundImage:
-                  "radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.18) 1px, transparent 0)",
-                backgroundSize: "22px 22px",
-              }}
-            />
-            <div className="relative">
-              <p className="font-serif italic text-xs uppercase tracking-[0.18em] text-primary-foreground/80">
-                Para el próximo sábado
-              </p>
-              <h2 className="mt-3 font-serif text-3xl font-medium leading-tight tracking-tight text-primary-foreground sm:text-4xl md:text-5xl">
-                Tu próxima lista te va a salir{" "}
-                <span className="italic">más barata</span>.
-              </h2>
-              <p className="mt-4 text-base text-primary-foreground/85 sm:text-lg">
-                Empezar toma 30 segundos. No pedimos tarjeta.
-              </p>
-              <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <a href={primaryHref}>
-                  <Button
-                    size="lg"
-                    variant="secondary"
-                    className="h-12 gap-2 rounded-full px-7 text-base font-semibold"
-                  >
-                    Empezar gratis
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </a>
-                <Link href="/map">
-                  <Button
-                    size="lg"
-                    variant="ghost"
-                    className="h-12 gap-2 rounded-full px-6 text-base text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
-                  >
-                    <MapPin className="h-4 w-4" />
-                    Ver mapa de tiendas
-                  </Button>
+          <div className="rounded-[2rem] bg-paper-deep px-8 py-16 text-center ring-1 ring-border/60 md:px-16 md:py-20">
+            <p className="font-serif italic text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              Para el próximo sábado
+            </p>
+            <h2 className="mt-3 font-serif text-3xl font-medium leading-tight tracking-tight text-foreground sm:text-4xl md:text-5xl">
+              Tu próxima lista te va a salir{" "}
+              <span className="italic deco-underline">más barata</span>.
+            </h2>
+            <p className="mt-4 text-base text-muted-foreground sm:text-lg">
+              Empezar toma 30 segundos. No pedimos tarjeta.
+            </p>
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Button
+                asChild
+                size="lg"
+                className="h-12 gap-2 rounded-full px-7 text-base font-semibold"
+              >
+                <Link href={primaryHref}>
+                  Empezar gratis
+                  <ArrowRight className="h-4 w-4" />
                 </Link>
-              </div>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="h-12 gap-2 rounded-full px-6 text-base"
+              >
+                <Link href="/map">
+                  <MapPin className="h-4 w-4" />
+                  Ver mapa de tiendas
+                </Link>
+              </Button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-background py-10">
-        <div className="container flex flex-col items-center justify-between gap-4 text-sm text-muted-foreground md:flex-row">
-          <div className="flex items-center gap-2">
-            <span className="font-serif text-lg font-semibold tracking-tight text-foreground">
-              tulistica
-            </span>
-            <span className="-ml-1.5 h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+      {/* Footer — quiet full index */}
+      <footer className="border-t border-border bg-background">
+        <div className="container py-14 md:py-16">
+          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+            {FOOTER_COLUMNS.map((column) => (
+              <nav key={column.title} aria-label={column.title}>
+                <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground/70">
+                  {column.title}
+                </p>
+                <ul className="mt-4 space-y-2.5">
+                  {column.links.map((link) =>
+                    link.href.startsWith("#") ? (
+                      <li key={link.label}>
+                        <a
+                          href={link.href}
+                          className="text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground"
+                        >
+                          {link.label}
+                        </a>
+                      </li>
+                    ) : (
+                      <li key={link.label}>
+                        <Link
+                          href={link.href}
+                          className="text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground"
+                        >
+                          {link.label}
+                        </Link>
+                      </li>
+                    )
+                  )}
+                </ul>
+              </nav>
+            ))}
           </div>
-          <p>© Tulistica · 2026 · Costa Rica</p>
+          <div className="mt-12 flex flex-col items-start justify-between gap-4 border-t border-border pt-8 md:flex-row md:items-center">
+            <BrandMark />
+            <p className="text-xs text-muted-foreground">© Tulistica · 2026 · Costa Rica</p>
+          </div>
         </div>
       </footer>
     </div>

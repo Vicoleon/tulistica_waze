@@ -6,10 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
 import {
-  ArrowLeft, Package, Plus, Bell, BellOff, AlertTriangle,
+  Package, Plus, Bell, BellOff, AlertTriangle,
   ShoppingCart, Clock, Loader2,
 } from "lucide-react";
-import { Link } from "wouter";
 import { toast } from "sonner";
 
 type PantryFilter = "todos" | "se-acaba" | "suficiente" | "sobra";
@@ -311,76 +310,64 @@ export default function Pantry() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border/60 bg-card/80 backdrop-blur sticky top-0 z-50">
-        <div className="container flex h-16 items-center gap-4">
-          <Link href="/dashboard">
-            <Button variant="ghost" size="icon" aria-label="Volver al inicio">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-          </Link>
-          <div className="flex flex-col leading-tight">
-            <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-              Tu semana
-            </span>
-            <span className="font-serif text-lg text-foreground">Despensa</span>
-          </div>
-          <div className="ml-auto">
-            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="gap-1 rounded-full h-11 px-4">
-                  <Plus className="w-4 h-4" /> Agregar a despensa
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle className="font-serif text-2xl">Agregar a tu despensa</DialogTitle>
-                  <DialogDescription>
-                    Empezá con lo básico. Después te avisamos cuando se vaya acabando.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 pt-4">
-                  <Input
-                    placeholder="Arroz, café, aceite…"
-                    value={newItemName}
-                    onChange={(e) => setNewItemName(e.target.value)}
-                    className="rounded-xl h-12"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && newItemName && !addItem.isPending) {
-                        addItem.mutate({ customName: newItemName });
-                      }
-                    }}
-                  />
-                  <Button
-                    className="w-full h-11 rounded-full gap-2"
-                    onClick={() => addItem.mutate({ customName: newItemName })}
-                    disabled={!newItemName || addItem.isPending}
-                  >
-                    {addItem.isPending ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" /> Guardando…
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-4 h-4" /> Agregar
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-      </header>
-
       <main className="container py-8 max-w-4xl">
-        <section className="mb-8">
-          <h1 className="font-serif text-3xl md:text-4xl text-foreground tracking-tight">
-            Despensa
-          </h1>
-          <p className="mt-2 text-muted-foreground max-w-xl">
-            Cuando algo se acaba, vos sos el primero en saberlo.
-          </p>
-        </section>
+        <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-2">
+            <p className="page-eyebrow">Tu semana</p>
+            <h1 className="font-serif text-3xl md:text-4xl text-foreground tracking-tight">
+              Despensa
+            </h1>
+            <p className="text-muted-foreground max-w-xl">
+              Cuando algo se acaba, vos sos el primero en saberlo.
+            </p>
+          </div>
+          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+            <DialogTrigger asChild>
+              <Button
+                size="sm"
+                className="gap-1 rounded-full h-11 px-4 self-start sm:self-auto shrink-0"
+              >
+                <Plus className="w-4 h-4" /> Agregar a despensa
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="font-serif text-2xl">Agregar a tu despensa</DialogTitle>
+                <DialogDescription>
+                  Empezá con lo básico. Después te avisamos cuando se vaya acabando.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 pt-4">
+                <Input
+                  placeholder="Arroz, café, aceite…"
+                  value={newItemName}
+                  onChange={(e) => setNewItemName(e.target.value)}
+                  className="rounded-xl h-12"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && newItemName && !addItem.isPending) {
+                      addItem.mutate({ customName: newItemName });
+                    }
+                  }}
+                />
+                <Button
+                  className="w-full h-11 rounded-full gap-2"
+                  onClick={() => addItem.mutate({ customName: newItemName })}
+                  disabled={!newItemName || addItem.isPending}
+                >
+                  {addItem.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> Guardando…
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4" /> Agregar
+                    </>
+                  )}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </header>
 
         {isLoading ? (
           <div className="flex items-center justify-center py-16">

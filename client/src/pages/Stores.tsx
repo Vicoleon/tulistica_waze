@@ -90,9 +90,7 @@ export default function Stores() {
       <main className="container py-6 sm:py-8 space-y-6">
         {/* Page heading */}
         <header className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground font-serif italic">
-            Saber el precio
-          </p>
+          <p className="page-eyebrow">Ahorrar</p>
           <h1 className="font-serif text-3xl sm:text-4xl text-foreground">Tiendas</h1>
           <p className="text-muted-foreground max-w-2xl">
             Los lugares donde Costa Rica hace su lista.
