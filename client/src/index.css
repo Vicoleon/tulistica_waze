@@ -41,6 +41,9 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-paper-deep: var(--paper-deep);
+  --color-gold: var(--gold);
+  --color-gold-foreground: var(--gold-foreground);
+  --color-gold-soft: var(--gold-soft);
   --color-butter: var(--butter);
   --color-butter-foreground: var(--butter-foreground);
   --color-rose: var(--rose);
@@ -52,126 +55,137 @@
   --color-butter-soft: var(--butter-soft);
   --color-rose-soft: var(--rose-soft);
   --color-sky-soft: var(--sky-soft);
-  --font-sans: 'Nunito', system-ui, -apple-system, sans-serif;
-  --font-serif: 'Fraunces', Georgia, serif;
+  --font-sans: 'Montserrat', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Cormorant Garamond', Georgia, serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 
 :root {
-  /* Tulistica — Cocina + Pastel warm palette */
-  --radius: 1rem;
+  /* Tulistica — porcelain + obsidian + champagne gold.
+     Light-luxury surface, automotive restraint: near-white warm porcelain,
+     ink-black primary actions, gold reserved for savings and active states. */
+  --radius: 0.75rem;
 
-  /* Base surfaces — warm cream paper */
-  --background: oklch(0.97 0.018 78);
-  --foreground: oklch(0.24 0.025 50);
+  /* Base surfaces — warm porcelain */
+  --background: oklch(0.979 0.004 85);
+  --foreground: oklch(0.225 0.012 50);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.24 0.025 50);
+  --card-foreground: oklch(0.225 0.012 50);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.24 0.025 50);
-  --paper-deep: oklch(0.93 0.025 78);
+  --popover-foreground: oklch(0.225 0.012 50);
+  --paper-deep: oklch(0.955 0.006 85);
 
-  /* Primary — terracotta */
-  --primary: oklch(0.62 0.14 38);
-  --primary-foreground: oklch(0.99 0.005 78);
+  /* Primary — obsidian. Actions are ink-black, never colored. */
+  --primary: oklch(0.245 0.014 55);
+  --primary-foreground: oklch(0.98 0.004 85);
 
-  /* Secondary — sage */
-  --secondary: oklch(0.92 0.04 130);
-  --secondary-foreground: oklch(0.36 0.08 130);
+  /* Secondary — quiet warm-gray surface */
+  --secondary: oklch(0.945 0.006 80);
+  --secondary-foreground: oklch(0.32 0.012 55);
 
-  /* Accent — peach */
-  --accent: oklch(0.88 0.07 52);
-  --accent-foreground: oklch(0.38 0.1 38);
+  /* Accent — champagne tint, used for hover washes and selected rows */
+  --accent: oklch(0.945 0.022 85);
+  --accent-foreground: oklch(0.38 0.06 75);
 
-  /* Friendly helpers */
-  --butter: oklch(0.84 0.13 84);
-  --butter-foreground: oklch(0.32 0.08 60);
-  --butter-soft: oklch(0.95 0.05 84);
-  --rose: oklch(0.82 0.07 22);
-  --rose-foreground: oklch(0.4 0.12 22);
-  --rose-soft: oklch(0.96 0.025 22);
-  --sky: oklch(0.84 0.05 230);
-  --sky-foreground: oklch(0.4 0.08 230);
-  --sky-soft: oklch(0.96 0.02 230);
-  --peach-soft: oklch(0.96 0.035 52);
-  --sage-soft: oklch(0.96 0.03 130);
+  /* Gold — the single brand accent. Savings, active nav, focus ring. */
+  --gold: oklch(0.62 0.115 80);
+  --gold-foreground: oklch(0.985 0.005 85);
+  --gold-soft: oklch(0.95 0.03 88);
+
+  /* Legacy helper tints — recalibrated to muted, low-chroma luxury values
+     so existing pages keep compiling while inheriting the new restraint. */
+  --butter: oklch(0.84 0.08 88);
+  --butter-foreground: oklch(0.36 0.06 70);
+  --butter-soft: oklch(0.955 0.025 88);
+  --rose: oklch(0.82 0.045 30);
+  --rose-foreground: oklch(0.4 0.08 30);
+  --rose-soft: oklch(0.962 0.014 30);
+  --sky: oklch(0.84 0.03 235);
+  --sky-foreground: oklch(0.4 0.05 235);
+  --sky-soft: oklch(0.962 0.01 235);
+  --peach-soft: oklch(0.958 0.018 70);
+  --sage-soft: oklch(0.958 0.016 130);
 
   /* Muted */
-  --muted: oklch(0.94 0.025 78);
-  --muted-foreground: oklch(0.46 0.03 60);
+  --muted: oklch(0.945 0.006 80);
+  --muted-foreground: oklch(0.47 0.014 60);
 
-  /* Destructive */
-  --destructive: oklch(0.6 0.22 25);
-  --destructive-foreground: oklch(0.99 0 0);
+  /* Destructive — deep oxblood, not alarm red */
+  --destructive: oklch(0.5 0.16 25);
+  --destructive-foreground: oklch(0.985 0 0);
 
-  /* Lines */
-  --border: oklch(0.9 0.025 78);
-  --input: oklch(0.92 0.022 78);
-  --ring: oklch(0.62 0.14 38);
+  /* Lines — hairline warm gray */
+  --border: oklch(0.905 0.008 80);
+  --input: oklch(0.92 0.007 80);
+  --ring: oklch(0.62 0.115 80);
 
-  /* Charts */
-  --chart-1: oklch(0.62 0.14 38);
-  --chart-2: oklch(0.66 0.09 130);
-  --chart-3: oklch(0.78 0.13 52);
-  --chart-4: oklch(0.84 0.13 84);
-  --chart-5: oklch(0.62 0.1 250);
+  /* Charts — gold first, then graphite scale with one olive note */
+  --chart-1: oklch(0.62 0.115 80);
+  --chart-2: oklch(0.36 0.014 55);
+  --chart-3: oklch(0.6 0.012 60);
+  --chart-4: oklch(0.8 0.05 85);
+  --chart-5: oklch(0.55 0.06 130);
 
-  /* Sidebar — slightly creamier than page */
-  --sidebar: oklch(0.96 0.024 78);
-  --sidebar-foreground: oklch(0.24 0.025 50);
-  --sidebar-primary: oklch(0.62 0.14 38);
-  --sidebar-primary-foreground: oklch(0.99 0.005 78);
-  --sidebar-accent: oklch(0.93 0.035 78);
-  --sidebar-accent-foreground: oklch(0.32 0.06 50);
-  --sidebar-border: oklch(0.9 0.03 78);
-  --sidebar-ring: oklch(0.62 0.14 38);
+  /* Sidebar — obsidian rail. Two-tone cockpit: dark rail, porcelain cabin. */
+  --sidebar: oklch(0.215 0.012 50);
+  --sidebar-foreground: oklch(0.92 0.008 85);
+  --sidebar-primary: oklch(0.72 0.11 85);
+  --sidebar-primary-foreground: oklch(0.16 0.01 50);
+  --sidebar-accent: oklch(0.27 0.013 50);
+  --sidebar-accent-foreground: oklch(0.95 0.008 85);
+  --sidebar-border: oklch(0.3 0.012 50);
+  --sidebar-ring: oklch(0.72 0.11 85);
 }
 
 .dark {
-  /* Minimal dark adaptation — not the focus of this pass, kept legible */
-  --background: oklch(0.18 0.02 50);
-  --foreground: oklch(0.95 0.018 78);
-  --card: oklch(0.22 0.025 50);
-  --card-foreground: oklch(0.95 0.018 78);
-  --popover: oklch(0.22 0.025 50);
-  --popover-foreground: oklch(0.95 0.018 78);
-  --paper-deep: oklch(0.24 0.025 50);
-  --primary: oklch(0.7 0.14 38);
-  --primary-foreground: oklch(0.15 0.02 38);
-  --secondary: oklch(0.32 0.04 130);
-  --secondary-foreground: oklch(0.92 0.04 130);
-  --accent: oklch(0.62 0.1 52);
-  --accent-foreground: oklch(0.15 0.04 38);
-  --butter: oklch(0.78 0.12 84);
-  --butter-foreground: oklch(0.2 0.05 60);
-  --butter-soft: oklch(0.3 0.04 84);
-  --rose: oklch(0.72 0.08 22);
-  --rose-foreground: oklch(0.2 0.05 22);
-  --rose-soft: oklch(0.3 0.03 22);
-  --sky: oklch(0.74 0.06 230);
-  --sky-foreground: oklch(0.2 0.04 230);
-  --sky-soft: oklch(0.3 0.02 230);
-  --peach-soft: oklch(0.3 0.025 52);
-  --sage-soft: oklch(0.3 0.03 130);
-  --muted: oklch(0.26 0.025 50);
-  --muted-foreground: oklch(0.66 0.025 60);
-  --destructive: oklch(0.6 0.22 25);
+  /* Night cockpit — full obsidian, ivory actions, gold unchanged. */
+  --background: oklch(0.17 0.01 50);
+  --foreground: oklch(0.93 0.008 85);
+  --card: oklch(0.21 0.011 50);
+  --card-foreground: oklch(0.93 0.008 85);
+  --popover: oklch(0.21 0.011 50);
+  --popover-foreground: oklch(0.93 0.008 85);
+  --paper-deep: oklch(0.23 0.011 50);
+  --primary: oklch(0.93 0.008 85);
+  --primary-foreground: oklch(0.19 0.01 50);
+  --secondary: oklch(0.26 0.012 50);
+  --secondary-foreground: oklch(0.9 0.008 85);
+  --accent: oklch(0.28 0.018 75);
+  --accent-foreground: oklch(0.88 0.04 85);
+  --gold: oklch(0.72 0.11 85);
+  --gold-foreground: oklch(0.16 0.01 50);
+  --gold-soft: oklch(0.27 0.025 80);
+  --butter: oklch(0.74 0.07 88);
+  --butter-foreground: oklch(0.2 0.04 70);
+  --butter-soft: oklch(0.28 0.025 88);
+  --rose: oklch(0.7 0.05 30);
+  --rose-foreground: oklch(0.2 0.04 30);
+  --rose-soft: oklch(0.27 0.014 30);
+  --sky: oklch(0.72 0.035 235);
+  --sky-foreground: oklch(0.2 0.03 235);
+  --sky-soft: oklch(0.27 0.012 235);
+  --peach-soft: oklch(0.27 0.014 70);
+  --sage-soft: oklch(0.27 0.012 130);
+  --muted: oklch(0.25 0.011 50);
+  --muted-foreground: oklch(0.68 0.012 70);
+  --destructive: oklch(0.58 0.16 25);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.3 0.03 50);
-  --input: oklch(0.3 0.03 50);
-  --ring: oklch(0.7 0.14 38);
-  --chart-1: oklch(0.7 0.14 38);
-  --chart-2: oklch(0.66 0.09 130);
-  --chart-3: oklch(0.78 0.13 52);
-  --chart-4: oklch(0.84 0.13 84);
-  --chart-5: oklch(0.7 0.1 250);
-  --sidebar: oklch(0.2 0.022 50);
-  --sidebar-foreground: oklch(0.95 0.018 78);
-  --sidebar-primary: oklch(0.7 0.14 38);
-  --sidebar-primary-foreground: oklch(0.15 0.02 38);
-  --sidebar-accent: oklch(0.28 0.03 50);
-  --sidebar-accent-foreground: oklch(0.95 0.018 78);
-  --sidebar-border: oklch(0.3 0.03 50);
-  --sidebar-ring: oklch(0.7 0.14 38);
+  --border: oklch(0.29 0.011 50);
+  --input: oklch(0.29 0.011 50);
+  --ring: oklch(0.72 0.11 85);
+  --chart-1: oklch(0.72 0.11 85);
+  --chart-2: oklch(0.84 0.01 60);
+  --chart-3: oklch(0.6 0.012 60);
+  --chart-4: oklch(0.5 0.05 85);
+  --chart-5: oklch(0.6 0.06 130);
+  --sidebar: oklch(0.145 0.009 50);
+  --sidebar-foreground: oklch(0.92 0.008 85);
+  --sidebar-primary: oklch(0.72 0.11 85);
+  --sidebar-primary-foreground: oklch(0.16 0.01 50);
+  --sidebar-accent: oklch(0.22 0.011 50);
+  --sidebar-accent-foreground: oklch(0.95 0.008 85);
+  --sidebar-border: oklch(0.24 0.011 50);
+  --sidebar-ring: oklch(0.72 0.11 85);
 }
 
 @layer base {
@@ -184,11 +198,13 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
-    font-feature-settings: "ss01", "cv11";
+    font-size: 15px;
+    letter-spacing: 0.01em;
   }
   h1, h2, h3, h4 {
-    @apply font-serif tracking-tight;
-    font-feature-settings: "ss01";
+    @apply font-serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
@@ -200,17 +216,6 @@
   input[type="checkbox"]:not(:disabled),
   input[type="radio"]:not(:disabled) {
     @apply cursor-pointer;
-  }
-  /* Warm cream texture on body — very subtle paper feel */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    background-image:
-      radial-gradient(circle at 1px 1px, rgba(120, 90, 50, 0.035) 1px, transparent 0);
-    background-size: 28px 28px;
   }
   /* Respect reduced motion */
   @media (prefers-reduced-motion: reduce) {
@@ -225,7 +230,7 @@
 
 @layer components {
   /**
-   * Tulistica container — centers content with warm responsive padding.
+   * Tulistica container — centers content with calm responsive padding.
    * Use: <div className="container">…</div>
    */
   .container {
@@ -258,29 +263,39 @@
     }
   }
 
-  /* Tulistica · soft paper card shadow */
+  /* Tulistica · elevation. Hairline edge + long, faint drop. Barely there. */
   .shadow-paper {
     box-shadow:
-      0 1px 0 rgba(56, 36, 18, 0.04),
-      0 18px 30px -22px rgba(56, 36, 18, 0.2);
+      0 0 0 1px rgba(38, 30, 20, 0.04),
+      0 16px 32px -24px rgba(38, 30, 20, 0.25);
   }
   .shadow-paper-lg {
     box-shadow:
-      0 1px 0 rgba(56, 36, 18, 0.05),
-      0 28px 50px -28px rgba(56, 36, 18, 0.3);
+      0 0 0 1px rgba(38, 30, 20, 0.05),
+      0 32px 64px -32px rgba(38, 30, 20, 0.35);
   }
 
-  /* Decorative serif underline (used in hero keywords) */
+  /* Thin gold rule under hero keywords — replaces the hand-drawn squiggle. */
   .deco-underline {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 14'><path d='M2 8 Q 30 -2 56 8 T 110 8 T 164 8 T 218 8' fill='none' stroke='%23b8624a' stroke-width='3' stroke-linecap='round'/></svg>");
+    background-image: linear-gradient(to right, var(--gold), var(--gold));
     background-repeat: no-repeat;
-    background-position: bottom;
-    background-size: 100% 0.6em;
-    padding-bottom: 0.1em;
+    background-position: 0 100%;
+    background-size: 100% 2px;
+    padding-bottom: 0.08em;
   }
 
-  /* Sidebar group eyebrow */
+  /* Sidebar group eyebrow — tiny tracked caps on the obsidian rail */
   .sidebar-eyebrow {
-    @apply text-[11px] uppercase tracking-[0.14em] text-sidebar-foreground/55 font-semibold px-3 mb-1 mt-2;
+    @apply text-[10px] uppercase tracking-[0.22em] text-sidebar-foreground/45 font-medium px-3 mb-1.5 mt-3;
+  }
+
+  /* Page eyebrow — tracked caps above serif page titles */
+  .page-eyebrow {
+    @apply font-mono text-[11px] uppercase tracking-[0.2em] text-gold;
+  }
+
+  /* Safe-area padding for the mobile bottom nav */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }

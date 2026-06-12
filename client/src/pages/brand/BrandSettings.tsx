@@ -13,12 +13,12 @@ export default function BrandSettings() {
   const updateProfile = trpc.brandAuth.updateProfile.useMutation({
     onSuccess: async () => {
       await refetch();
-      toast.success("Profile updated");
+      toast.success("Perfil actualizado");
     },
     onError: err => toast.error(err.message),
   });
   const changePassword = trpc.brandAuth.changePassword.useMutation({
-    onSuccess: () => toast.success("Password changed"),
+    onSuccess: () => toast.success("Contraseña actualizada"),
     onError: err => toast.error(err.message),
   });
 
@@ -71,20 +71,20 @@ export default function BrandSettings() {
     <BrandLayout>
       <div className="space-y-6 max-w-3xl">
         <div>
-          <h1 className="text-2xl font-bold">Settings</h1>
-          <p className="text-sm text-muted-foreground">Company profile and credentials.</p>
+          <h1 className="text-2xl font-bold">Configuración</h1>
+          <p className="text-sm text-muted-foreground">Perfil de la empresa y credenciales.</p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Company profile</CardTitle>
-            <CardDescription>Visible on invoices.</CardDescription>
+            <CardTitle>Perfil de la empresa</CardTitle>
+            <CardDescription>Aparece en tus facturas.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={onSaveProfile} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="company">Company name</Label>
+                  <Label htmlFor="company">Nombre de la empresa</Label>
                   <Input
                     id="company"
                     required
@@ -93,29 +93,29 @@ export default function BrandSettings() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="contact">Contact name</Label>
+                  <Label htmlFor="contact">Nombre de contacto</Label>
                   <Input id="contact" value={contactName} onChange={e => setContactName(e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="phone">Phone</Label>
+                  <Label htmlFor="phone">Teléfono</Label>
                   <Input id="phone" value={phone} onChange={e => setPhone(e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="country">Country</Label>
+                  <Label htmlFor="country">País</Label>
                   <Input id="country" value={country} onChange={e => setCountry(e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="billing">Billing email</Label>
+                  <Label htmlFor="billing">Correo de facturación</Label>
                   <Input id="billing" type="email" value={billingEmail} onChange={e => setBillingEmail(e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="tax">Tax ID</Label>
+                  <Label htmlFor="tax">Cédula jurídica</Label>
                   <Input id="tax" value={taxId} onChange={e => setTaxId(e.target.value)} />
                 </div>
               </div>
               <div className="flex justify-end">
                 <Button type="submit" disabled={updateProfile.isPending}>
-                  {updateProfile.isPending ? "Saving…" : "Save profile"}
+                  {updateProfile.isPending ? "Guardando…" : "Guardar perfil"}
                 </Button>
               </div>
             </form>
@@ -124,13 +124,13 @@ export default function BrandSettings() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Change password</CardTitle>
-            <CardDescription>Use at least 8 characters.</CardDescription>
+            <CardTitle>Cambiar contraseña</CardTitle>
+            <CardDescription>Usá al menos 8 caracteres.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={onChangePassword} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="currentPassword">Current password</Label>
+                <Label htmlFor="currentPassword">Contraseña actual</Label>
                 <Input
                   id="currentPassword"
                   type="password"
@@ -141,7 +141,7 @@ export default function BrandSettings() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="newPassword">New password</Label>
+                <Label htmlFor="newPassword">Nueva contraseña</Label>
                 <Input
                   id="newPassword"
                   type="password"
@@ -154,7 +154,7 @@ export default function BrandSettings() {
               </div>
               <div className="flex justify-end">
                 <Button type="submit" disabled={changePassword.isPending}>
-                  {changePassword.isPending ? "Updating…" : "Update password"}
+                  {changePassword.isPending ? "Actualizando…" : "Actualizar contraseña"}
                 </Button>
               </div>
             </form>

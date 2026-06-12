@@ -199,6 +199,29 @@ export default function Onboarding() {
   const updateLocation = trpc.user.updateLocation.useMutation();
   const updateWorkLocation = trpc.user.updateWorkLocation.useMutation();
 
+  // "Saltear por ahora" persists the skip server-side; without it the
+  // DashboardLayout gate bounces the user right back here.
+  const skip = trpc.profile.skip.useMutation({
+    onSuccess: () => {
+      const skippedAt = new Date().toISOString();
+      utils.auth.me.setData(undefined, (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          preferences: {
+            ...(prev.preferences ?? {}),
+            onboardingSkippedAt: skippedAt,
+          },
+        };
+      });
+      void utils.auth.me.invalidate();
+      navigate("/lists");
+    },
+    onError: () => {
+      toast.error("No pudimos guardar tu preferencia. Intentá de nuevo.");
+    },
+  });
+
   const { track } = useAnalytics();
   const [stepIndex, setStepIndex] = useState(0);
   const [draft, setDraft] = useState<Draft>({
@@ -300,8 +323,9 @@ export default function Onboarding() {
   };
 
   const handleSkip = () => {
+    if (skip.isPending) return;
     track(ANALYTICS_EVENTS.ONBOARDING_SKIPPED, { stepReached: stepKey });
-    navigate("/lists");
+    skip.mutate();
   };
 
   const handleBack = () => {
@@ -343,8 +367,9 @@ export default function Onboarding() {
         <button
           type="button"
           onClick={handleSkip}
-          className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground transition-colors rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary px-2 py-1"
+          className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground transition-colors rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary px-4 py-3 min-h-[44px] disabled:opacity-60"
           aria-label="Saltear por ahora y volver más tarde"
+          disabled={skip.isPending}
         >
           Saltear por ahora →
         </button>

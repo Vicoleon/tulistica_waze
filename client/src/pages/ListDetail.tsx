@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
 import {
   ArrowLeft, Check, ChevronRight, Clock, Copy, Edit2, MapPin, Package,
@@ -51,6 +51,34 @@ const AVATAR_TINTS = [
 function avatarLetter(name: string | null | undefined, fallback: string): string {
   const source = (name || fallback || "?").trim();
   return source.charAt(0).toUpperCase();
+}
+
+interface ShareListButtonProps {
+  isShared: boolean;
+  isPending: boolean;
+  onOpenShareDialog: () => void;
+  onEnableShare: () => void;
+  className?: string;
+}
+
+/** Share affordance — used in the lg-only sidebar AND inline on mobile. */
+function ShareListButton({
+  isShared,
+  isPending,
+  onOpenShareDialog,
+  onEnableShare,
+  className = "",
+}: ShareListButtonProps) {
+  return (
+    <Button
+      variant="outline"
+      className={`h-12 w-full gap-2 rounded-full border-border ${className}`}
+      onClick={isShared ? onOpenShareDialog : onEnableShare}
+      disabled={!isShared && isPending}
+    >
+      <Share2 className="h-4 w-4" /> Compartir lista
+    </Button>
+  );
 }
 
 export default function ListDetail() {
@@ -543,7 +571,7 @@ export default function ListDetail() {
                               type="button"
                               onClick={() => checkItem.mutate({ id: item.id, isChecked: true })}
                               aria-label={`Marcar ${displayName} como comprado`}
-                              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-border text-transparent transition-colors duration-200 hover:border-primary hover:text-primary"
+                              className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-border text-transparent transition-colors duration-200 after:absolute after:-inset-2.5 after:content-[''] hover:border-primary hover:text-primary"
                             >
                               <Check className="h-4 w-4" />
                             </button>
@@ -595,7 +623,7 @@ export default function ListDetail() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-9 w-9 shrink-0 rounded-full text-muted-foreground opacity-0 transition-opacity duration-200 hover:bg-rose-soft hover:text-destructive group-hover:opacity-100"
+                              className="h-11 w-11 shrink-0 rounded-full text-muted-foreground opacity-100 transition-opacity duration-200 hover:bg-rose-soft hover:text-destructive focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100"
                               onClick={() => removeItem.mutate({ id: item.id })}
                               aria-label={`Eliminar ${displayName}`}
                             >
@@ -627,7 +655,7 @@ export default function ListDetail() {
                               type="button"
                               onClick={() => checkItem.mutate({ id: item.id, isChecked: false })}
                               aria-label={`Desmarcar ${displayName}`}
-                              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors duration-200"
+                              className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors duration-200 after:absolute after:-inset-2.5 after:content-['']"
                             >
                               <Check className="h-4 w-4" />
                             </button>
@@ -637,7 +665,7 @@ export default function ListDetail() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-9 w-9 rounded-full text-muted-foreground opacity-0 transition-opacity duration-200 hover:bg-rose-soft hover:text-destructive group-hover:opacity-100"
+                              className="h-11 w-11 rounded-full text-muted-foreground opacity-100 transition-opacity duration-200 hover:bg-rose-soft hover:text-destructive focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100"
                               onClick={() => removeItem.mutate({ id: item.id })}
                               aria-label={`Eliminar ${displayName}`}
                             >
@@ -651,6 +679,15 @@ export default function ListDetail() {
                 )}
               </div>
             )}
+
+            {/* Compartir — el sidebar es solo lg+, así que en móvil va inline */}
+            <ShareListButton
+              className="lg:hidden"
+              isShared={!!list.isShared}
+              isPending={updateList.isPending}
+              onOpenShareDialog={() => setShowShareDialog(true)}
+              onEnableShare={() => updateList.mutate({ id: listId, isShared: true })}
+            />
           </section>
 
           {/* RIGHT — sidebar (lg+) */}
@@ -719,53 +756,13 @@ export default function ListDetail() {
                   </Link>
                 )}
 
-                {list.isShared ? (
-                  <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="mt-2 h-12 w-full gap-2 rounded-full border-border"
-                      >
-                        <Share2 className="h-4 w-4" /> Compartir lista
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle className="font-serif text-2xl">Compartir esta lista</DialogTitle>
-                        <DialogDescription>
-                          Pasale este código a la familia o a tu compañero de mandado. Lo escriben en
-                          "Unirme con código" y entran a esta misma lista.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4 pt-4">
-                        <div className="flex items-center gap-2">
-                          <Input
-                            value={list.shareCode || ""}
-                            readOnly
-                            className="h-12 rounded-xl font-mono text-base tracking-widest"
-                          />
-                          <Button
-                            onClick={copyShareCode}
-                            size="icon"
-                            className="h-12 w-12 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
-                            aria-label="Copiar código"
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                ) : (
-                  <Button
-                    variant="outline"
-                    className="mt-2 h-12 w-full gap-2 rounded-full border-border"
-                    onClick={() => updateList.mutate({ id: listId, isShared: true })}
-                    disabled={updateList.isPending}
-                  >
-                    <Share2 className="h-4 w-4" /> Compartir lista
-                  </Button>
-                )}
+                <ShareListButton
+                  className="mt-2"
+                  isShared={!!list.isShared}
+                  isPending={updateList.isPending}
+                  onOpenShareDialog={() => setShowShareDialog(true)}
+                  onEnableShare={() => updateList.mutate({ id: listId, isShared: true })}
+                />
               </div>
 
               {/* Editors */}
@@ -809,6 +806,36 @@ export default function ListDetail() {
           </aside>
         </div>
       </main>
+
+      {/* Share dialog — single instance, triggered from sidebar or inline button */}
+      <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl">Compartir esta lista</DialogTitle>
+            <DialogDescription>
+              Pasale este código a la familia o a tu compañero de mandado. Lo escriben en
+              "Unirme con código" y entran a esta misma lista.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="flex items-center gap-2">
+              <Input
+                value={list.shareCode || ""}
+                readOnly
+                className="h-12 rounded-xl font-mono text-base tracking-widest"
+              />
+              <Button
+                onClick={copyShareCode}
+                size="icon"
+                className="h-12 w-12 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                aria-label="Copiar código"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Sticky mobile bottom bar */}
       <div className="sticky bottom-0 left-0 right-0 z-30 space-y-2 border-t border-border bg-card/95 px-4 py-3 shadow-paper-lg backdrop-blur lg:hidden">

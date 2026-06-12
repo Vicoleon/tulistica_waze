@@ -12,7 +12,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -31,10 +30,10 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
 import {
-  ArrowLeft, ChefHat, ShoppingCart, Trash2,
+  ChefHat, ShoppingCart, Trash2,
   ExternalLink, Users, Loader2, Link2, BookOpen, Wand2, Sparkles,
 } from "lucide-react";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { toast } from "sonner";
 
 const EXAMPLE_SITES = ["cookpad", "ollaarrocera.cr", "recetasnestle", "youtube.com"];
@@ -152,31 +151,16 @@ export default function Recipes() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border/60 bg-card/80 backdrop-blur sticky top-0 z-50">
-        <div className="container flex h-16 items-center gap-4">
-          <Link href="/dashboard">
-            <Button variant="ghost" size="icon" aria-label="Volver al inicio">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-          </Link>
-          <div className="flex flex-col leading-tight">
-            <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-              Tu semana
-            </span>
-            <span className="font-serif text-lg text-foreground">Recetario</span>
-          </div>
-        </div>
-      </header>
-
       <main className="container py-8 max-w-4xl">
-        <section className="mb-8">
+        <header className="mb-8 space-y-2">
+          <p className="page-eyebrow">Tu semana</p>
           <h1 className="font-serif text-3xl md:text-4xl text-foreground tracking-tight">
             Recetario
           </h1>
-          <p className="mt-2 text-muted-foreground max-w-2xl">
+          <p className="text-muted-foreground max-w-2xl">
             Pegá un link de una receta del internet — la pasamos a tu lista, lista para comprar.
           </p>
-        </section>
+        </header>
 
         {/* Paste-link card */}
         <Card className="rounded-3xl shadow-paper border-border/60 mb-10">
@@ -375,7 +359,7 @@ export default function Recipes() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-9 w-9 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 text-muted-foreground hover:text-destructive"
+                              className="h-11 w-11 opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 text-muted-foreground hover:text-destructive"
                               aria-label="Eliminar receta"
                             >
                               <Trash2 className="w-4 h-4" />

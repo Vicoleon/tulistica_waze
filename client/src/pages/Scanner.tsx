@@ -178,8 +178,8 @@ export default function Scanner() {
             </Button>
           </Link>
           <div className="flex flex-col leading-tight">
-            <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-              Comunidad
+            <span className="page-eyebrow">
+              Ahorrar
             </span>
             <span className="font-serif text-lg text-foreground">Escanear precios</span>
           </div>

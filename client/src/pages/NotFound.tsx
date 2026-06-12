@@ -42,8 +42,13 @@ export default function NotFound() {
         </div>
 
         <p className="text-xs text-muted-foreground mt-12">
-          Si llegaste acá desde un enlace, contanos —
-          <span className="font-mono"> hola@tulistica.com</span>
+          Si llegaste acá desde un enlace, contanos —{" "}
+          <a
+            href="mailto:hola@tulistica.com"
+            className="font-mono underline underline-offset-2 transition-colors duration-200 hover:text-foreground"
+          >
+            hola@tulistica.com
+          </a>
         </p>
       </div>
     </div>

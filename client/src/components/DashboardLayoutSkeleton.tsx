@@ -1,6 +1,8 @@
 import { Skeleton } from './ui/skeleton';
 
-const groupSizes = [3, 5, 3];
+// Mirrors navConfig: Inicio (ungrouped) + Tu semana, Ahorrar, Seguir el
+// precio, Comunidad. Counts approximate — it's a skeleton.
+const groupSizes = [1, 4, 5, 2, 2];
 
 export function DashboardLayoutSkeleton() {
   return (
@@ -9,10 +11,10 @@ export function DashboardLayoutSkeleton() {
       <aside className="hidden md:flex w-[280px] shrink-0 flex-col border-r border-sidebar-border bg-sidebar">
         {/* Brand area */}
         <div className="flex items-center gap-2 h-16 px-4 border-b border-sidebar-border/60">
-          <Skeleton className="h-2 w-2 rounded-full bg-primary/40" />
+          <Skeleton className="h-2 w-2 rounded-full bg-sidebar-primary/50" />
           <div className="flex flex-col gap-1.5">
-            <Skeleton className="h-4 w-24 bg-foreground/10" />
-            <Skeleton className="h-2 w-32 bg-foreground/5" />
+            <Skeleton className="h-4 w-24 bg-sidebar-foreground/15" />
+            <Skeleton className="h-2 w-32 bg-sidebar-foreground/10" />
           </div>
         </div>
 
@@ -20,14 +22,14 @@ export function DashboardLayoutSkeleton() {
         <div className="flex-1 px-2 py-4 space-y-6">
           {groupSizes.map((count, idx) => (
             <div key={idx} className="space-y-2">
-              <Skeleton className="h-3 w-24 mx-3 bg-foreground/10" />
+              <Skeleton className="h-3 w-24 mx-3 bg-sidebar-foreground/15" />
               {Array.from({ length: count }).map((_, i) => (
                 <div
                   key={i}
                   className="flex items-center gap-3 px-3 py-2.5"
                 >
-                  <Skeleton className="h-4 w-4 rounded-md bg-foreground/10" />
-                  <Skeleton className="h-3 w-28 bg-foreground/10" />
+                  <Skeleton className="h-4 w-4 rounded-md bg-sidebar-foreground/15" />
+                  <Skeleton className="h-3 w-28 bg-sidebar-foreground/15" />
                 </div>
               ))}
             </div>
@@ -37,10 +39,10 @@ export function DashboardLayoutSkeleton() {
         {/* User row */}
         <div className="border-t border-sidebar-border/60 p-3">
           <div className="flex items-center gap-3 px-1 py-1">
-            <Skeleton className="h-9 w-9 rounded-full bg-accent/40" />
+            <Skeleton className="h-9 w-9 rounded-full bg-sidebar-foreground/15" />
             <div className="flex-1 space-y-2">
-              <Skeleton className="h-3 w-20 bg-foreground/10" />
-              <Skeleton className="h-2 w-32 bg-foreground/5" />
+              <Skeleton className="h-3 w-20 bg-sidebar-foreground/15" />
+              <Skeleton className="h-2 w-32 bg-sidebar-foreground/10" />
             </div>
           </div>
         </div>

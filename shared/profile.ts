@@ -110,6 +110,12 @@ export type UserPreferences = {
   dietaryRestrictions?: string[];
   favoriteStores?: number[];
   shopperProfile?: ShopperProfile;
+  /**
+   * ISO timestamp set when the user taps "Saltear por ahora" in onboarding.
+   * The dashboard gate honors it — without this, skipping bounced users
+   * straight back into onboarding forever.
+   */
+  onboardingSkippedAt?: string;
   // Budget tracker (Tulistica feature)
   monthlyBudget?: number;
   budgetAlertThreshold?: number;
